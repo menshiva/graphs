@@ -6,7 +6,7 @@
 !/.git*
 
 # Do not ignore current project's `.uproject`.
-!/Project.uproject
+!/Graphs.uproject
 
 # Do not ignore source, config and plugins dirs.
 !/Source/**

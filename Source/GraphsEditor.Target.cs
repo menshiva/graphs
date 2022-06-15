@@ -1,14 +1,9 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
-
 using UnrealBuildTool;
-using System.Collections.Generic;
 
-public class GraphsEditorTarget : TargetRules
-{
-	public GraphsEditorTarget( TargetInfo Target) : base(Target)
-	{
+public class GraphsEditorTarget : TargetRules {
+	public GraphsEditorTarget(TargetInfo target) : base(target) {
 		Type = TargetType.Editor;
 		DefaultBuildSettings = BuildSettingsVersion.V2;
-		ExtraModuleNames.AddRange( new string[] { "Graphs" } );
+		ExtraModuleNames.AddRange(new[] { "Graphs" });
 	}
 }
