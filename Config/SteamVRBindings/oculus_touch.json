@@ -6,7 +6,49 @@
 	{
 		"/actions/main":
 		{
-			"sources": [],
+			"sources": [
+				{
+					"mode": "trigger",
+					"path": "/user/hand/right/input/trigger",
+					"inputs":
+					{
+						"click":
+						{
+							"output": "/actions/main/in/RightTriggerActionClick"
+						}
+					}
+				},
+				{
+					"mode": "dpad",
+					"path": "/user/hand/left/input/joystick",
+					"parameters":
+					{
+						"sub_mode": "touch"
+					},
+					"inputs":
+					{
+						"west":
+						{
+							"output": "/actions/main/in/LeftThumbstickActionLeft"
+						}
+					}
+				},
+				{
+					"mode": "dpad",
+					"path": "/user/hand/left/input/joystick",
+					"parameters":
+					{
+						"sub_mode": "touch"
+					},
+					"inputs":
+					{
+						"east":
+						{
+							"output": "/actions/main/in/LeftThumbstickActionRight"
+						}
+					}
+				}
+			],
 			"poses": [
 				{
 					"output": "/actions/main/in/controllerleft",
@@ -40,5 +82,5 @@
 			]
 		}
 	},
-	"description": ""
+	"description": "Graphs-18319896"
 }
