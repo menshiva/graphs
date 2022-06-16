@@ -58,6 +58,17 @@
 							"output": "/actions/main/in/LeftThumbstickActionRight"
 						}
 					}
+				},
+				{
+					"mode": "joystick",
+					"path": "/user/hand/right/input/joystick",
+					"inputs":
+					{
+						"position":
+						{
+							"output": "/actions/main/in/RightThumbstickAxisX,RightThumbstickAxisY X Y_axis2d"
+						}
+					}
 				}
 			],
 			"poses": [

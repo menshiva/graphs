@@ -36,6 +36,17 @@
 							"output": "/actions/main/in/LeftThumbstickActionRight"
 						}
 					}
+				},
+				{
+					"mode": "trackpad",
+					"path": "/user/hand/right/input/trackpad",
+					"inputs":
+					{
+						"position":
+						{
+							"output": "/actions/main/in/RightThumbstickAxisX,RightThumbstickAxisY X Y_axis2d"
+						}
+					}
 				}
 			],
 			"poses": [

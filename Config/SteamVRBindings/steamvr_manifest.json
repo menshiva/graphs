@@ -158,6 +158,10 @@
 		{
 			"name": "/actions/main/in/LeftThumbstickActionRight",
 			"type": "boolean"
+		},
+		{
+			"name": "/actions/main/in/RightThumbstickAxisX,RightThumbstickAxisY X Y_axis2d",
+			"type": "vector2"
 		}
 	],
 	"action_sets": [
@@ -403,6 +407,7 @@
 			"/actions/main/in/RightTriggerActionClick": "RightTriggerActionClick",
 			"/actions/main/in/LeftThumbstickActionLeft": "LeftThumbstickActionLeft",
 			"/actions/main/in/LeftThumbstickActionRight": "LeftThumbstickActionRight",
+			"/actions/main/in/RightThumbstickAxisX,RightThumbstickAxisY X Y_axis2d": "RightThumbstickAis",
 			"/actions/main": "Main Game Actions"
 		}
 	]
