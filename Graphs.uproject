@@ -23,10 +23,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "AISupport",
-			"Enabled": false
-		},
-		{
 			"Name": "OnlineSubsystemGooglePlay",
 			"Enabled": false,
 			"SupportedTargetPlatforms": [
@@ -130,10 +126,6 @@
 			"Enabled": false
 		},
 		{
-			"Name": "TcpMessaging",
-			"Enabled": false
-		},
-		{
 			"Name": "UdpMessaging",
 			"Enabled": false
 		},
@@ -217,19 +209,18 @@
 			]
 		},
 		{
-			"Name": "HPMotionController",
-			"Enabled": true,
-			"SupportedTargetPlatforms": [
-				"Win32",
-				"Win64"
-			]
+			"Name": "SimpleHMD",
+			"Enabled": true
 		},
 		{
-			"Name": "WindowsMixedReality",
-			"Enabled": true,
+			"Name": "OpenXRHandTracking",
+			"Enabled": false,
 			"SupportedTargetPlatforms": [
+				"Win32",
 				"Win64",
-				"HoloLens"
+				"Linux",
+				"HoloLens",
+				"Android"
 			]
 		},
 		{
@@ -244,20 +235,31 @@
 			]
 		},
 		{
-			"Name": "SimpleHMD",
-			"Enabled": true
-		},
-		{
-			"Name": "OculusVR",
+			"Name": "OpenXR",
 			"Enabled": false,
 			"SupportedTargetPlatforms": [
 				"Win32",
 				"Win64",
-				"Android"
+				"Linux",
+				"Android",
+				"HoloLens"
 			]
+		},
+		{
+			"Name": "WindowsMixedReality",
+			"Enabled": true,
+			"SupportedTargetPlatforms": [
+				"Win64",
+				"HoloLens"
+			]
+		},
+		{
+			"Name": "AISupport",
+			"Enabled": false
 		}
 	],
 	"TargetPlatforms": [
-		"WindowsNoEditor"
+		"WindowsNoEditor",
+		"Android"
 	]
 }

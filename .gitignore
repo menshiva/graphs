@@ -2,6 +2,9 @@
 *
 !*/
 
+# Do not ignore clean_cache.bar
+!/clear_cache.bat
+
 # Do not ignore git files in the root of the repo.
 !/.git*
 

@@ -38,6 +38,17 @@
 					}
 				},
 				{
+					"mode": "trigger",
+					"path": "/user/hand/right/input/trigger",
+					"inputs":
+					{
+						"click":
+						{
+							"output": "/actions/main/in/RightTriggerActionPress"
+						}
+					}
+				},
+				{
 					"mode": "trackpad",
 					"path": "/user/hand/right/input/trackpad",
 					"inputs":

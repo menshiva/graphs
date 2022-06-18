@@ -8,17 +8,6 @@
 		{
 			"sources": [
 				{
-					"mode": "trigger",
-					"path": "/user/hand/right/input/trigger",
-					"inputs":
-					{
-						"click":
-						{
-							"output": "/actions/main/in/RightTriggerActionClick"
-						}
-					}
-				},
-				{
 					"mode": "dpad",
 					"path": "/user/hand/left/input/thumbstick",
 					"parameters":
@@ -45,6 +34,17 @@
 						"east":
 						{
 							"output": "/actions/main/in/LeftThumbstickActionRight"
+						}
+					}
+				},
+				{
+					"mode": "trigger",
+					"path": "/user/hand/right/input/trigger",
+					"inputs":
+					{
+						"click":
+						{
+							"output": "/actions/main/in/RightTriggerActionPress"
 						}
 					}
 				},

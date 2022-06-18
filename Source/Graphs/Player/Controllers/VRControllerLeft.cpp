@@ -1,6 +1,6 @@
 #include "VRControllerLeft.h"
 #include "XRMotionControllerBase.h"
-#include "../Pawn/VRPlayerPawn.h"
+#include "../Pawn/VRPawn.h"
 
 UVRControllerLeft::UVRControllerLeft(const FObjectInitializer &ObjectInitializer) : UVRControllerBase(
 	ObjectInitializer, FXRMotionControllerBase::LeftHandSourceId
@@ -8,7 +8,7 @@ UVRControllerLeft::UVRControllerLeft(const FObjectInitializer &ObjectInitializer
 
 void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) {
 	Super::SetupInputBindings(Pawn, PlayerInputComponent);
-	const auto vrPawn = Cast<AVRPlayerPawn>(Pawn);
-	PlayerInputComponent->BindAction("LeftThumbstickActionLeft", IE_Pressed, vrPawn, &AVRPlayerPawn::TurnLeft);
-	PlayerInputComponent->BindAction("LeftThumbstickActionRight", IE_Pressed, vrPawn, &AVRPlayerPawn::TurnRight);
+	const auto vrPawn = Cast<AVRPawn>(Pawn);
+	PlayerInputComponent->BindAction("LeftThumbstickActionLeft", IE_Pressed, vrPawn, &AVRPawn::TurnLeft);
+	PlayerInputComponent->BindAction("LeftThumbstickActionRight", IE_Pressed, vrPawn, &AVRPawn::TurnRight);
 }

@@ -1,62 +1,72 @@
-#include "VRPlayerPawn.h"
+#include "VRPawn.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-AVRPlayerPawn::AVRPlayerPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInitializer) {
+AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInitializer) {
 	SetActorTickEnabled(false);
 	PrimaryActorTick.bCanEverTick = false;
-	PrimaryActorTick.bStartWithTickEnabled = false;
-	PrimaryActorTick.bAllowTickOnDedicatedServer = false;
-	bAllowTickBeforeBeginPlay = false;
+	AutoPossessAI = EAutoPossessAI::Disabled;
+	AIControllerClass = nullptr;
 	SetCanBeDamaged(false);
-	AutoPossessPlayer = EAutoReceiveInput::Type::Player0;
-	bNetLoadOnClient = false;
+
+	ControllerActionHapticEffect = ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base>(TEXT(
+		"/Game/Haptics/ControllerActionHapticEffect"
+	)).Object;
 
 	// Create a scene component that will act as the parent for the camera and controllers
-	Root = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, "VRPlayerRoot");
-	Root->SetupAttachment(RootComponent);
-	Root->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
-	Root->SetRelativeScale3D(FVector::OneVector);
+	RootComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, "VRPlayerRoot");
+	RootComponent->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
+	RootComponent->SetRelativeScale3D(FVector::OneVector);
 
 	// Create a camera component and attach this to the root
 	Camera = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, "VRCamera");
-	Camera->SetupAttachment(Root);
+	Camera->SetupAttachment(RootComponent);
 	Camera->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
 	Camera->SetRelativeScale3D(FVector::OneVector);
 
 	// Create left controller component and attach this to the root
 	LeftController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
-	LeftController->SetupAttachment(Root);
+	LeftController->SetupAttachment(RootComponent);
 	LeftController->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
 	LeftController->SetRelativeScale3D(FVector::OneVector);
 
 	// Create right controller component and attach this to the root
 	RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
-	RightController->SetupAttachment(Root);
+	RightController->SetupAttachment(RootComponent);
 	RightController->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
 	RightController->SetRelativeScale3D(FVector::OneVector);
 }
 
-void AVRPlayerPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
+void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-	PlayerInputComponent->BindAction("KeyboardEscActionPress", IE_Pressed, this, &AVRPlayerPawn::QuitGame);
+	PlayerInputComponent->BindAction("KeyboardEscActionPress", IE_Pressed, this, &AVRPawn::QuitGame);
 	LeftController->SetupInputBindings(this, PlayerInputComponent);
 	RightController->SetupInputBindings(this, PlayerInputComponent);
 }
 
-APlayerController *AVRPlayerPawn::GetPlayerController() const {
+APlayerController *AVRPawn::GetPlayerController() const {
 	return Cast<APlayerController>(Controller);
 }
 
-void AVRPlayerPawn::TurnLeft() {
+UVRControllerLeft *AVRPawn::GetLeftController() const {
+	return LeftController;
+}
+
+UVRControllerRight *AVRPawn::GetRightController() const {
+	return RightController;
+}
+
+void AVRPawn::TurnLeft() {
 	AddActorWorldRotation({0.0f, -45.0f, 0.0f});
+	GetPlayerController()->PlayHapticEffect(ControllerActionHapticEffect, EControllerHand::Left);
 }
 
-void AVRPlayerPawn::TurnRight() {
+void AVRPawn::TurnRight() {
 	AddActorWorldRotation({0.0f, 45.0f, 0.0f});
+	GetPlayerController()->PlayHapticEffect(ControllerActionHapticEffect, EControllerHand::Left);
 }
 
-void AVRPlayerPawn::MoveY(const float Speed) {
+void AVRPawn::MoveY(const float Speed) {
 	if (Speed != 0.0f) {
 		auto dt = Camera->GetForwardVector() * SpeedCoefficient * Speed;
 		dt.Z = 0.0f;
@@ -64,7 +74,7 @@ void AVRPlayerPawn::MoveY(const float Speed) {
 	}
 }
 
-void AVRPlayerPawn::MoveX(const float Speed) {
+void AVRPawn::MoveX(const float Speed) {
 	if (Speed != 0.0f) {
 		auto dt = Camera->GetRightVector() * SpeedCoefficient * Speed;
 		dt.Z = 0.0f;
@@ -73,15 +83,23 @@ void AVRPlayerPawn::MoveX(const float Speed) {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPlayerPawn::QuitGame() {
+void AVRPawn::PrimaryAction() {
+	// TODO
+	UKismetSystemLibrary::PrintString(
+		GetWorld(), "Right Trigger Pressed",
+		true, true, FColor::Red
+	);
+	GetPlayerController()->PlayHapticEffect(ControllerActionHapticEffect, EControllerHand::Right);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::QuitGame() {
 	UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
 }
 
-void AVRPlayerPawn::BeginPlay() {
+void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
-	SetActorLocationAndRotation(FVector::ZeroVector, FRotator::ZeroRotator);
-	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()) {
-		// Setting up camera to work with a seated experience
+	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
-	}
+	SetActorRelativeLocation({0.0f, 0.0f, 111.0f});
 }
