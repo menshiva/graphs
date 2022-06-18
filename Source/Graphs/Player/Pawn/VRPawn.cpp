@@ -34,32 +34,35 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
 	PlayerInputComponent->BindAction("KeyboardEscActionPress", IE_Pressed, this, &AVRPawn::QuitGame);
 	LeftController->SetupInputBindings(this, PlayerInputComponent);
 	RightController->SetupInputBindings(this, PlayerInputComponent);
+}
+
+APlayerCameraManager* AVRPawn::GetCameraManager() const {
+	return GetPlayerController()->PlayerCameraManager;
 }
 
 APlayerController *AVRPawn::GetPlayerController() const {
 	return Cast<APlayerController>(Controller);
 }
 
-UVRControllerLeft *AVRPawn::GetLeftController() const {
-	return LeftController;
-}
-
-UVRControllerRight *AVRPawn::GetRightController() const {
-	return RightController;
-}
-
 void AVRPawn::TurnLeft() {
-	AddActorWorldRotation({0.0f, -45.0f, 0.0f});
-	LeftController->PlayHapticEffect(GetPlayerController());
+	if (!IsTeleporting) {
+		LeftController->PlayHapticEffect(GetPlayerController());
+		CameraTeleportAnimation([&] {
+			AddActorWorldRotation({0.0f, -TurnAngle, 0.0f});
+		});
+	}
 }
 
 void AVRPawn::TurnRight() {
-	AddActorWorldRotation({0.0f, 45.0f, 0.0f});
-	LeftController->PlayHapticEffect(GetPlayerController());
+	if (!IsTeleporting) {
+		LeftController->PlayHapticEffect(GetPlayerController());
+		CameraTeleportAnimation([&] {
+			AddActorWorldRotation({0.0f, TurnAngle, 0.0f});
+		});
+	}
 }
 
 void AVRPawn::MoveY(const float Speed) {
@@ -81,21 +84,21 @@ void AVRPawn::MoveX(const float Speed) {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::PrimaryActionPressed() {
 	// TODO
+	RightController->PlayHapticEffect(GetPlayerController());
 	UKismetSystemLibrary::PrintString(
 		GetWorld(), "Right Trigger Pressed",
 		true, true, FColor::Red
 	);
-	RightController->PlayHapticEffect(GetPlayerController());
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::PrimaryActionReleased() {
 	// TODO
+	RightController->PlayHapticEffect(GetPlayerController());
 	UKismetSystemLibrary::PrintString(
 		GetWorld(), "Right Trigger Released",
 		true, true, FColor::Red
 	);
-	RightController->PlayHapticEffect(GetPlayerController());
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -107,5 +110,27 @@ void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
-	SetActorRelativeLocation({0.0f, 0.0f, 111.0f});
+	SetActorRelativeLocation({0.0f, 0.0f, PlayerHeight});
+}
+
+void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
+	IsTeleporting = true;
+	FadeCamera(1.0f);
+	FTimerHandle FadeInHandle;
+	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&, DoAfterFadeIn] {
+		DoAfterFadeIn();
+		FadeCamera(0.0f);
+		FTimerHandle FadeOutHandle;
+		GetWorldTimerManager().SetTimer(FadeOutHandle, FTimerDelegate::CreateLambda([&] {
+			IsTeleporting = false;
+		}), ScreenFadeDuration, false);
+	}), ScreenFadeDuration, false);
+}
+
+void AVRPawn::FadeCamera(const float Value) const {
+	GetCameraManager()->StartCameraFade(
+		1.0 - Value, Value,
+		ScreenFadeDuration, FColor::Black,
+		false, static_cast<bool>(Value)
+	);
 }
