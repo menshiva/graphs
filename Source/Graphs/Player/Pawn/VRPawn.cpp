@@ -11,26 +11,18 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 
 	// Create a scene component that will act as the parent for the camera and controllers
 	RootComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, "VRPlayerRoot");
-	RootComponent->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
-	RootComponent->SetRelativeScale3D(FVector::OneVector);
 
 	// Create a camera component and attach this to the root
 	Camera = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, "VRCamera");
 	Camera->SetupAttachment(RootComponent);
-	Camera->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
-	Camera->SetRelativeScale3D(FVector::OneVector);
 
 	// Create left controller component and attach this to the root
 	LeftController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
 	LeftController->SetupAttachment(RootComponent);
-	LeftController->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
-	LeftController->SetRelativeScale3D(FVector::OneVector);
 
 	// Create right controller component and attach this to the root
 	RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
 	RightController->SetupAttachment(RootComponent);
-	RightController->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
-	RightController->SetRelativeScale3D(FVector::OneVector);
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
@@ -47,21 +39,20 @@ APlayerController *AVRPawn::GetPlayerController() const {
 	return Cast<APlayerController>(Controller);
 }
 
-void AVRPawn::TurnLeft() {
-	if (!IsTeleporting) {
-		LeftController->PlayHapticEffect(GetPlayerController());
-		CameraTeleportAnimation([&] {
-			AddActorWorldRotation({0.0f, -TurnAngle, 0.0f});
-		});
+void AVRPawn::Turn(const float Value) {
+	static bool isTurning = false;
+	const float absValue = fabsf(Value);
+	if (absValue >= 0.5f) {
+		if (!isTurning && !IsTeleporting) {
+			isTurning = true;
+			LeftController->PlayHapticEffect(GetPlayerController());
+			CameraTeleportAnimation([&, Value] {
+				AddActorWorldRotation({0.0f, roundf(Value) * TurnAngle, 0.0f});
+			});
+		}
 	}
-}
-
-void AVRPawn::TurnRight() {
-	if (!IsTeleporting) {
-		LeftController->PlayHapticEffect(GetPlayerController());
-		CameraTeleportAnimation([&] {
-			AddActorWorldRotation({0.0f, TurnAngle, 0.0f});
-		});
+	else if (isTurning && absValue <= 0.2f) {
+		isTurning = false;
 	}
 }
 
@@ -108,9 +99,9 @@ void AVRPawn::QuitGame() {
 
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
+	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
-	SetActorRelativeLocation({0.0f, 0.0f, PlayerHeight});
 }
 
 void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
