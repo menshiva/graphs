@@ -11,5 +11,15 @@ public:
 	UVRControllerBase() = default;
 	UVRControllerBase(const FObjectInitializer &ObjectInitializer, const FName &TrackingSource);
 
-	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent);
+	virtual void SetupInputBindings(
+		APawn *Pawn,
+		UInputComponent *PlayerInputComponent
+	) PURE_VIRTUAL(UVRControllerBase::SetupInputBindings);
+
+	virtual void PlayHapticEffect(
+		APlayerController *PlayerController
+	) const PURE_VIRTUAL(UVRControllerBase::PlayHapticEffect);
+protected:
+	UPROPERTY()
+	UHapticFeedbackEffect_Base *ControllerActionHapticEffect;
 };

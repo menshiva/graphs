@@ -7,8 +7,11 @@ UVRControllerLeft::UVRControllerLeft(const FObjectInitializer &ObjectInitializer
 ) {}
 
 void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) {
-	Super::SetupInputBindings(Pawn, PlayerInputComponent);
 	const auto vrPawn = Cast<AVRPawn>(Pawn);
 	PlayerInputComponent->BindAction("LeftThumbstickActionLeft", IE_Pressed, vrPawn, &AVRPawn::TurnLeft);
 	PlayerInputComponent->BindAction("LeftThumbstickActionRight", IE_Pressed, vrPawn, &AVRPawn::TurnRight);
+}
+
+void UVRControllerLeft::PlayHapticEffect(APlayerController *PlayerController) const {
+	PlayerController->PlayHapticEffect(ControllerActionHapticEffect, EControllerHand::Left);
 }

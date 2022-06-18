@@ -9,10 +9,6 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 	AIControllerClass = nullptr;
 	SetCanBeDamaged(false);
 
-	ControllerActionHapticEffect = ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base>(TEXT(
-		"/Game/Haptics/ControllerActionHapticEffect"
-	)).Object;
-
 	// Create a scene component that will act as the parent for the camera and controllers
 	RootComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, "VRPlayerRoot");
 	RootComponent->SetRelativeLocationAndRotation(FVector::ZeroVector, FQuat::Identity);
@@ -58,12 +54,12 @@ UVRControllerRight *AVRPawn::GetRightController() const {
 
 void AVRPawn::TurnLeft() {
 	AddActorWorldRotation({0.0f, -45.0f, 0.0f});
-	GetPlayerController()->PlayHapticEffect(ControllerActionHapticEffect, EControllerHand::Left);
+	LeftController->PlayHapticEffect(GetPlayerController());
 }
 
 void AVRPawn::TurnRight() {
 	AddActorWorldRotation({0.0f, 45.0f, 0.0f});
-	GetPlayerController()->PlayHapticEffect(ControllerActionHapticEffect, EControllerHand::Left);
+	LeftController->PlayHapticEffect(GetPlayerController());
 }
 
 void AVRPawn::MoveY(const float Speed) {
@@ -83,13 +79,23 @@ void AVRPawn::MoveX(const float Speed) {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::PrimaryAction() {
+void AVRPawn::PrimaryActionPressed() {
 	// TODO
 	UKismetSystemLibrary::PrintString(
 		GetWorld(), "Right Trigger Pressed",
 		true, true, FColor::Red
 	);
-	GetPlayerController()->PlayHapticEffect(ControllerActionHapticEffect, EControllerHand::Right);
+	RightController->PlayHapticEffect(GetPlayerController());
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::PrimaryActionReleased() {
+	// TODO
+	UKismetSystemLibrary::PrintString(
+		GetWorld(), "Right Trigger Released",
+		true, true, FColor::Red
+	);
+	RightController->PlayHapticEffect(GetPlayerController());
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

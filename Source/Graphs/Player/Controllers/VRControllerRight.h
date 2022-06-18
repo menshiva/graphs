@@ -11,4 +11,6 @@ public:
 	explicit UVRControllerRight(const FObjectInitializer &ObjectInitializer);
 
 	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) override;
+
+	virtual void PlayHapticEffect(APlayerController *PlayerController) const override;
 };

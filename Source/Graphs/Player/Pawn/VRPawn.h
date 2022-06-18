@@ -1,7 +1,6 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Haptics/HapticFeedbackEffect_Base.h"
 #include "Camera/CameraComponent.h"
 #include "../Controllers/VRControllerLeft.h"
 #include "../Controllers/VRControllerRight.h"
@@ -22,14 +21,12 @@ public:
 	void TurnRight();
 	void MoveY(float Speed);
 	void MoveX(float Speed);
-	void PrimaryAction();
+	void PrimaryActionPressed();
+	void PrimaryActionReleased();
 	void QuitGame();
 protected:
 	virtual void BeginPlay() override;
 private:
-	UPROPERTY()
-	UHapticFeedbackEffect_Base *ControllerActionHapticEffect;
-
 	UPROPERTY()
 	UCameraComponent *Camera;
 
