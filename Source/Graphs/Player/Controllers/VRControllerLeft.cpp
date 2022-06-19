@@ -4,34 +4,24 @@
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/VFX/Laser"));
-	TeleportLaser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(
-		this, "TeleportLaser"
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Game/Meshes/Capsule"));
+	m_TeleportPreviewMesh = CreateDefaultSubobject<UStaticMeshComponent>("TeleportPreviewMesh");
+	m_TeleportPreviewMesh->SetupAttachment(this);
+	m_TeleportPreviewMesh->SetStaticMesh(TeleportPreviewMeshAsset.Object);
+	m_TeleportPreviewMesh->SetVisibility(false);
+	m_TeleportPreviewMesh->SetCollisionProfileName(TEXT("NoCollision"));
+	m_TeleportPreviewMesh->SetCastShadow(false);
+	m_TeleportPreviewMesh->SetCastInsetShadow(false);
+
+	static ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
+		TEXT("/Game/Materials/TeleportPreviewMaterial")
 	);
-	TeleportLaser->SetupAttachment(this);
-	TeleportLaser->SetAsset(LaserAsset.Object);
-	TeleportLaser->SetVisibility(TeleportLaserVisibility);
-	TeleportLaser->SetColorParameter("User.CustomColor", TeleportLaserColor);
-
-	// TODO init teleport preview capsule
-
-	/*const auto mesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("/Game/Models/Gizmo/Sphere")).Object;
-	m_pSphereMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Tool Draw Curve Sphere Mesh"));
-	m_pSphereMesh->SetVisibility(false);
-	m_pSphereMesh->SetStaticMesh(mesh);
-	m_pSphereMesh->SetCollisionProfileName(TEXT("NoCollision"));
-	m_pSphereMesh->SetCastShadow(false);
-	m_pSphereMesh->SetCastInsetShadow(false);*/
-
-	/*static ConstructorHelpers::FClassFinder<UUserWidget> WidgetMenuAsset(TEXT("/Game/UI/WidgetMenu"));
-	WidgetMenu = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(
-		this, "Menu"
+	const auto TeleportPreviewMaterialInst = m_TeleportPreviewMesh->CreateAndSetMaterialInstanceDynamicFromMaterial(
+		0,
+		TeleportPreviewMaterialAsset.Object
 	);
-	WidgetMenu->SetWidgetClass(WidgetMenuAsset.Class);
-	WidgetMenu->SetDrawAtDesiredSize(true);
-	WidgetMenu->SetupAttachment(GetMotionControllerAim());
-	WidgetMenu->SetRelativeRotation({0.0f, 180.0f, 0.0f});
-	WidgetMenu->SetRelativeScale3D(FVector(0.08f));*/
+	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", m_TeleportLaserColor);
+	m_TeleportPreviewMesh->SetMaterial(0, TeleportPreviewMaterialInst);
 }
 
 void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) {
@@ -44,22 +34,23 @@ void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerI
 	PlayerInputComponent->BindAction("LeftGripActionPress", IE_Released, vrPawn, &AVRPawn::TurnTeleportationModeOff);
 }
 
-void UVRControllerLeft::ToggleTeleportationMode(const bool Enable) {
-	TeleportLaserVisibility = Enable;
-	TeleportLaser->SetVisibility(Enable);
-	// TODO: Set visibility capsule
+void UVRControllerLeft::ToggleTeleportationMode(const bool Enable) const {
+	m_Laser->SetColor(Enable ? m_TeleportLaserColor : m_MeshInteractionLaserColor);
+	m_Laser->SetLength(Enable ? m_TeleportLaserCurrentDistance : m_MeshInteractionLaserMaxDistance);
+	m_TeleportPreviewMesh->SetVisibility(Enable);
 }
 
-void UVRControllerLeft::SetTeleportLaserDistance(const float Delta) {
-	TeleportLaserCurrentDistance = FMath::Clamp(
-		TeleportLaserCurrentDistance + Delta * TeleportLaserDistanceSpeed,
-		TeleportLaserMinDistance,
-		TeleportLaserMaxDistance
+void UVRControllerLeft::AdjustTeleportLaserLength(const float Delta) {
+	m_TeleportLaserCurrentDistance = FMath::Clamp(
+		m_TeleportLaserCurrentDistance + Delta * m_TeleportLaserLengthDeltaSpeed,
+		m_TeleportLaserMinDistance,
+		m_TeleportLaserMaxDistance
 	);
+	m_Laser->SetLength(m_TeleportLaserCurrentDistance);
 }
 
-FVector UVRControllerLeft::GetTeleportPoint() const {
-	return GetMotionControllerAimEndPos(TeleportLaserCurrentDistance);
+const FVector &UVRControllerLeft::GetTeleportPoint() const {
+	return m_Laser->GetEndPoint();
 }
 
 void UVRControllerLeft::TickComponent(
@@ -68,13 +59,9 @@ void UVRControllerLeft::TickComponent(
 	FActorComponentTickFunction* ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (TeleportLaserVisibility) {
-		UpdateLaserPositions(
-			TeleportLaser,
-			GetMotionControllerAimStartPos(),
-			GetMotionControllerAimEndPos(TeleportLaserCurrentDistance)
-		);
-		// TODO: Move capsule
-		// TODO: add laser and capsule lerp
+	if (m_TeleportPreviewMesh->IsVisible()) {
+		auto previewPos = GetTeleportPoint();
+		previewPos.Z -= m_TeleportPreviewMesh->GetNavigationBounds().GetSize().Z;
+		m_TeleportPreviewMesh->SetWorldLocation(previewPos);
 	}
 }

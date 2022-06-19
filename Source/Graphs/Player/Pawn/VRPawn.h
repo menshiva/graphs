@@ -37,17 +37,17 @@ private:
 	FORCEINLINE void FadeCamera(float Value) const;
 
 	UPROPERTY()
-	UCameraComponent *Camera;
+	UCameraComponent *m_Camera;
 
 	UPROPERTY()
-	UVRControllerLeft *LeftController;
+	UVRControllerLeft *m_LeftController;
 
 	UPROPERTY()
-	UVRControllerRight *RightController;
+	UVRControllerRight *m_RightController;
 
-	bool IsInTeleportationMode = false;
-	bool IsCameraFadeAnimationRunning = false;
+	bool m_IsInTeleportationMode = false;
+	bool m_IsCameraFadeAnimationRunning = false;
 
-	constexpr static float RotationAngle = 45.0f;
-	constexpr static float ScreenFadeDuration = 0.15f;
+	constexpr static float m_RotationAngle = 45.0f;
+	constexpr static float m_ScreenFadeDuration = 0.15f;
 };

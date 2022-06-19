@@ -1,7 +1,7 @@
 #pragma once
 
 #include "MotionControllerComponent.h"
-#include "NiagaraComponent.h"
+#include "Laser/Laser.h"
 #include "VRControllerBase.generated.h"
 
 UCLASS(Abstract, ClassGroup=(Custom))
@@ -9,46 +9,36 @@ class GRAPHS_API UVRControllerBase : public USceneComponent {
 	GENERATED_BODY()
 public:
 	UVRControllerBase() = default;
-	UVRControllerBase(
-		const FObjectInitializer &ObjectInitializer,
-		EControllerHand Hand
-	);
+	UVRControllerBase(const FObjectInitializer &ObjectInitializer, EControllerHand Hand);
 
 	virtual void SetupInputBindings(
 		APawn *Pawn,
 		UInputComponent *PlayerInputComponent
 	) PURE_VIRTUAL(UVRControllerBase::SetupInputBindings);
 
-	void PlayHapticEffect(APlayerController *PlayerController) const;
+	FORCEINLINE void PlayHapticEffect(APlayerController *PlayerController) const;
 
-	void ToggleMeshInteractionLaser(bool Enable);
+	FORCEINLINE void ToggleLaser(bool IsVisible) const;
 
-	virtual void TickComponent(
-		float DeltaTime,
-		ELevelTick TickType,
-		FActorComponentTickFunction *ThisTickFunction
-	) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 protected:
-	FVector GetMotionControllerAimStartPos() const;
-	FVector GetMotionControllerAimEndPos(float Distance) const;
-	static void UpdateLaserPositions(UNiagaraComponent *Laser, const FVector &Start, const FVector &End);
+	UPROPERTY()
+	ULaser *m_Laser;
+
+	constexpr static FLinearColor m_MeshInteractionLaserColor = FLinearColor(1.0f, 1.0f, 1.0f);
+	constexpr static float m_MeshInteractionLaserMaxDistance = 5000.0f;
 private:
-	EControllerHand HandType;
+	EControllerHand m_HandType;
+
+	FVector m_LerpedAimPosition;
+	FVector m_LerpedAimDirection;
 
 	UPROPERTY()
-	UMotionControllerComponent *MotionController;
+	UMotionControllerComponent *m_MotionController;
 
 	UPROPERTY()
-	UMotionControllerComponent *MotionControllerAim;
+	UMotionControllerComponent *m_MotionControllerAim;
 
 	UPROPERTY()
-	UNiagaraComponent *MeshInteractionLaser;
-
-	UPROPERTY()
-	UHapticFeedbackEffect_Base *ControllerActionHapticEffect;
-
-	bool MeshInteractionLaserVisibility = true;
-
-	inline const static FColor MeshInteractionLaserColor = FColor::White;
-	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
+	UHapticFeedbackEffect_Base *m_ControllerActionHapticEffect;
 };

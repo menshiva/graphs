@@ -8,5 +8,6 @@ class GRAPHS_API ADefaultGameMode final : public AGameModeBase {
 	GENERATED_BODY()
 public:
 	explicit ADefaultGameMode(const FObjectInitializer &ObjectInitializer);
+
 	virtual void InitGame(const FString &MapName, const FString &Options, FString &ErrorMessage) override;
 };

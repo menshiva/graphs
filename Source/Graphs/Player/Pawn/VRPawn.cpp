@@ -11,20 +11,20 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 
 	RootComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, "VRPlayerRoot");
 
-	Camera = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, "VRCamera");
-	Camera->SetupAttachment(RootComponent);
+	m_Camera = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, "VRCamera");
+	m_Camera->SetupAttachment(RootComponent);
 
-	LeftController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
-	LeftController->SetupAttachment(RootComponent);
+	m_LeftController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
+	m_LeftController->SetupAttachment(RootComponent);
 
-	RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
-	RightController->SetupAttachment(RootComponent);
+	m_RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
+	m_RightController->SetupAttachment(RootComponent);
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
 	PlayerInputComponent->BindAction("KeyboardEscActionPress", IE_Pressed, this, &AVRPawn::QuitGame);
-	LeftController->SetupInputBindings(this, PlayerInputComponent);
-	RightController->SetupInputBindings(this, PlayerInputComponent);
+	m_LeftController->SetupInputBindings(this, PlayerInputComponent);
+	m_RightController->SetupInputBindings(this, PlayerInputComponent);
 }
 
 APlayerCameraManager* AVRPawn::GetCameraManager() const {
@@ -38,7 +38,7 @@ APlayerController *AVRPawn::GetPlayerController() const {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::PrimaryActionPressed() {
 	// TODO
-	RightController->PlayHapticEffect(GetPlayerController());
+	m_RightController->PlayHapticEffect(GetPlayerController());
 	UKismetSystemLibrary::PrintString(
 		GetWorld(), "Right Trigger Pressed",
 		true, true, FColor::Red
@@ -48,7 +48,7 @@ void AVRPawn::PrimaryActionPressed() {
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::PrimaryActionReleased() {
 	// TODO
-	RightController->PlayHapticEffect(GetPlayerController());
+	m_RightController->PlayHapticEffect(GetPlayerController());
 	UKismetSystemLibrary::PrintString(
 		GetWorld(), "Right Trigger Released",
 		true, true, FColor::Red
@@ -57,29 +57,29 @@ void AVRPawn::PrimaryActionReleased() {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::SecondaryActionPressed() {
-	if (IsInTeleportationMode && !IsCameraFadeAnimationRunning) {
-		LeftController->PlayHapticEffect(GetPlayerController());
+	if (m_IsInTeleportationMode && !m_IsCameraFadeAnimationRunning) {
+		m_LeftController->PlayHapticEffect(GetPlayerController());
 		CameraTeleportAnimation([&] {
-			SetActorLocation(LeftController->GetTeleportPoint());
+			SetActorLocation(m_LeftController->GetTeleportPoint());
 		});
 	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::SecondaryActionReleased() {
-	if (IsInTeleportationMode)
-		LeftController->PlayHapticEffect(GetPlayerController());
+	if (m_IsInTeleportationMode)
+		m_LeftController->PlayHapticEffect(GetPlayerController());
 }
 
 void AVRPawn::Rotate(const float Value) {
 	static bool isTurning = false;
 	const float absValue = fabsf(Value);
 	if (absValue >= 0.5f) {
-		if (!isTurning && !IsCameraFadeAnimationRunning) {
+		if (!isTurning && !m_IsCameraFadeAnimationRunning) {
 			isTurning = true;
-			LeftController->PlayHapticEffect(GetPlayerController());
+			m_LeftController->PlayHapticEffect(GetPlayerController());
 			CameraTeleportAnimation([&, Value] {
-				AddActorWorldRotation({0.0f, roundf(Value) * RotationAngle, 0.0f});
+				AddActorWorldRotation({0.0f, roundf(Value) * m_RotationAngle, 0.0f});
 			});
 		}
 	}
@@ -90,24 +90,22 @@ void AVRPawn::Rotate(const float Value) {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::AdjustTeleportDistance(const float Delta) {
-	if (IsInTeleportationMode && Delta != 0.0f)
-		LeftController->SetTeleportLaserDistance(Delta);
+	if (m_IsInTeleportationMode && Delta != 0.0f)
+		m_LeftController->AdjustTeleportLaserLength(Delta);
 }
 
 void AVRPawn::TurnTeleportationModeOn() {
-	IsInTeleportationMode = true;
-	LeftController->PlayHapticEffect(GetPlayerController());
-	LeftController->ToggleMeshInteractionLaser(false);
-	RightController->ToggleMeshInteractionLaser(false);
-	LeftController->ToggleTeleportationMode(true);
+	m_IsInTeleportationMode = true;
+	m_LeftController->PlayHapticEffect(GetPlayerController());
+	m_LeftController->ToggleTeleportationMode(true);
+	m_RightController->ToggleLaser(false);
 }
 
 void AVRPawn::TurnTeleportationModeOff() {
-	IsInTeleportationMode = false;
-	LeftController->PlayHapticEffect(GetPlayerController());
-	LeftController->ToggleMeshInteractionLaser(true);
-	RightController->ToggleMeshInteractionLaser(true);
-	LeftController->ToggleTeleportationMode(false);
+	m_IsInTeleportationMode = false;
+	m_LeftController->PlayHapticEffect(GetPlayerController());
+	m_LeftController->ToggleTeleportationMode(false);
+	m_RightController->ToggleLaser(true);
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -123,7 +121,7 @@ void AVRPawn::BeginPlay() {
 }
 
 void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
-	IsCameraFadeAnimationRunning = true;
+	m_IsCameraFadeAnimationRunning = true;
 	FadeCamera(1.0f);
 	FTimerHandle FadeInHandle;
 	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&, DoAfterFadeIn] {
@@ -131,15 +129,15 @@ void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
 		FadeCamera(0.0f);
 		FTimerHandle FadeOutHandle;
 		GetWorldTimerManager().SetTimer(FadeOutHandle, FTimerDelegate::CreateLambda([&] {
-			IsCameraFadeAnimationRunning = false;
-		}), ScreenFadeDuration, false);
-	}), ScreenFadeDuration, false);
+			m_IsCameraFadeAnimationRunning = false;
+		}), m_ScreenFadeDuration, false);
+	}), m_ScreenFadeDuration, false);
 }
 
 void AVRPawn::FadeCamera(const float Value) const {
 	GetCameraManager()->StartCameraFade(
 		1.0 - Value, Value,
-		ScreenFadeDuration, FColor::Black,
+		m_ScreenFadeDuration, FColor::Black,
 		false, static_cast<bool>(Value)
 	);
 }

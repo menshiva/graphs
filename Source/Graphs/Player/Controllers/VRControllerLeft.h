@@ -1,8 +1,6 @@
 #pragma once
 
-#include "CoreMinimal.h"
 #include "VRControllerBase.h"
-#include "Components/WidgetComponent.h"
 #include "VRControllerLeft.generated.h"
 
 UCLASS(ClassGroup=(Custom))
@@ -13,24 +11,19 @@ public:
 
 	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) override;
 
-	void ToggleTeleportationMode(bool Enable);
-	void SetTeleportLaserDistance(float Delta);
-	FVector GetTeleportPoint() const;
+	void ToggleTeleportationMode(bool Enable) const;
+	void AdjustTeleportLaserLength(float Delta);
+	FORCEINLINE const FVector &GetTeleportPoint() const;
 
-	virtual void TickComponent(
-		float DeltaTime,
-		ELevelTick TickType,
-		FActorComponentTickFunction *ThisTickFunction
-	) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 private:
 	UPROPERTY()
-	UNiagaraComponent *TeleportLaser;
+	UStaticMeshComponent *m_TeleportPreviewMesh;
 
-	bool TeleportLaserVisibility = false;
-	float TeleportLaserCurrentDistance = 100.0f;
+	float m_TeleportLaserCurrentDistance = 100.0f;
 
-	inline const static FColor TeleportLaserColor = FColor::Blue;
-	constexpr static float TeleportLaserDistanceSpeed = 3.0f;
-	constexpr static float TeleportLaserMinDistance = 50.0f;
-	constexpr static float TeleportLaserMaxDistance = 500.0f;
+	constexpr static FLinearColor m_TeleportLaserColor = FLinearColor(0.1f, 1.0f, 0.2f);
+	constexpr static float m_TeleportLaserLengthDeltaSpeed = 5.0f;
+	constexpr static float m_TeleportLaserMinDistance = 50.0f;
+	constexpr static float m_TeleportLaserMaxDistance = 500.0f;
 };
