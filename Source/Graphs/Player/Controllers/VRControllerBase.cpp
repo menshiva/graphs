@@ -26,9 +26,13 @@ UVRControllerBase::UVRControllerBase(
 	MotionControllerAim->SetTrackingMotionSource(FName(GetData(handName + "Aim")));
 
 	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/VFX/Laser"));
-	Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "Laser");
-	Laser->SetupAttachment(MotionControllerAim);
-	Laser->SetAsset(LaserAsset.Object);
+	MeshInteractionLaser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(
+		this, "MeshInteractionLaser"
+	);
+	MeshInteractionLaser->SetupAttachment(this);
+	MeshInteractionLaser->SetAsset(LaserAsset.Object);
+	MeshInteractionLaser->SetVisibility(MeshInteractionLaserVisibility);
+	MeshInteractionLaser->SetColorParameter("User.CustomColor", MeshInteractionLaserColor);
 
 	static ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> ControllerActionHapticEffectAsset(TEXT(
 		"/Game/Haptics/ControllerActionHapticEffect"
@@ -40,24 +44,44 @@ void UVRControllerBase::PlayHapticEffect(APlayerController *PlayerController) co
 	PlayerController->PlayHapticEffect(ControllerActionHapticEffect, HandType);
 }
 
+void UVRControllerBase::ToggleMeshInteractionLaser(const bool Enable) {
+	MeshInteractionLaserVisibility = Enable;
+	MeshInteractionLaser->SetVisibility(Enable);
+}
+
 void UVRControllerBase::TickComponent(
 	const float DeltaTime,
 	const ELevelTick TickType,
 	FActorComponentTickFunction *ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	if (MeshInteractionLaserVisibility) {
+		UpdateLaserPositions(
+			MeshInteractionLaser,
+			GetMotionControllerAimStartPos(),
+			GetMotionControllerAimEndPos(MeshInteractionLaserMaxDistance)
+		);
+		// TODO: add lerp
+	}
+}
 
-	const auto laserStart = MotionControllerAim->GetComponentLocation();
-	const auto laserEnd = laserStart + MotionControllerAim->GetForwardVector() * LaserMaxDistance;
+FVector UVRControllerBase::GetMotionControllerAimStartPos() const {
+	return MotionControllerAim->GetComponentLocation();
+}
 
+FVector UVRControllerBase::GetMotionControllerAimEndPos(const float Distance) const {
+	return GetMotionControllerAimStartPos() + MotionControllerAim->GetForwardVector() * Distance;
+}
+
+void UVRControllerBase::UpdateLaserPositions(UNiagaraComponent *Laser, const FVector &Start, const FVector &End) {
 	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
 		Laser,
 		"User.PointArray", 0,
-		laserStart, false
+		Start, false
 	);
 	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
 		Laser,
 		"User.PointArray", 1,
-		laserEnd, false
+		End, false
 	);
 }

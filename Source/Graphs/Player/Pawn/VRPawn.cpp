@@ -9,18 +9,14 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 	AIControllerClass = nullptr;
 	SetCanBeDamaged(false);
 
-	// Create a scene component that will act as the parent for the camera and controllers
 	RootComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, "VRPlayerRoot");
 
-	// Create a camera component and attach this to the root
 	Camera = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, "VRCamera");
 	Camera->SetupAttachment(RootComponent);
 
-	// Create left controller component and attach this to the root
 	LeftController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
 	LeftController->SetupAttachment(RootComponent);
 
-	// Create right controller component and attach this to the root
 	RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
 	RightController->SetupAttachment(RootComponent);
 }
@@ -37,39 +33,6 @@ APlayerCameraManager* AVRPawn::GetCameraManager() const {
 
 APlayerController *AVRPawn::GetPlayerController() const {
 	return Cast<APlayerController>(Controller);
-}
-
-void AVRPawn::Turn(const float Value) {
-	static bool isTurning = false;
-	const float absValue = fabsf(Value);
-	if (absValue >= 0.5f) {
-		if (!isTurning && !IsTeleporting) {
-			isTurning = true;
-			LeftController->PlayHapticEffect(GetPlayerController());
-			CameraTeleportAnimation([&, Value] {
-				AddActorWorldRotation({0.0f, roundf(Value) * TurnAngle, 0.0f});
-			});
-		}
-	}
-	else if (isTurning && absValue <= 0.2f) {
-		isTurning = false;
-	}
-}
-
-void AVRPawn::MoveY(const float Speed) {
-	if (Speed != 0.0f) {
-		auto dt = Camera->GetForwardVector() * SpeedCoefficient * Speed;
-		dt.Z = 0.0f;
-		AddActorWorldOffset(dt);
-	}
-}
-
-void AVRPawn::MoveX(const float Speed) {
-	if (Speed != 0.0f) {
-		auto dt = Camera->GetRightVector() * SpeedCoefficient * Speed;
-		dt.Z = 0.0f;
-		AddActorWorldOffset(dt);
-	}
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -93,6 +56,61 @@ void AVRPawn::PrimaryActionReleased() {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::SecondaryActionPressed() {
+	if (IsInTeleportationMode && !IsCameraFadeAnimationRunning) {
+		LeftController->PlayHapticEffect(GetPlayerController());
+		CameraTeleportAnimation([&] {
+			SetActorLocation(LeftController->GetTeleportPoint());
+		});
+	}
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::SecondaryActionReleased() {
+	if (IsInTeleportationMode)
+		LeftController->PlayHapticEffect(GetPlayerController());
+}
+
+void AVRPawn::Rotate(const float Value) {
+	static bool isTurning = false;
+	const float absValue = fabsf(Value);
+	if (absValue >= 0.5f) {
+		if (!isTurning && !IsCameraFadeAnimationRunning) {
+			isTurning = true;
+			LeftController->PlayHapticEffect(GetPlayerController());
+			CameraTeleportAnimation([&, Value] {
+				AddActorWorldRotation({0.0f, roundf(Value) * RotationAngle, 0.0f});
+			});
+		}
+	}
+	else if (isTurning && absValue <= 0.2f) {
+		isTurning = false;
+	}
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::AdjustTeleportDistance(const float Delta) {
+	if (IsInTeleportationMode && Delta != 0.0f)
+		LeftController->SetTeleportLaserDistance(Delta);
+}
+
+void AVRPawn::TurnTeleportationModeOn() {
+	IsInTeleportationMode = true;
+	LeftController->PlayHapticEffect(GetPlayerController());
+	LeftController->ToggleMeshInteractionLaser(false);
+	RightController->ToggleMeshInteractionLaser(false);
+	LeftController->ToggleTeleportationMode(true);
+}
+
+void AVRPawn::TurnTeleportationModeOff() {
+	IsInTeleportationMode = false;
+	LeftController->PlayHapticEffect(GetPlayerController());
+	LeftController->ToggleMeshInteractionLaser(true);
+	RightController->ToggleMeshInteractionLaser(true);
+	LeftController->ToggleTeleportationMode(false);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::QuitGame() {
 	UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
 }
@@ -105,7 +123,7 @@ void AVRPawn::BeginPlay() {
 }
 
 void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
-	IsTeleporting = true;
+	IsCameraFadeAnimationRunning = true;
 	FadeCamera(1.0f);
 	FTimerHandle FadeInHandle;
 	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&, DoAfterFadeIn] {
@@ -113,7 +131,7 @@ void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
 		FadeCamera(0.0f);
 		FTimerHandle FadeOutHandle;
 		GetWorldTimerManager().SetTimer(FadeOutHandle, FTimerDelegate::CreateLambda([&] {
-			IsTeleporting = false;
+			IsCameraFadeAnimationRunning = false;
 		}), ScreenFadeDuration, false);
 	}), ScreenFadeDuration, false);
 }

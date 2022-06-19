@@ -21,11 +21,17 @@ public:
 
 	void PlayHapticEffect(APlayerController *PlayerController) const;
 
+	void ToggleMeshInteractionLaser(bool Enable);
+
 	virtual void TickComponent(
 		float DeltaTime,
 		ELevelTick TickType,
 		FActorComponentTickFunction *ThisTickFunction
 	) override;
+protected:
+	FVector GetMotionControllerAimStartPos() const;
+	FVector GetMotionControllerAimEndPos(float Distance) const;
+	static void UpdateLaserPositions(UNiagaraComponent *Laser, const FVector &Start, const FVector &End);
 private:
 	EControllerHand HandType;
 
@@ -36,10 +42,13 @@ private:
 	UMotionControllerComponent *MotionControllerAim;
 
 	UPROPERTY()
-	UNiagaraComponent *Laser;
+	UNiagaraComponent *MeshInteractionLaser;
 
 	UPROPERTY()
 	UHapticFeedbackEffect_Base *ControllerActionHapticEffect;
 
-	constexpr static float LaserMaxDistance = 5000.0f;
+	bool MeshInteractionLaserVisibility = true;
+
+	inline const static FColor MeshInteractionLaserColor = FColor::White;
+	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
 };

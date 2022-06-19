@@ -8,5 +8,6 @@ class GRAPHS_API UVRControllerRight final : public UVRControllerBase {
 	GENERATED_BODY()
 public:
 	explicit UVRControllerRight(const FObjectInitializer &ObjectInitializer);
+
 	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) override;
 };

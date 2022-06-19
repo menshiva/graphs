@@ -15,14 +15,18 @@ public:
 	FORCEINLINE APlayerCameraManager *GetCameraManager() const;
 	FORCEINLINE APlayerController *GetPlayerController() const;
 
-	// -1.0f for turning left, +1.0f for turning right
-	void Turn(float Value);
-
-	void MoveY(float Speed);
-	void MoveX(float Speed);
-
 	void PrimaryActionPressed();
 	void PrimaryActionReleased();
+
+	void SecondaryActionPressed();
+	void SecondaryActionReleased();
+
+	// -1.0f for turning left, +1.0f for turning right
+	void Rotate(float Value);
+
+	void AdjustTeleportDistance(float Delta);
+	void TurnTeleportationModeOn();
+	void TurnTeleportationModeOff();
 
 	void QuitGame();
 protected:
@@ -41,10 +45,9 @@ private:
 	UPROPERTY()
 	UVRControllerRight *RightController;
 
-	bool IsTeleporting = false;
+	bool IsInTeleportationMode = false;
+	bool IsCameraFadeAnimationRunning = false;
 
-	constexpr static float PlayerHeight = 111.0f;
-	constexpr static float TurnAngle = 45.0f;
-	constexpr static float SpeedCoefficient = 3.0f;
+	constexpr static float RotationAngle = 45.0f;
 	constexpr static float ScreenFadeDuration = 0.15f;
 };

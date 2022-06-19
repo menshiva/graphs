@@ -8,7 +8,8 @@ public class Graphs : ModuleRules {
 			"CoreUObject",
 			"Engine",
 			"InputCore",
-			"Niagara"
+			"Niagara",
+			"UMG"
 		});
 		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay" });
 		CppStandard = CppStandardVersion.Cpp17;
