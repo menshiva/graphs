@@ -34,7 +34,7 @@ void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerI
 	PlayerInputComponent->BindAction("LeftGripActionPress", IE_Released, vrPawn, &AVRPawn::TurnTeleportationModeOff);
 }
 
-void UVRControllerLeft::ToggleTeleportationMode(const bool Enable) const {
+void UVRControllerLeft::SetTeleportationMode(const bool Enable) const {
 	m_Laser->SetColor(Enable ? m_TeleportLaserColor : m_MeshInteractionLaserColor);
 	m_Laser->SetLength(Enable ? m_TeleportLaserCurrentDistance : m_MeshInteractionLaserMaxDistance);
 	m_TeleportPreviewMesh->SetVisibility(Enable);
@@ -53,15 +53,8 @@ const FVector &UVRControllerLeft::GetTeleportPoint() const {
 	return m_Laser->GetEndPoint();
 }
 
-void UVRControllerLeft::TickComponent(
-	const float DeltaTime,
-	const ELevelTick TickType,
-	FActorComponentTickFunction* ThisTickFunction
-) {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (m_TeleportPreviewMesh->IsVisible()) {
-		auto previewPos = GetTeleportPoint();
-		previewPos.Z -= m_TeleportPreviewMesh->GetNavigationBounds().GetSize().Z;
-		m_TeleportPreviewMesh->SetWorldLocation(previewPos);
-	}
+void UVRControllerLeft::UpdateLaserPositionDirection(const bool ShouldLerp) {
+	Super::UpdateLaserPositionDirection(ShouldLerp);
+	if (m_TeleportPreviewMesh->IsVisible())
+		m_TeleportPreviewMesh->SetWorldLocation(GetTeleportPoint());
 }

@@ -60,7 +60,11 @@ void AVRPawn::SecondaryActionPressed() {
 	if (m_IsInTeleportationMode && !m_IsCameraFadeAnimationRunning) {
 		m_LeftController->PlayHapticEffect(GetPlayerController());
 		CameraTeleportAnimation([&] {
-			SetActorLocation(m_LeftController->GetTeleportPoint());
+			auto teleportPoint = m_LeftController->GetTeleportPoint();
+			teleportPoint.Z += 111; // add player's height
+			SetActorLocation(teleportPoint);
+			m_LeftController->UpdateLaserPositionDirection(false);
+			m_RightController->UpdateLaserPositionDirection(false);
 		});
 	}
 }
@@ -80,6 +84,8 @@ void AVRPawn::Rotate(const float Value) {
 			m_LeftController->PlayHapticEffect(GetPlayerController());
 			CameraTeleportAnimation([&, Value] {
 				AddActorWorldRotation({0.0f, roundf(Value) * m_RotationAngle, 0.0f});
+				m_LeftController->UpdateLaserPositionDirection(false);
+				m_RightController->UpdateLaserPositionDirection(false);
 			});
 		}
 	}
@@ -97,15 +103,13 @@ void AVRPawn::AdjustTeleportDistance(const float Delta) {
 void AVRPawn::TurnTeleportationModeOn() {
 	m_IsInTeleportationMode = true;
 	m_LeftController->PlayHapticEffect(GetPlayerController());
-	m_LeftController->ToggleTeleportationMode(true);
-	m_RightController->ToggleLaser(false);
+	m_LeftController->SetTeleportationMode(true);
 }
 
 void AVRPawn::TurnTeleportationModeOff() {
 	m_IsInTeleportationMode = false;
 	m_LeftController->PlayHapticEffect(GetPlayerController());
-	m_LeftController->ToggleTeleportationMode(false);
-	m_RightController->ToggleLaser(true);
+	m_LeftController->SetTeleportationMode(false);
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -121,15 +125,18 @@ void AVRPawn::BeginPlay() {
 }
 
 void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
+	FTimerHandle FadeInHandle;
 	m_IsCameraFadeAnimationRunning = true;
 	FadeCamera(1.0f);
-	FTimerHandle FadeInHandle;
 	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&, DoAfterFadeIn] {
 		DoAfterFadeIn();
-		FadeCamera(0.0f);
-		FTimerHandle FadeOutHandle;
-		GetWorldTimerManager().SetTimer(FadeOutHandle, FTimerDelegate::CreateLambda([&] {
-			m_IsCameraFadeAnimationRunning = false;
+		FTimerHandle WaitHandle;
+		GetWorldTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&] {
+			FadeCamera(0.0f);
+			FTimerHandle FadeOutHandle;
+			GetWorldTimerManager().SetTimer(FadeOutHandle, FTimerDelegate::CreateLambda([&] {
+				m_IsCameraFadeAnimationRunning = false;
+			}), m_ScreenFadeDuration, false);
 		}), m_ScreenFadeDuration, false);
 	}), m_ScreenFadeDuration, false);
 }

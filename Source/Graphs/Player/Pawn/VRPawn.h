@@ -49,5 +49,5 @@ private:
 	bool m_IsCameraFadeAnimationRunning = false;
 
 	constexpr static float m_RotationAngle = 45.0f;
-	constexpr static float m_ScreenFadeDuration = 0.15f;
+	constexpr static float m_ScreenFadeDuration = 0.1f;
 };

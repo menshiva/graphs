@@ -38,8 +38,20 @@ void UVRControllerBase::PlayHapticEffect(APlayerController *PlayerController) co
 	PlayerController->PlayHapticEffect(m_ControllerActionHapticEffect, m_HandType);
 }
 
-void UVRControllerBase::ToggleLaser(const bool IsVisible) const {
+void UVRControllerBase::SetLaserVisibility(const bool IsVisible) const {
 	m_Laser->SetVisibility(IsVisible);
+}
+
+void UVRControllerBase::UpdateLaserPositionDirection(const bool ShouldLerp) {
+	if (ShouldLerp) {
+		m_AimPosition = FMath::Lerp(m_AimPosition, m_MotionControllerAim->GetComponentLocation(), 0.5f);
+		m_AimDirection = FMath::Lerp(m_AimDirection, m_MotionControllerAim->GetForwardVector(), 0.25f);
+	}
+	else {
+		m_AimPosition = m_MotionControllerAim->GetComponentLocation();
+		m_AimDirection = m_MotionControllerAim->GetForwardVector();
+	}
+	m_Laser->Update(m_AimPosition, m_AimDirection);
 }
 
 void UVRControllerBase::TickComponent(
@@ -48,7 +60,5 @@ void UVRControllerBase::TickComponent(
 	FActorComponentTickFunction *ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	m_LerpedAimPosition = FMath::Lerp(m_LerpedAimPosition, m_MotionControllerAim->GetComponentLocation(), 0.5f);
-	m_LerpedAimDirection = FMath::Lerp(m_LerpedAimDirection, m_MotionControllerAim->GetForwardVector(), 0.25f);
-	m_Laser->Update(m_LerpedAimPosition, m_LerpedAimDirection);
+	UpdateLaserPositionDirection(true);
 }

@@ -18,7 +18,8 @@ public:
 
 	FORCEINLINE void PlayHapticEffect(APlayerController *PlayerController) const;
 
-	FORCEINLINE void ToggleLaser(bool IsVisible) const;
+	FORCEINLINE void SetLaserVisibility(bool IsVisible) const;
+	virtual void UpdateLaserPositionDirection(bool ShouldLerp);
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 protected:
@@ -30,8 +31,8 @@ protected:
 private:
 	EControllerHand m_HandType;
 
-	FVector m_LerpedAimPosition;
-	FVector m_LerpedAimDirection;
+	FVector m_AimPosition;
+	FVector m_AimDirection;
 
 	UPROPERTY()
 	UMotionControllerComponent *m_MotionController;
