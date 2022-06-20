@@ -4,7 +4,7 @@
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Game/Meshes/Capsule"));
+	static ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Game/Graphs/Meshes/Capsule"));
 	m_TeleportPreviewMesh = CreateDefaultSubobject<UStaticMeshComponent>("TeleportPreviewMesh");
 	m_TeleportPreviewMesh->SetupAttachment(this);
 	m_TeleportPreviewMesh->SetStaticMesh(TeleportPreviewMeshAsset.Object);
@@ -14,7 +14,7 @@ UVRControllerLeft::UVRControllerLeft(
 	m_TeleportPreviewMesh->SetCastInsetShadow(false);
 
 	static ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
-		TEXT("/Game/Materials/TeleportPreviewMaterial")
+		TEXT("/Game/Graphs/Materials/TeleportPreviewMaterial")
 	);
 	const auto TeleportPreviewMaterialInst = m_TeleportPreviewMesh->CreateAndSetMaterialInstanceDynamicFromMaterial(
 		0,

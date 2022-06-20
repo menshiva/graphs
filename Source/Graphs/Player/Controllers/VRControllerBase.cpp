@@ -29,7 +29,7 @@ UVRControllerBase::UVRControllerBase(
 	m_Laser->Init(m_MeshInteractionLaserColor, m_MeshInteractionLaserMaxDistance);
 
 	static ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> ControllerActionHapticEffectAsset(TEXT(
-		"/Game/Haptics/ControllerActionHapticEffect"
+		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
 	));
 	m_ControllerActionHapticEffect = ControllerActionHapticEffectAsset.Object;
 }

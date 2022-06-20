@@ -55,7 +55,6 @@ void AVRPawn::PrimaryActionReleased() {
 	);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::SecondaryActionPressed() {
 	if (m_IsInTeleportationMode && !m_IsCameraFadeAnimationRunning) {
 		m_LeftController->PlayHapticEffect(GetPlayerController());

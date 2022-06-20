@@ -26,7 +26,7 @@ protected:
 	UPROPERTY()
 	ULaser *m_Laser;
 
-	constexpr static FLinearColor m_MeshInteractionLaserColor = FLinearColor(1.0f, 1.0f, 1.0f);
+	constexpr static FLinearColor m_MeshInteractionLaserColor = FLinearColor(0.07451f, 0.14902f, 0.360784f);
 	constexpr static float m_MeshInteractionLaserMaxDistance = 5000.0f;
 private:
 	EControllerHand m_HandType;
