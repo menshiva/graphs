@@ -15,24 +15,21 @@ public:
 	FORCEINLINE APlayerCameraManager *GetCameraManager() const;
 	FORCEINLINE APlayerController *GetPlayerController() const;
 
-	void PrimaryActionPressed();
-	void PrimaryActionReleased();
-
-	void SecondaryActionPressed();
-	void SecondaryActionReleased();
+	void PrimaryAction(bool IsPressed);
+	void SecondaryAction(bool IsPressed);
 
 	// -1.0f for turning left, +1.0f for turning right
 	void Rotate(float Value);
 
+	void SetTeleportationMode(bool Enabled);
 	void AdjustTeleportDistance(float Delta);
-	void TurnTeleportationModeOn();
-	void TurnTeleportationModeOff();
 
 	void QuitGame();
 protected:
 	virtual void BeginPlay() override;
 private:
 	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
+
 	// 1.0f for FadeIn, 0.0f for FadeOut
 	FORCEINLINE void FadeCamera(float Value) const;
 
@@ -48,6 +45,7 @@ private:
 	bool m_IsInTeleportationMode = false;
 	bool m_IsCameraFadeAnimationRunning = false;
 
+	constexpr static float m_ActionHapticScale = 0.3f;
 	constexpr static float m_RotationAngle = 45.0f;
 	constexpr static float m_ScreenFadeDuration = 0.1f;
 };

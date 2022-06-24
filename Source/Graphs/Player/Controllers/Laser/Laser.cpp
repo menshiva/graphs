@@ -7,7 +7,7 @@ ULaser::ULaser(const FObjectInitializer &ObjectInitializer) : UNiagaraComponent(
 }
 
 void ULaser::Init(const FLinearColor &Color, const float Length) {
-	static ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/Laser"));
+	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
 	SetAsset(LaserAsset.Object);
 	SetColor(Color);
 	SetLength(Length);

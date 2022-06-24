@@ -3,8 +3,8 @@
 
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
-) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
-	static ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Game/Graphs/Meshes/Capsule"));
+) : UVRControllerBase(ObjectInitializer, "Left") {
+	const ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Game/Graphs/Meshes/Capsule"));
 	m_TeleportPreviewMesh = CreateDefaultSubobject<UStaticMeshComponent>("TeleportPreviewMesh");
 	m_TeleportPreviewMesh->SetupAttachment(this);
 	m_TeleportPreviewMesh->SetStaticMesh(TeleportPreviewMeshAsset.Object);
@@ -13,7 +13,7 @@ UVRControllerLeft::UVRControllerLeft(
 	m_TeleportPreviewMesh->SetCastShadow(false);
 	m_TeleportPreviewMesh->SetCastInsetShadow(false);
 
-	static ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
+	const ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
 		TEXT("/Game/Graphs/Materials/TeleportPreviewMaterial")
 	);
 	const auto TeleportPreviewMaterialInst = m_TeleportPreviewMesh->CreateAndSetMaterialInstanceDynamicFromMaterial(
@@ -24,14 +24,51 @@ UVRControllerLeft::UVRControllerLeft(
 	m_TeleportPreviewMesh->SetMaterial(0, TeleportPreviewMaterialInst);
 }
 
-void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) {
+void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) const {
 	const auto vrPawn = Cast<AVRPawn>(Pawn);
+
 	PlayerInputComponent->BindAxis("LeftThumbstickAxisY", vrPawn, &AVRPawn::AdjustTeleportDistance);
 	PlayerInputComponent->BindAxis("LeftThumbstickAxisX", vrPawn, &AVRPawn::Rotate);
-	PlayerInputComponent->BindAction("LeftTriggerActionPress", IE_Pressed, vrPawn, &AVRPawn::SecondaryActionPressed);
-	PlayerInputComponent->BindAction("LeftTriggerActionPress", IE_Released, vrPawn, &AVRPawn::SecondaryActionReleased);
-	PlayerInputComponent->BindAction("LeftGripActionPress", IE_Pressed, vrPawn, &AVRPawn::TurnTeleportationModeOn);
-	PlayerInputComponent->BindAction("LeftGripActionPress", IE_Released, vrPawn, &AVRPawn::TurnTeleportationModeOff);
+
+	AddActionBindingLambda(
+		PlayerInputComponent,
+		"LeftTriggerActionPress", IE_Pressed,
+		[vrPawn] {
+			vrPawn->SecondaryAction(true);
+		}
+	);
+	AddActionBindingLambda(
+		PlayerInputComponent,
+		"LeftTriggerActionPress", IE_Released,
+		[vrPawn] {
+			vrPawn->SecondaryAction(false);
+		}
+	);
+
+	AddActionBindingLambda(
+		PlayerInputComponent,
+		"LeftGripActionPress", IE_Pressed,
+		[vrPawn] {
+			vrPawn->SetTeleportationMode(true);
+		}
+	);
+	AddActionBindingLambda(
+		PlayerInputComponent,
+		"LeftGripActionPress", IE_Released,
+		[vrPawn] {
+			vrPawn->SetTeleportationMode(false);
+		}
+	);
+}
+
+void UVRControllerLeft::PlayHapticEffect(APlayerController *PlayerController, const float Scale) const {
+	PlayerController->PlayHapticEffect(m_ControllerActionHapticEffect, EControllerHand::Left, Scale);
+}
+
+void UVRControllerLeft::UpdateLaserPositionDirection(const bool ShouldLerp) {
+	Super::UpdateLaserPositionDirection(ShouldLerp);
+	if (m_TeleportPreviewMesh->IsVisible())
+		m_TeleportPreviewMesh->SetWorldLocation(GetTeleportPoint());
 }
 
 void UVRControllerLeft::SetTeleportationMode(const bool Enable) const {
@@ -51,10 +88,4 @@ void UVRControllerLeft::AdjustTeleportLaserLength(const float Delta) {
 
 const FVector &UVRControllerLeft::GetTeleportPoint() const {
 	return m_Laser->GetEndPoint();
-}
-
-void UVRControllerLeft::UpdateLaserPositionDirection(const bool ShouldLerp) {
-	Super::UpdateLaserPositionDirection(ShouldLerp);
-	if (m_TeleportPreviewMesh->IsVisible())
-		m_TeleportPreviewMesh->SetWorldLocation(GetTeleportPoint());
 }

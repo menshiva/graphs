@@ -9,5 +9,6 @@ class GRAPHS_API UVRControllerRight final : public UVRControllerBase {
 public:
 	explicit UVRControllerRight(const FObjectInitializer &ObjectInitializer);
 
-	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) override;
+	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) const override;
+	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) const override;
 };

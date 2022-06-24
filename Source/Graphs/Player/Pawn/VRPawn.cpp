@@ -36,51 +36,49 @@ APlayerController *AVRPawn::GetPlayerController() const {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::PrimaryActionPressed() {
+void AVRPawn::PrimaryAction(const bool IsPressed) {
 	// TODO
-	m_RightController->PlayHapticEffect(GetPlayerController());
-	UKismetSystemLibrary::PrintString(
-		GetWorld(), "Right Trigger Pressed",
-		true, true, FColor::Red
-	);
-}
-
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::PrimaryActionReleased() {
-	// TODO
-	m_RightController->PlayHapticEffect(GetPlayerController());
-	UKismetSystemLibrary::PrintString(
-		GetWorld(), "Right Trigger Released",
-		true, true, FColor::Red
-	);
-}
-
-void AVRPawn::SecondaryActionPressed() {
-	if (m_IsInTeleportationMode && !m_IsCameraFadeAnimationRunning) {
-		m_LeftController->PlayHapticEffect(GetPlayerController());
-		CameraTeleportAnimation([&] {
-			auto teleportPoint = m_LeftController->GetTeleportPoint();
-			teleportPoint.Z += 111; // add player's height
-			SetActorLocation(teleportPoint);
-			m_LeftController->UpdateLaserPositionDirection(false);
-			m_RightController->UpdateLaserPositionDirection(false);
-		});
+	m_RightController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+	if (IsPressed) {
+		UKismetSystemLibrary::PrintString(
+			GetWorld(), "Right Trigger Pressed",
+			true, true, FColor::Red
+		);
+	}
+	else {
+		UKismetSystemLibrary::PrintString(
+			GetWorld(), "Right Trigger Released",
+			true, true, FColor::Red
+		);
 	}
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::SecondaryActionReleased() {
-	if (m_IsInTeleportationMode)
-		m_LeftController->PlayHapticEffect(GetPlayerController());
+void AVRPawn::SecondaryAction(const bool IsPressed) {
+	if (m_IsInTeleportationMode) {
+		if (IsPressed) {
+			if (!m_IsCameraFadeAnimationRunning) {
+				m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+				CameraTeleportAnimation([&] {
+					auto teleportPoint = m_LeftController->GetTeleportPoint();
+					teleportPoint.Z += 111; // add player's height
+					SetActorLocation(teleportPoint);
+					m_LeftController->UpdateLaserPositionDirection(false);
+					m_RightController->UpdateLaserPositionDirection(false);
+				});
+			}
+		}
+		else
+			m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+	}
 }
 
 void AVRPawn::Rotate(const float Value) {
 	static bool isTurning = false;
 	const float absValue = fabsf(Value);
-	if (absValue >= 0.5f) {
+	if (absValue >= 0.7f) {
 		if (!isTurning && !m_IsCameraFadeAnimationRunning) {
 			isTurning = true;
-			m_LeftController->PlayHapticEffect(GetPlayerController());
+			m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
 			CameraTeleportAnimation([&, Value] {
 				AddActorWorldRotation({0.0f, roundf(Value) * m_RotationAngle, 0.0f});
 				m_LeftController->UpdateLaserPositionDirection(false);
@@ -88,27 +86,21 @@ void AVRPawn::Rotate(const float Value) {
 			});
 		}
 	}
-	else if (isTurning && absValue <= 0.2f) {
+	else if (isTurning) {
 		isTurning = false;
 	}
+}
+
+void AVRPawn::SetTeleportationMode(const bool Enabled) {
+	m_IsInTeleportationMode = Enabled;
+	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+	m_LeftController->SetTeleportationMode(Enabled);
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::AdjustTeleportDistance(const float Delta) {
 	if (m_IsInTeleportationMode && Delta != 0.0f)
 		m_LeftController->AdjustTeleportLaserLength(Delta);
-}
-
-void AVRPawn::TurnTeleportationModeOn() {
-	m_IsInTeleportationMode = true;
-	m_LeftController->PlayHapticEffect(GetPlayerController());
-	m_LeftController->SetTeleportationMode(true);
-}
-
-void AVRPawn::TurnTeleportationModeOff() {
-	m_IsInTeleportationMode = false;
-	m_LeftController->PlayHapticEffect(GetPlayerController());
-	m_LeftController->SetTeleportationMode(false);
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

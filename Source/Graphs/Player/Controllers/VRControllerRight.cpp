@@ -3,10 +3,27 @@
 
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
-) : UVRControllerBase(ObjectInitializer, EControllerHand::Right) {}
+) : UVRControllerBase(ObjectInitializer, "Right") {}
 
-void UVRControllerRight::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) {
+void UVRControllerRight::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) const {
 	const auto vrPawn = Cast<AVRPawn>(Pawn);
-	PlayerInputComponent->BindAction("RightTriggerActionPress", IE_Pressed, vrPawn, &AVRPawn::PrimaryActionPressed);
-	PlayerInputComponent->BindAction("RightTriggerActionPress", IE_Released, vrPawn, &AVRPawn::PrimaryActionReleased);
+
+	AddActionBindingLambda(
+		PlayerInputComponent,
+		"RightTriggerActionPress", IE_Pressed,
+		[vrPawn] {
+			vrPawn->PrimaryAction(true);
+		}
+	);
+	AddActionBindingLambda(
+		PlayerInputComponent,
+		"RightTriggerActionPress", IE_Released,
+		[vrPawn] {
+			vrPawn->PrimaryAction(false);
+		}
+	);
+}
+
+void UVRControllerRight::PlayHapticEffect(APlayerController *PlayerController, const float Scale) const {
+	PlayerController->PlayHapticEffect(m_ControllerActionHapticEffect, EControllerHand::Right, Scale);
 }
