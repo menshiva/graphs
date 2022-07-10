@@ -37,6 +37,12 @@ protected:
 	ULaser *m_Laser;
 
 	UPROPERTY()
+	UMotionControllerComponent *m_MotionController;
+
+	UPROPERTY()
+	UMotionControllerComponent *m_MotionControllerAim;
+
+	UPROPERTY()
 	UHapticFeedbackEffect_Base *m_ControllerActionHapticEffect;
 
 	constexpr static FLinearColor m_MeshInteractionLaserColor = FLinearColor(0.07451f, 0.14902f, 0.360784f);
@@ -46,10 +52,4 @@ private:
 
 	FVector m_AimLerpedPosition;
 	FVector m_AimLerpedDirection;
-
-	UPROPERTY()
-	UMotionControllerComponent *m_MotionController;
-
-	UPROPERTY()
-	UMotionControllerComponent *m_MotionControllerAim;
 };

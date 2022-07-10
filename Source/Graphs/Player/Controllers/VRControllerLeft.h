@@ -1,6 +1,7 @@
 #pragma once
 
 #include "VRControllerBase.h"
+#include "Components/WidgetComponent.h"
 #include "VRControllerLeft.generated.h"
 
 UCLASS(ClassGroup=(Custom))
@@ -16,9 +17,16 @@ public:
 	void SetTeleportationMode(bool Enable) const;
 	void AdjustTeleportLaserLength(float Delta);
 	FORCEINLINE const FVector &GetTeleportPoint() const;
+
+	void SpawnMainMenu(APawn *Pawn);
+	void DestroyMainMenu();
 private:
 	UPROPERTY()
 	UStaticMeshComponent *m_TeleportPreviewMesh;
+
+	UPROPERTY()
+	UWidgetComponent *m_MainMenu;
+	TSubclassOf<UUserWidget> m_MainMenuWidgetClass;
 
 	float m_TeleportLaserCurrentDistance = 150.0f;
 

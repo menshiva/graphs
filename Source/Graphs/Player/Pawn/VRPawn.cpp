@@ -22,7 +22,7 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
-	PlayerInputComponent->BindAction("KeyboardEscActionPress", IE_Pressed, this, &AVRPawn::QuitGame);
+	PlayerInputComponent->BindAction("KeyboardEsc", IE_Pressed, this, &AVRPawn::QuitGame);
 	m_LeftController->SetupInputBindings(this, PlayerInputComponent);
 	m_RightController->SetupInputBindings(this, PlayerInputComponent);
 }
@@ -37,19 +37,13 @@ APlayerController *AVRPawn::GetPlayerController() const {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::PrimaryAction(const bool IsPressed) {
-	// TODO
 	m_RightController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
 	if (IsPressed) {
-		UKismetSystemLibrary::PrintString(
-			GetWorld(), "Right Trigger Pressed",
-			true, true, FColor::Red
-		);
+		if (m_RightController->IsUiHit())
+			m_RightController->UiPointerKeyPress();
 	}
 	else {
-		UKismetSystemLibrary::PrintString(
-			GetWorld(), "Right Trigger Released",
-			true, true, FColor::Red
-		);
+		m_RightController->UiPointerKeyRelease();
 	}
 }
 
@@ -101,6 +95,17 @@ void AVRPawn::SetTeleportationMode(const bool Enabled) {
 void AVRPawn::AdjustTeleportDistance(const float Delta) {
 	if (m_IsInTeleportationMode && Delta != 0.0f)
 		m_LeftController->AdjustTeleportLaserLength(Delta);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::ToggleMenu() {
+	static bool isMenuShown = false;
+	isMenuShown = !isMenuShown;
+	m_RightController->setUiInteractionEnabled(isMenuShown);
+	if (isMenuShown)
+		m_LeftController->SpawnMainMenu(this);
+	else
+		m_LeftController->DestroyMainMenu();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

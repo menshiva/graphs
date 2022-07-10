@@ -11,20 +11,20 @@ UVRControllerBase::UVRControllerBase(
 		this,
 		"MotionController"
 	);
-	m_MotionController->SetupAttachment(this);
 	m_MotionController->SetShowDeviceModel(true);
 	m_MotionController->SetTrackingMotionSource(FName(GetData(Hand)));
+	m_MotionController->SetupAttachment(this);
 
 	m_MotionControllerAim = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
 		this,
 		"MotionControllerAim"
 	);
-	m_MotionControllerAim->SetupAttachment(this);
 	m_MotionControllerAim->SetTrackingMotionSource(FName(GetData(Hand + "Aim")));
+	m_MotionControllerAim->SetupAttachment(this);
 
 	m_Laser = ObjectInitializer.CreateDefaultSubobject<ULaser>(this, "Laser");
-	m_Laser->SetupAttachment(m_MotionControllerAim);
 	m_Laser->Init(m_MeshInteractionLaserColor, m_MeshInteractionLaserMaxDistance);
+	m_Laser->SetupAttachment(m_MotionControllerAim);
 
 	const ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> ControllerActionHapticEffectAsset(TEXT(
 		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
@@ -57,6 +57,32 @@ void UVRControllerBase::TickComponent(
 	m_AimLerpedPosition = FMath::Lerp(m_AimLerpedPosition, m_MotionControllerAim->GetComponentLocation(), 0.5f);
 	m_AimLerpedDirection = FMath::Lerp(m_AimLerpedDirection, m_MotionControllerAim->GetForwardVector(), 0.25f);
 	UpdateLaserPositionDirection(true);
+
+	// UWorld::LineTraceSingleByChannel()
+	// ECC_GameTraceChannel2;
+	/*FHitResult res;
+	UKismetSystemLibrary::LineTraceSingle(
+		GetWorld(),
+		m_AimLerpedPosition,
+		m_AimLerpedPosition + m_AimLerpedDirection * m_MeshInteractionLaserMaxDistance,
+		TraceTypeQuery1,
+		false,
+		{},
+		EDrawDebugTrace::ForOneFrame,
+		res,
+		true
+	);*/
+	/*UKismetSystemLibrary::LineTraceSingleByProfile(
+		GetWorld(),
+		m_AimLerpedPosition,
+		m_AimLerpedPosition + m_AimLerpedDirection * m_MeshInteractionLaserMaxDistance,
+		"BlockAll",
+		false,
+		{},
+		EDrawDebugTrace::ForOneFrame,
+		res,
+		true
+	);*/
 }
 
 void UVRControllerBase::AddActionBindingLambda(

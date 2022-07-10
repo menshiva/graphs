@@ -24,6 +24,7 @@ public:
 	void SetTeleportationMode(bool Enabled);
 	void AdjustTeleportDistance(float Delta);
 
+	void ToggleMenu();
 	void QuitGame();
 protected:
 	virtual void BeginPlay() override;

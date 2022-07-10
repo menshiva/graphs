@@ -6,12 +6,12 @@ UVRControllerLeft::UVRControllerLeft(
 ) : UVRControllerBase(ObjectInitializer, "Left") {
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Game/Graphs/Meshes/Capsule"));
 	m_TeleportPreviewMesh = CreateDefaultSubobject<UStaticMeshComponent>("TeleportPreviewMesh");
-	m_TeleportPreviewMesh->SetupAttachment(this);
 	m_TeleportPreviewMesh->SetStaticMesh(TeleportPreviewMeshAsset.Object);
 	m_TeleportPreviewMesh->SetVisibility(false);
 	m_TeleportPreviewMesh->SetCollisionProfileName(TEXT("NoCollision"));
 	m_TeleportPreviewMesh->SetCastShadow(false);
 	m_TeleportPreviewMesh->SetCastInsetShadow(false);
+	m_TeleportPreviewMesh->SetupAttachment(this);
 
 	const ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
 		TEXT("/Game/Graphs/Materials/TeleportPreviewMaterial")
@@ -22,6 +22,9 @@ UVRControllerLeft::UVRControllerLeft(
 	);
 	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", m_TeleportLaserColor);
 	m_TeleportPreviewMesh->SetMaterial(0, TeleportPreviewMaterialInst);
+
+	const ConstructorHelpers::FClassFinder<UUserWidget> MainMenuAsset(TEXT("/Game/Graphs/UI/MainMenu"));
+	m_MainMenuWidgetClass = MainMenuAsset.Class;
 }
 
 void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) const {
@@ -32,14 +35,14 @@ void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerI
 
 	AddActionBindingLambda(
 		PlayerInputComponent,
-		"LeftTriggerActionPress", IE_Pressed,
+		"LeftTrigger", IE_Pressed,
 		[vrPawn] {
 			vrPawn->SecondaryAction(true);
 		}
 	);
 	AddActionBindingLambda(
 		PlayerInputComponent,
-		"LeftTriggerActionPress", IE_Released,
+		"LeftTrigger", IE_Released,
 		[vrPawn] {
 			vrPawn->SecondaryAction(false);
 		}
@@ -47,14 +50,14 @@ void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerI
 
 	AddActionBindingLambda(
 		PlayerInputComponent,
-		"LeftGripActionPress", IE_Pressed,
+		"LeftGrip", IE_Pressed,
 		[vrPawn] {
 			vrPawn->SetTeleportationMode(true);
 		}
 	);
 	AddActionBindingLambda(
 		PlayerInputComponent,
-		"LeftGripActionPress", IE_Released,
+		"LeftGrip", IE_Released,
 		[vrPawn] {
 			vrPawn->SetTeleportationMode(false);
 		}
@@ -88,4 +91,26 @@ void UVRControllerLeft::AdjustTeleportLaserLength(const float Delta) {
 
 const FVector &UVRControllerLeft::GetTeleportPoint() const {
 	return m_Laser->GetEndPoint();
+}
+
+void UVRControllerLeft::SpawnMainMenu(APawn *Pawn) {
+	m_MainMenu = NewObject<UWidgetComponent>(Pawn, UWidgetComponent::StaticClass(), "MainMenu");
+	m_MainMenu->SetWidgetClass(m_MainMenuWidgetClass);
+	m_MainMenu->SetDrawAtDesiredSize(true);
+	m_MainMenu->SetPivot({0.0f, 0.5f});
+	m_MainMenu->SetRelativeLocationAndRotation(
+		FVector(0.0f, 5.0f, 0.0f),
+		FRotator(75.0f, 15.0f, 185.0f)
+	);
+	m_MainMenu->SetRelativeScale3D(FVector(0.03f));
+	m_MainMenu->SetGenerateOverlapEvents(false);
+	m_MainMenu->CanCharacterStepUpOn = ECB_No;
+	m_MainMenu->SetCollisionProfileName("VRUI");
+	m_MainMenu->RegisterComponent();
+	m_MainMenu->AttachToComponent(m_MotionController, FAttachmentTransformRules::KeepRelativeTransform);
+}
+
+void UVRControllerLeft::DestroyMainMenu() {
+	m_MainMenu->DestroyComponent();
+	m_MainMenu = nullptr;
 }

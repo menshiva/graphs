@@ -5,7 +5,6 @@
 ADefaultGameMode::ADefaultGameMode(const FObjectInitializer &ObjectInitializer) : AGameModeBase(ObjectInitializer) {
 	bPauseable = false;
 	DefaultPawnClass = AVRPawn::StaticClass();
-	HUDClass = nullptr;
 }
 
 void ADefaultGameMode::InitGame(const FString &MapName, const FString &Options, FString &ErrorMessage) {
