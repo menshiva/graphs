@@ -46,6 +46,9 @@ void UVRControllerRight::TickComponent(
 void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
 	if (Enabled) {
 		m_UiInteractor->Activate();
+		// fixes cursor when pointing at ui before it becomes visible
+		if (const auto menu = Cast<UMenuWidgetComponent>(m_UiInteractor->GetHoveredWidgetComponent()))
+			OnUiHover(menu, nullptr);
 	}
 	else {
 		UiLeftMouseButtonRelease();
@@ -62,11 +65,9 @@ void UVRControllerRight::UiLeftMouseButtonRelease() const {
 	m_UiInteractor->ReleasePointerKey(EKeys::LeftMouseButton);
 }
 
-void UVRControllerRight::OnUiHover(
-	UWidgetComponent *WidgetComponent,
-	UWidgetComponent *PreviousWidgetComponent
-) {
+void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent) {
 	if (const auto menu = Cast<UMenuWidgetComponent>(WidgetComponent)) {
+		menu->SetCursorLocation(m_UiInteractor->GetLastHitResult().ImpactPoint);
 		menu->SetCursorVisibility(true);
 		SetState(ControllerState::UI);
 	}

@@ -214,9 +214,9 @@ void AVRPawn::FadeCamera(const float Value) const {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::ToggleMenu() {
-	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
 	static bool isMenuShown = false;
 	isMenuShown = !isMenuShown;
 	m_Menu->SetVisble(isMenuShown);
+	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
 	m_RightController->SetUiInteractionEnabled(isMenuShown);
 }
