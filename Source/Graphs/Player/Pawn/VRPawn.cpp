@@ -32,10 +32,6 @@ void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
 	m_RightController->SetupInputBindings(this, PlayerInputComponent);
 }
 
-APlayerCameraManager* AVRPawn::GetCameraManager() const {
-	return GetPlayerController()->PlayerCameraManager;
-}
-
 APlayerController *AVRPawn::GetPlayerController() const {
 	return Cast<APlayerController>(Controller);
 }
@@ -204,11 +200,11 @@ void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
 	}), m_ScreenFadeDuration, false);
 }
 
-void AVRPawn::FadeCamera(const float Value) const {
-	GetCameraManager()->StartCameraFade(
-		1.0 - Value, Value,
+void AVRPawn::FadeCamera(const float ToValue) const {
+	GetPlayerController()->PlayerCameraManager->StartCameraFade(
+		1.0 - ToValue, ToValue,
 		m_ScreenFadeDuration, FColor::Black,
-		false, static_cast<bool>(Value)
+		false, static_cast<bool>(ToValue)
 	);
 }
 

@@ -6,8 +6,13 @@
 UCLASS(Abstract)
 class GRAPHS_API UMenuWidget final : public UUserWidget {
 	GENERATED_BODY()
-protected:
+public:
 	virtual void NativeConstruct() override;
+
+	void PlayAnimation(UWidgetAnimation *Animation, EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd);
+
+	UPROPERTY(BlueprintReadOnly, Transient, meta=(BindWidgetAnim))
+	UWidgetAnimation *ShowHideAnimation;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UButton *ExitButton;

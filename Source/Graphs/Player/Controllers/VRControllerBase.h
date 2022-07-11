@@ -1,7 +1,6 @@
 #pragma once
 
 #include "MotionControllerComponent.h"
-#include "NiagaraComponent.h"
 
 enum class GRAPHS_API ControllerState {
 	NONE,
@@ -58,7 +57,7 @@ private:
 	TWeakObjectPtr<UMotionControllerComponent> m_MotionControllerAim;
 
 	TWeakObjectPtr<UHapticFeedbackEffect_Base> m_HapticEffectController;
-	TWeakObjectPtr<UNiagaraComponent> m_Laser;
+	TWeakObjectPtr<class UNiagaraComponent> m_Laser;
 
 	FVector m_LaserStartPosition;
 	FVector m_LaserEndPosition;

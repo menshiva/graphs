@@ -1,4 +1,5 @@
 #include "MenuWidgetComponent.h"
+#include "MenuWidget.h"
 
 UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectInitializer) : UWidgetComponent(ObjectInitializer) {
 	const ConstructorHelpers::FClassFinder<UUserWidget> MenuAsset(TEXT("/Game/Graphs/UI/Blueprints/Menu"));
@@ -28,8 +29,22 @@ UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectIniti
 }
 
 void UMenuWidgetComponent::SetVisble(const bool Visible) {
-	if (!Visible) m_Cursor->SetVisibility(false);
-	SetVisibility(Visible);
+	const auto menuWidget = Cast<UMenuWidget>(GetWidget());
+	if (Visible) {
+		menuWidget->SetRenderOpacity(0.0f);
+		SetVisibility(Visible);
+		menuWidget->PlayAnimation(menuWidget->ShowHideAnimation, EUMGSequencePlayMode::Forward, [] {});
+	}
+	else {
+		menuWidget->PlayAnimation(
+			menuWidget->ShowHideAnimation,
+			EUMGSequencePlayMode::Reverse,
+			[&] {
+				m_Cursor->SetVisibility(false);
+				SetVisibility(false);
+			}
+		);
+	}
 }
 
 void UMenuWidgetComponent::SetCursorVisibility(const bool Visible) const {

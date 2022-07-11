@@ -14,7 +14,6 @@ public:
 	explicit AVRPawn(const FObjectInitializer &ObjectInitializer);
 	virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 
-	FORCEINLINE APlayerCameraManager *GetCameraManager() const;
 	FORCEINLINE APlayerController *GetPlayerController() const;
 
 	virtual bool OnRightTriggerPressed() override;
@@ -41,7 +40,7 @@ private:
 	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
 
 	// 1.0f for FadeIn, 0.0f for FadeOut
-	FORCEINLINE void FadeCamera(float Value) const;
+	FORCEINLINE void FadeCamera(float ToValue) const;
 
 	void ToggleMenu();
 

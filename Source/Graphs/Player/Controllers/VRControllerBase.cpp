@@ -1,5 +1,6 @@
 #include "VRControllerBase.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
+#include "NiagaraComponent.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 
 UVRControllerBase::UVRControllerBase(
