@@ -12,7 +12,6 @@ UVRControllerLeft::UVRControllerLeft(
 	m_TeleportPreviewMesh->SetVisibility(false);
 	m_TeleportPreviewMesh->SetCollisionProfileName(TEXT("NoCollision"));
 	m_TeleportPreviewMesh->SetCastShadow(false);
-	m_TeleportPreviewMesh->SetCastInsetShadow(false);
 	m_TeleportPreviewMesh->SetupAttachment(this);
 
 	const ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
@@ -24,9 +23,6 @@ UVRControllerLeft::UVRControllerLeft(
 	);
 	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", m_TeleportLaserColor);
 	m_TeleportPreviewMesh->SetMaterial(0, TeleportPreviewMaterialInst);
-
-	const ConstructorHelpers::FClassFinder<UUserWidget> MainMenuAsset(TEXT("/Game/Graphs/UI/MainMenu"));
-	m_MainMenuWidgetClass = MainMenuAsset.Class;
 }
 
 void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *Pic) const {
@@ -90,26 +86,4 @@ void UVRControllerLeft::AdjustTeleportLaserLength(const float Delta) {
 		m_TeleportLaserMaxDistance
 	);
 	SetLaserLength(m_TeleportLaserCurrentDistance);
-}
-
-void UVRControllerLeft::SpawnMainMenu(APawn *Pawn) {
-	m_MainMenu = NewObject<UWidgetComponent>(Pawn, UWidgetComponent::StaticClass(), "MainMenu");
-	m_MainMenu->SetWidgetClass(m_MainMenuWidgetClass);
-	m_MainMenu->SetDrawAtDesiredSize(true);
-	m_MainMenu->SetPivot({0.0f, 0.5f});
-	m_MainMenu->SetRelativeLocationAndRotation(
-		FVector(0.0f, 5.0f, 0.0f),
-		FRotator(75.0f, 15.0f, 185.0f)
-	);
-	m_MainMenu->SetRelativeScale3D(FVector(0.03f));
-	m_MainMenu->SetGenerateOverlapEvents(false);
-	m_MainMenu->CanCharacterStepUpOn = ECB_No;
-	m_MainMenu->SetCollisionProfileName("VRUI");
-	m_MainMenu->RegisterComponent();
-	m_MainMenu->AttachToComponent(GetMotionController(), FAttachmentTransformRules::KeepRelativeTransform);
-}
-
-void UVRControllerLeft::DestroyMainMenu() {
-	m_MainMenu->DestroyComponent();
-	m_MainMenu = nullptr;
 }

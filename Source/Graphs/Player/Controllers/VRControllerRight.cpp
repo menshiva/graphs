@@ -1,5 +1,6 @@
 #include "VRControllerRight.h"
 #include "../Pawn/VRPawn.h"
+#include "../Menu/MenuWidgetComponent.h"
 
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
@@ -35,10 +36,22 @@ void UVRControllerRight::TickComponent(
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	UpdateLaser();
+	if (GetState() == ControllerState::UI) {
+		const auto &hr = m_UiInteractor->GetLastHitResult();
+		if (const auto menu = Cast<UMenuWidgetComponent>(hr.Component.Get()))
+			menu->SetCursorLocation(hr.ImpactPoint);
+	}
 }
 
-void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) const {
-	Enabled ? m_UiInteractor->Activate() : m_UiInteractor->Deactivate();
+void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
+	if (Enabled) {
+		m_UiInteractor->Activate();
+	}
+	else {
+		UiLeftMouseButtonRelease();
+		m_UiInteractor->Deactivate();
+		SetState(ControllerState::NONE);
+	}
 }
 
 void UVRControllerRight::UiLeftMouseButtonPress() const {
@@ -50,12 +63,16 @@ void UVRControllerRight::UiLeftMouseButtonRelease() const {
 }
 
 void UVRControllerRight::OnUiHover(
-	// ReSharper disable once CppParameterMayBeConstPtrOrRef
 	UWidgetComponent *WidgetComponent,
-	[[maybe_unused]] UWidgetComponent *PreviousWidgetComponent
+	UWidgetComponent *PreviousWidgetComponent
 ) {
-	if (WidgetComponent == nullptr)
-		SetState(ControllerState::NONE);
-	else if (GetState() == ControllerState::NONE && WidgetComponent != nullptr)
+	if (const auto menu = Cast<UMenuWidgetComponent>(WidgetComponent)) {
+		menu->SetCursorVisibility(true);
 		SetState(ControllerState::UI);
+	}
+	else {
+		SetState(ControllerState::NONE);
+		if (const auto prevMenu = Cast<UMenuWidgetComponent>(PreviousWidgetComponent))
+			prevMenu->SetCursorVisibility(false);
+	}
 }

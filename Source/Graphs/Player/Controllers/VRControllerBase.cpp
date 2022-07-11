@@ -40,6 +40,18 @@ void UVRControllerBase::SetState(const ControllerState NewState) {
 	UpdateLaser(false);
 }
 
+UMotionControllerComponent *UVRControllerBase::GetMotionController() const {
+	return m_MotionController.Get();
+}
+
+UMotionControllerComponent *UVRControllerBase::GetMotionControllerAim() const {
+	return m_MotionControllerAim.Get();
+}
+
+UHapticFeedbackEffect_Base *UVRControllerBase::GetHapticEffectController() const {
+	return m_HapticEffectController.Get();
+}
+
 ControllerState UVRControllerBase::GetState() const {
 	return m_State;
 }
@@ -92,18 +104,6 @@ void UVRControllerBase::UpdateLaser(const bool Lerp) {
 		m_LaserEndPosition, false
 	);
 	m_Laser->SetColorParameter("User.CustomColor", m_LaserColor);
-}
-
-UMotionControllerComponent *UVRControllerBase::GetMotionController() const {
-	return m_MotionController.Get();
-}
-
-UMotionControllerComponent *UVRControllerBase::GetMotionControllerAim() const {
-	return m_MotionControllerAim.Get();
-}
-
-UHapticFeedbackEffect_Base *UVRControllerBase::GetHapticEffectController() const {
-	return m_HapticEffectController.Get();
 }
 
 void UVRControllerBase::BindAction(

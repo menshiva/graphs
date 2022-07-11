@@ -4,6 +4,7 @@
 #include "../../InputInterface.h"
 #include "../Controllers/VRControllerLeft.h"
 #include "../Controllers/VRControllerRight.h"
+#include "../Menu/MenuWidgetComponent.h"
 #include "VRPawn.generated.h"
 
 UCLASS()
@@ -52,6 +53,9 @@ private:
 
 	UPROPERTY()
 	UVRControllerRight *m_RightController;
+
+	UPROPERTY()
+	UMenuWidgetComponent *m_Menu;
 
 	bool m_IsCameraFadeAnimationRunning = false;
 

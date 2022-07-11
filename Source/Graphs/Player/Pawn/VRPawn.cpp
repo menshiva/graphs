@@ -19,6 +19,10 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 
 	m_RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
 	m_RightController->SetupAttachment(RootComponent);
+
+	m_Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
+	m_Menu->SetVisibility(false);
+	m_Menu->SetupAttachment(m_LeftController->GetMotionController());
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
@@ -213,12 +217,6 @@ void AVRPawn::ToggleMenu() {
 	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
 	static bool isMenuShown = false;
 	isMenuShown = !isMenuShown;
+	m_Menu->SetVisble(isMenuShown);
 	m_RightController->SetUiInteractionEnabled(isMenuShown);
-	if (isMenuShown) {
-		m_LeftController->SpawnMainMenu(this);
-	}
-	else {
-		m_LeftController->DestroyMainMenu();
-		m_RightController->SetState(ControllerState::NONE);
-	}
 }

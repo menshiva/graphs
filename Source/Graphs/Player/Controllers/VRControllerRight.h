@@ -16,7 +16,7 @@ public:
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	FORCEINLINE void SetUiInteractionEnabled(bool Enabled) const;
+	void SetUiInteractionEnabled(bool Enabled);
 	FORCEINLINE void UiLeftMouseButtonPress() const;
 	FORCEINLINE void UiLeftMouseButtonRelease() const;
 private:

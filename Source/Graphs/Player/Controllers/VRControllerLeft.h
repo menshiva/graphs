@@ -1,7 +1,6 @@
 #pragma once
 
 #include "VRControllerBase.h"
-#include "Components/WidgetComponent.h"
 #include "VRControllerLeft.generated.h"
 
 UCLASS(ClassGroup=(Custom))
@@ -19,17 +18,9 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void AdjustTeleportLaserLength(float Delta);
-
-	void SpawnMainMenu(APawn *Pawn);
-	void DestroyMainMenu();
 private:
 	UPROPERTY()
 	UStaticMeshComponent *m_TeleportPreviewMesh;
-
-	UPROPERTY()
-	UWidgetComponent *m_MainMenu;
-
-	TSubclassOf<UUserWidget> m_MainMenuWidgetClass;
 
 	float m_TeleportLaserCurrentDistance = 150.0f;
 

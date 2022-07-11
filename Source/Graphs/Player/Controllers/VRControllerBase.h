@@ -20,6 +20,10 @@ public:
 	);
 	virtual ~UVRControllerBase() = default;
 
+	FORCEINLINE UMotionControllerComponent *GetMotionController() const;
+	FORCEINLINE UMotionControllerComponent *GetMotionControllerAim() const;
+	FORCEINLINE UHapticFeedbackEffect_Base *GetHapticEffectController() const;
+
 	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *Pic) const = 0;
 
 	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) = 0;
@@ -35,10 +39,6 @@ public:
 	FORCEINLINE void SetLaserActive(bool IsActive) const;
 	void UpdateLaser(bool Lerp = true);
 protected:
-	FORCEINLINE UMotionControllerComponent *GetMotionController() const;
-	FORCEINLINE UMotionControllerComponent *GetMotionControllerAim() const;
-	FORCEINLINE UHapticFeedbackEffect_Base *GetHapticEffectController() const;
-
 	static void BindAction(
 		UInputComponent *PlayerInputComponent,
 		const FName &ActionName,
