@@ -1,66 +1,134 @@
 #include "VRControllerBase.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
+#include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 
 UVRControllerBase::UVRControllerBase(
 	const FObjectInitializer &ObjectInitializer,
+	USceneComponent *Controller,
 	const FString &Hand
-) : USceneComponent(ObjectInitializer) {
-	PrimaryComponentTick.bCanEverTick = true;
-
+) {
 	m_MotionController = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
-		this,
+		Controller,
 		"MotionController"
 	);
 	m_MotionController->SetShowDeviceModel(true);
 	m_MotionController->SetTrackingMotionSource(FName(GetData(Hand)));
-	m_MotionController->SetupAttachment(this);
+	m_MotionController->SetupAttachment(Controller);
 
 	m_MotionControllerAim = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
-		this,
+		Controller,
 		"MotionControllerAim"
 	);
 	m_MotionControllerAim->SetTrackingMotionSource(FName(GetData(Hand + "Aim")));
-	m_MotionControllerAim->SetupAttachment(this);
-
-	m_Laser = ObjectInitializer.CreateDefaultSubobject<ULaser>(this, "Laser");
-	m_Laser->Init(m_MeshInteractionLaserColor, m_MeshInteractionLaserMaxDistance);
-	m_Laser->SetupAttachment(m_MotionControllerAim);
+	m_MotionControllerAim->SetupAttachment(Controller);
 
 	const ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> ControllerActionHapticEffectAsset(TEXT(
 		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
 	));
-	m_ControllerActionHapticEffect = ControllerActionHapticEffectAsset.Object;
+	m_HapticEffectController = ControllerActionHapticEffectAsset.Object;
+
+	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
+	m_Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(Controller, "Laser");
+	m_Laser->SetComponentTickEnabled(false);
+	m_Laser->SetAsset(LaserAsset.Object);
+	m_Laser->SetupAttachment(m_MotionControllerAim.Get());
 }
 
-void UVRControllerBase::SetLaserVisibility(const bool IsVisible) const {
-	m_Laser->SetVisibility(IsVisible);
+void UVRControllerBase::SetState(const ControllerState NewState) {
+	m_State = NewState;
 }
 
-void UVRControllerBase::UpdateLaserPositionDirection(const bool ShouldLerp) {
-	if (ShouldLerp) {
-		m_Laser->Update(m_AimLerpedPosition, m_AimLerpedDirection);
+ControllerState UVRControllerBase::GetState() const {
+	return m_State;
+}
+
+const FVector &UVRControllerBase::GetLaserStartPosition() const {
+	return m_LaserStartPosition;
+}
+
+const FVector &UVRControllerBase::GetLaserEndPosition() const {
+	return m_LaserEndPosition;
+}
+
+const FVector& UVRControllerBase::GetLaserDirection() const {
+	return m_LaserDirection;
+}
+
+void UVRControllerBase::SetLaserColor(const FLinearColor& NewColor) {
+	m_LaserColor = NewColor;
+}
+
+void UVRControllerBase::SetLaserLength(const float NewLength) {
+	m_LaserLength = NewLength;
+}
+
+void UVRControllerBase::SetLaserActive(const bool IsActive) const {
+	IsActive ? m_Laser->Activate() : m_Laser->Deactivate();
+	m_Laser->SetVisibility(IsActive);
+}
+
+void UVRControllerBase::UpdateLaser(const bool Lerp) {
+	if (!m_Laser->IsVisible()) return;
+	if (Lerp) {
+		m_LaserStartPosition = FMath::Lerp(m_LaserStartPosition, m_MotionControllerAim->GetComponentLocation(), 0.5f);
+		m_LaserDirection = FMath::Lerp(m_LaserDirection, m_MotionControllerAim->GetForwardVector(), 0.25f);
 	}
 	else {
-		m_Laser->Update(
-			m_MotionControllerAim->GetComponentLocation(),
-			m_MotionControllerAim->GetForwardVector()
-		);
+		m_LaserStartPosition = m_MotionControllerAim->GetComponentLocation();
+		m_LaserDirection = m_MotionControllerAim->GetForwardVector();
 	}
+	m_LaserEndPosition = m_LaserStartPosition + m_LaserDirection * m_LaserLength;
+
+	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
+		m_Laser.Get(),
+		"User.PointArray", 0,
+		m_LaserStartPosition, false
+	);
+	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
+		m_Laser.Get(),
+		"User.PointArray", 1,
+		m_LaserEndPosition, false
+	);
+	m_Laser->SetColorParameter("User.CustomColor", m_LaserColor);
 }
 
-void UVRControllerBase::TickComponent(
-	const float DeltaTime,
-	const ELevelTick TickType,
-	FActorComponentTickFunction *ThisTickFunction
-) {
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	m_AimLerpedPosition = FMath::Lerp(m_AimLerpedPosition, m_MotionControllerAim->GetComponentLocation(), 0.5f);
-	m_AimLerpedDirection = FMath::Lerp(m_AimLerpedDirection, m_MotionControllerAim->GetForwardVector(), 0.25f);
-	UpdateLaserPositionDirection(true);
+UMotionControllerComponent *UVRControllerBase::GetMotionController() const {
+	return m_MotionController.Get();
+}
 
+UMotionControllerComponent *UVRControllerBase::GetMotionControllerAim() const {
+	return m_MotionControllerAim.Get();
+}
+
+UHapticFeedbackEffect_Base *UVRControllerBase::GetHapticEffectController() const {
+	return m_HapticEffectController.Get();
+}
+
+void UVRControllerBase::BindAction(
+	UInputComponent *PlayerInputComponent,
+	const FName& ActionName,
+	const EInputEvent InputEvent,
+	TFunction<void()> &&Func
+) {
+	FInputActionBinding AB(ActionName, InputEvent);
+	AB.ActionDelegate.GetDelegateForManualSet().BindLambda(Func);
+	PlayerInputComponent->AddActionBinding(MoveTemp(AB));
+}
+
+void UVRControllerBase::BindAxis(
+	UInputComponent *PlayerInputComponent,
+	const FName &ActionName,
+	TFunction<void(float)> &&Func
+) {
+	FInputAxisBinding AB(ActionName);
+	AB.AxisDelegate.GetDelegateForManualSet().BindLambda(Func);
+	PlayerInputComponent->AxisBindings.Push(MoveTemp(AB));
+}
+
+/*void UVRControllerBase::Tick() {
 	// UWorld::LineTraceSingleByChannel()
 	// ECC_GameTraceChannel2;
-	/*FHitResult res;
+	FHitResult res;
 	UKismetSystemLibrary::LineTraceSingle(
 		GetWorld(),
 		m_AimLerpedPosition,
@@ -71,8 +139,8 @@ void UVRControllerBase::TickComponent(
 		EDrawDebugTrace::ForOneFrame,
 		res,
 		true
-	);*/
-	/*UKismetSystemLibrary::LineTraceSingleByProfile(
+	);
+	UKismetSystemLibrary::LineTraceSingleByProfile(
 		GetWorld(),
 		m_AimLerpedPosition,
 		m_AimLerpedPosition + m_AimLerpedDirection * m_MeshInteractionLaserMaxDistance,
@@ -82,16 +150,5 @@ void UVRControllerBase::TickComponent(
 		EDrawDebugTrace::ForOneFrame,
 		res,
 		true
-	);*/
-}
-
-void UVRControllerBase::AddActionBindingLambda(
-	UInputComponent *PlayerInputComponent,
-	const FName &ActionName,
-	const EInputEvent InputEvent,
-	const TFunction<void()> &Func
-) {
-	FInputActionBinding Action(ActionName, InputEvent);
-	Action.ActionDelegate.GetDelegateForManualSet().BindLambda(Func);
-	PlayerInputComponent->AddActionBinding(Action);
-}
+	);
+}*/

@@ -3,9 +3,11 @@
 
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
-) : UVRControllerBase(ObjectInitializer, "Left") {
+) : USceneComponent(ObjectInitializer), UVRControllerBase(ObjectInitializer, this, "Left") {
+	PrimaryComponentTick.bCanEverTick = true;
+
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Game/Graphs/Meshes/Capsule"));
-	m_TeleportPreviewMesh = CreateDefaultSubobject<UStaticMeshComponent>("TeleportPreviewMesh");
+	m_TeleportPreviewMesh = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, "TeleportPreviewMesh");
 	m_TeleportPreviewMesh->SetStaticMesh(TeleportPreviewMeshAsset.Object);
 	m_TeleportPreviewMesh->SetVisibility(false);
 	m_TeleportPreviewMesh->SetCollisionProfileName(TEXT("NoCollision"));
@@ -27,57 +29,58 @@ UVRControllerLeft::UVRControllerLeft(
 	m_MainMenuWidgetClass = MainMenuAsset.Class;
 }
 
-void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) const {
+void UVRControllerLeft::SetupInputBindings(APawn *Pawn, UInputComponent *Pic) const {
 	const auto vrPawn = Cast<AVRPawn>(Pawn);
 
-	PlayerInputComponent->BindAxis("LeftThumbstickAxisY", vrPawn, &AVRPawn::AdjustTeleportDistance);
-	PlayerInputComponent->BindAxis("LeftThumbstickAxisX", vrPawn, &AVRPawn::Rotate);
+	BindAction(Pic, "LeftTrigger", IE_Pressed, [vrPawn] {
+		vrPawn->OnLeftTriggerPressed();
+	});
+	BindAction(Pic, "LeftTrigger", IE_Released, [vrPawn] {
+		vrPawn->OnLeftTriggerReleased();
+	});
 
-	AddActionBindingLambda(
-		PlayerInputComponent,
-		"LeftTrigger", IE_Pressed,
-		[vrPawn] {
-			vrPawn->SecondaryAction(true);
-		}
-	);
-	AddActionBindingLambda(
-		PlayerInputComponent,
-		"LeftTrigger", IE_Released,
-		[vrPawn] {
-			vrPawn->SecondaryAction(false);
-		}
-	);
+	BindAction(Pic, "LeftGrip", IE_Pressed, [vrPawn] {
+		vrPawn->OnLeftGripPressed();
+	});
+	BindAction(Pic, "LeftGrip", IE_Released, [vrPawn] {
+		vrPawn->OnLeftGripReleased();
+	});
 
-	AddActionBindingLambda(
-		PlayerInputComponent,
-		"LeftGrip", IE_Pressed,
-		[vrPawn] {
-			vrPawn->SetTeleportationMode(true);
-		}
-	);
-	AddActionBindingLambda(
-		PlayerInputComponent,
-		"LeftGrip", IE_Released,
-		[vrPawn] {
-			vrPawn->SetTeleportationMode(false);
-		}
-	);
+	BindAxis(Pic, "LeftThumbstickAxisY", [vrPawn] (const float Value) {
+		vrPawn->OnLeftThumbstickY(Value);
+	});
+	BindAxis(Pic, "LeftThumbstickAxisX", [vrPawn] (const float Value) {
+		vrPawn->OnLeftThumbstickX(Value);
+	});
 }
 
-void UVRControllerLeft::PlayHapticEffect(APlayerController *PlayerController, const float Scale) const {
-	PlayerController->PlayHapticEffect(m_ControllerActionHapticEffect, EControllerHand::Left, Scale);
+void UVRControllerLeft::PlayHapticEffect(APlayerController *PlayerController, const float Scale) {
+	PlayerController->PlayHapticEffect(GetHapticEffectController(), EControllerHand::Left, Scale);
 }
 
-void UVRControllerLeft::UpdateLaserPositionDirection(const bool ShouldLerp) {
-	Super::UpdateLaserPositionDirection(ShouldLerp);
-	if (m_TeleportPreviewMesh->IsVisible())
-		m_TeleportPreviewMesh->SetWorldLocation(GetTeleportPoint());
+void UVRControllerLeft::SetState(const ControllerState NewState) {
+	UVRControllerBase::SetState(NewState);
+	if (NewState != ControllerState::TELEPORTATION) {
+		SetLaserColor(m_MeshInteractionLaserColor);
+		SetLaserLength(m_MeshInteractionLaserMaxDistance);
+		m_TeleportPreviewMesh->SetVisibility(false);
+	}
+	else {
+		SetLaserColor(m_TeleportLaserColor);
+		SetLaserLength(m_TeleportLaserCurrentDistance);
+		m_TeleportPreviewMesh->SetVisibility(true);
+	}
 }
 
-void UVRControllerLeft::SetTeleportationMode(const bool Enable) const {
-	m_Laser->SetColor(Enable ? m_TeleportLaserColor : m_MeshInteractionLaserColor);
-	m_Laser->SetLength(Enable ? m_TeleportLaserCurrentDistance : m_MeshInteractionLaserMaxDistance);
-	m_TeleportPreviewMesh->SetVisibility(Enable);
+void UVRControllerLeft::TickComponent(
+	const float DeltaTime,
+	const ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction
+) {
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	UpdateLaser();
+	if (GetState() == ControllerState::TELEPORTATION)
+		m_TeleportPreviewMesh->SetWorldLocation(GetLaserEndPosition());
 }
 
 void UVRControllerLeft::AdjustTeleportLaserLength(const float Delta) {
@@ -86,11 +89,7 @@ void UVRControllerLeft::AdjustTeleportLaserLength(const float Delta) {
 		m_TeleportLaserMinDistance,
 		m_TeleportLaserMaxDistance
 	);
-	m_Laser->SetLength(m_TeleportLaserCurrentDistance);
-}
-
-const FVector &UVRControllerLeft::GetTeleportPoint() const {
-	return m_Laser->GetEndPoint();
+	SetLaserLength(m_TeleportLaserCurrentDistance);
 }
 
 void UVRControllerLeft::SpawnMainMenu(APawn *Pawn) {
@@ -107,7 +106,7 @@ void UVRControllerLeft::SpawnMainMenu(APawn *Pawn) {
 	m_MainMenu->CanCharacterStepUpOn = ECB_No;
 	m_MainMenu->SetCollisionProfileName("VRUI");
 	m_MainMenu->RegisterComponent();
-	m_MainMenu->AttachToComponent(m_MotionController, FAttachmentTransformRules::KeepRelativeTransform);
+	m_MainMenu->AttachToComponent(GetMotionController(), FAttachmentTransformRules::KeepRelativeTransform);
 }
 
 void UVRControllerLeft::DestroyMainMenu() {

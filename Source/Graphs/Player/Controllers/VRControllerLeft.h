@@ -5,18 +5,20 @@
 #include "VRControllerLeft.generated.h"
 
 UCLASS(ClassGroup=(Custom))
-class GRAPHS_API UVRControllerLeft final : public UVRControllerBase {
+class GRAPHS_API UVRControllerLeft final : public USceneComponent, public UVRControllerBase {
 	GENERATED_BODY()
 public:
 	explicit UVRControllerLeft(const FObjectInitializer &ObjectInitializer);
 
-	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) const override;
-	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) const override;
-	virtual void UpdateLaserPositionDirection(bool ShouldLerp) override;
+	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *Pic) const override;
 
-	void SetTeleportationMode(bool Enable) const;
+	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) override;
+
+	virtual void SetState(ControllerState NewState) override;
+
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
 	void AdjustTeleportLaserLength(float Delta);
-	FORCEINLINE const FVector &GetTeleportPoint() const;
 
 	void SpawnMainMenu(APawn *Pawn);
 	void DestroyMainMenu();
@@ -26,6 +28,7 @@ private:
 
 	UPROPERTY()
 	UWidgetComponent *m_MainMenu;
+
 	TSubclassOf<UUserWidget> m_MainMenuWidgetClass;
 
 	float m_TeleportLaserCurrentDistance = 150.0f;

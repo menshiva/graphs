@@ -22,6 +22,7 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
+	PlayerInputComponent->BindAction("Menu", IE_Pressed, this, &AVRPawn::ToggleMenu);
 	PlayerInputComponent->BindAction("KeyboardEsc", IE_Pressed, this, &AVRPawn::QuitGame);
 	m_LeftController->SetupInputBindings(this, PlayerInputComponent);
 	m_RightController->SetupInputBindings(this, PlayerInputComponent);
@@ -35,80 +36,137 @@ APlayerController *AVRPawn::GetPlayerController() const {
 	return Cast<APlayerController>(Controller);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::PrimaryAction(const bool IsPressed) {
-	m_RightController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
-	if (IsPressed) {
-		if (m_RightController->IsUiHit())
-			m_RightController->UiPointerKeyPress();
+bool AVRPawn::OnRightTriggerPressed() {
+	// TODO: pass event to active tool
+	if (m_RightController->GetState() == ControllerState::UI) {
+		m_RightController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+		m_RightController->UiLeftMouseButtonPress();
+		return true;
 	}
-	else {
-		m_RightController->UiPointerKeyRelease();
-	}
+	return InputInterface::OnRightTriggerPressed();
 }
 
-void AVRPawn::SecondaryAction(const bool IsPressed) {
-	if (m_IsInTeleportationMode) {
-		if (IsPressed) {
-			if (!m_IsCameraFadeAnimationRunning) {
-				m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
-				CameraTeleportAnimation([&] {
-					auto teleportPoint = m_LeftController->GetTeleportPoint();
-					teleportPoint.Z += 111; // add player's height
-					SetActorLocation(teleportPoint);
-					m_LeftController->UpdateLaserPositionDirection(false);
-					m_RightController->UpdateLaserPositionDirection(false);
-				});
-			}
-		}
-		else
+bool AVRPawn::OnRightTriggerReleased() {
+	// TODO: pass event to active tool
+	m_RightController->UiLeftMouseButtonRelease();
+	return InputInterface::OnRightTriggerReleased();
+}
+
+bool AVRPawn::OnLeftTriggerPressed() {
+	// TODO: pass event to active tool
+	if (m_LeftController->GetState() == ControllerState::TELEPORTATION) {
+		if (!m_IsCameraFadeAnimationRunning) {
 			m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+			CameraTeleportAnimation([&] {
+				auto teleportPoint = m_LeftController->GetLaserEndPosition();
+				teleportPoint.Z += 111; // add player's height
+				SetActorLocation(teleportPoint);
+				m_LeftController->UpdateLaser(false);
+				m_RightController->UpdateLaser(false);
+			});
+			return true;
+		}
 	}
+	return InputInterface::OnLeftTriggerPressed();
 }
 
-void AVRPawn::Rotate(const float Value) {
-	static bool isTurning = false;
-	const float absValue = fabsf(Value);
-	if (absValue >= 0.7f) {
-		if (!isTurning && !m_IsCameraFadeAnimationRunning) {
-			isTurning = true;
+bool AVRPawn::OnLeftTriggerReleased() {
+	// TODO: pass event to active tool
+	return InputInterface::OnLeftTriggerReleased();
+}
+
+bool AVRPawn::OnLeftGripPressed() {
+	// TODO: pass event to active tool
+	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+	m_LeftController->SetState(ControllerState::TELEPORTATION);
+	return InputInterface::OnLeftGripPressed();
+}
+
+bool AVRPawn::OnLeftGripReleased() {
+	// TODO: pass event to active tool
+	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+	m_LeftController->SetState(ControllerState::NONE);
+	return InputInterface::OnLeftGripReleased();
+}
+
+bool AVRPawn::OnLeftThumbstickY(const float Value) {
+	// TODO: pass OnLeftThumbstickY event to active tool
+	static bool isClicked = false;
+	if (fabsf(Value) >= 0.7f) {
+		if (!isClicked) {
+			isClicked = true;
+			if (Value > 0.0f) {
+				if (OnLeftThumbstickUp())
+					return true;
+			}
+			else {
+				if (OnLeftThumbstickDown())
+					return true;
+			}
+			return true;
+		}
+	}
+	else if (isClicked) {
+		isClicked = false;
+	}
+	if (m_LeftController->GetState() == ControllerState::TELEPORTATION) {
+		m_LeftController->AdjustTeleportLaserLength(Value);
+		return true;
+	}
+	return InputInterface::OnLeftThumbstickY(Value);
+}
+
+bool AVRPawn::OnLeftThumbstickX(const float Value) {
+	// TODO: pass OnLeftThumbstickX event to active tool
+	static bool isClicked = false;
+	if (fabsf(Value) >= 0.7f) {
+		if (!isClicked && !m_IsCameraFadeAnimationRunning) {
+			isClicked = true;
+			if (Value > 0.0f) {
+				if (OnLeftThumbstickRight())
+					return true;
+			}
+			else {
+				if (OnLeftThumbstickLeft())
+					return true;
+			}
 			m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
 			CameraTeleportAnimation([&, Value] {
 				AddActorWorldRotation({0.0f, roundf(Value) * m_RotationAngle, 0.0f});
-				m_LeftController->UpdateLaserPositionDirection(false);
-				m_RightController->UpdateLaserPositionDirection(false);
+				m_LeftController->UpdateLaser(false);
+				m_RightController->UpdateLaser(false);
 			});
+			return true;
 		}
 	}
-	else if (isTurning) {
-		isTurning = false;
+	else if (isClicked) {
+		isClicked = false;
+		return true;
 	}
+	return InputInterface::OnLeftThumbstickX(Value);
 }
 
-void AVRPawn::SetTeleportationMode(const bool Enabled) {
-	m_IsInTeleportationMode = Enabled;
-	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
-	m_LeftController->SetTeleportationMode(Enabled);
+bool AVRPawn::OnLeftThumbstickLeft() {
+	// TODO: pass event to active tool
+	return InputInterface::OnLeftThumbstickLeft();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::AdjustTeleportDistance(const float Delta) {
-	if (m_IsInTeleportationMode && Delta != 0.0f)
-		m_LeftController->AdjustTeleportLaserLength(Delta);
+bool AVRPawn::OnLeftThumbstickRight() {
+	// TODO: pass event to active tool
+	return InputInterface::OnLeftThumbstickRight();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::ToggleMenu() {
-	static bool isMenuShown = false;
-	isMenuShown = !isMenuShown;
-	m_RightController->setUiInteractionEnabled(isMenuShown);
-	if (isMenuShown)
-		m_LeftController->SpawnMainMenu(this);
-	else
-		m_LeftController->DestroyMainMenu();
+bool AVRPawn::OnLeftThumbstickUp() {
+	// TODO: pass event to active tool
+	return InputInterface::OnLeftThumbstickUp();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
+bool AVRPawn::OnLeftThumbstickDown() {
+	// TODO: pass event to active tool
+	return InputInterface::OnLeftThumbstickDown();
+}
+
+// ReSharper disable once CppUE4BlueprintCallableFunctionMayBeConst
 void AVRPawn::QuitGame() {
 	UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
 }
@@ -143,4 +201,16 @@ void AVRPawn::FadeCamera(const float Value) const {
 		m_ScreenFadeDuration, FColor::Black,
 		false, static_cast<bool>(Value)
 	);
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::ToggleMenu() {
+	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+	static bool isMenuShown = false;
+	isMenuShown = !isMenuShown;
+	m_RightController->SetUiInteractionEnabled(isMenuShown);
+	if (isMenuShown)
+		m_LeftController->SpawnMainMenu(this);
+	else
+		m_LeftController->DestroyMainMenu();
 }

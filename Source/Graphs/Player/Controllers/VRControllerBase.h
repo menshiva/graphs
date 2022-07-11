@@ -1,55 +1,70 @@
 #pragma once
 
 #include "MotionControllerComponent.h"
-#include "Laser/Laser.h"
-#include "VRControllerBase.generated.h"
+#include "NiagaraComponent.h"
 
-UCLASS(Abstract, ClassGroup=(Custom))
-class GRAPHS_API UVRControllerBase : public USceneComponent {
-	GENERATED_BODY()
+enum class GRAPHS_API ControllerState {
+	NONE,
+	TELEPORTATION,
+	UI,
+	TOOL
+};
+
+class GRAPHS_API UVRControllerBase {
 public:
 	UVRControllerBase() = default;
-	UVRControllerBase(const FObjectInitializer &ObjectInitializer, const FString &Hand);
+	UVRControllerBase(
+		const FObjectInitializer &ObjectInitializer,
+		USceneComponent *Controller,
+		const FString &Hand
+	);
+	virtual ~UVRControllerBase() = default;
 
-	virtual void SetupInputBindings(
-		APawn *Pawn,
-		UInputComponent *PlayerInputComponent
-	) const PURE_VIRTUAL(UVRControllerBase::SetupInputBindings);
+	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *Pic) const = 0;
 
-	virtual void PlayHapticEffect(
-		APlayerController *PlayerController,
-		float Scale
-	) const PURE_VIRTUAL(UVRControllerBase::SetupInputBindings);
+	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) = 0;
 
-	FORCEINLINE void SetLaserVisibility(bool IsVisible) const;
-	virtual void UpdateLaserPositionDirection(bool ShouldLerp);
+	virtual void SetState(ControllerState NewState);
+	FORCEINLINE ControllerState GetState() const;
 
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
+	FORCEINLINE const FVector &GetLaserStartPosition() const;
+	FORCEINLINE const FVector &GetLaserEndPosition() const;
+	FORCEINLINE const FVector &GetLaserDirection() const;
+	FORCEINLINE void SetLaserColor(const FLinearColor &NewColor);
+	FORCEINLINE void SetLaserLength(float NewLength);
+	FORCEINLINE void SetLaserActive(bool IsActive) const;
+	void UpdateLaser(bool Lerp = true);
 protected:
-	static void AddActionBindingLambda(
+	FORCEINLINE UMotionControllerComponent *GetMotionController() const;
+	FORCEINLINE UMotionControllerComponent *GetMotionControllerAim() const;
+	FORCEINLINE UHapticFeedbackEffect_Base *GetHapticEffectController() const;
+
+	static void BindAction(
 		UInputComponent *PlayerInputComponent,
 		const FName &ActionName,
 		EInputEvent InputEvent,
-		const TFunction<void()> &Func
+		TFunction<void()> &&Func
 	);
-
-	UPROPERTY()
-	ULaser *m_Laser;
-
-	UPROPERTY()
-	UMotionControllerComponent *m_MotionController;
-
-	UPROPERTY()
-	UMotionControllerComponent *m_MotionControllerAim;
-
-	UPROPERTY()
-	UHapticFeedbackEffect_Base *m_ControllerActionHapticEffect;
+	static void BindAxis(
+		UInputComponent *PlayerInputComponent,
+		const FName &ActionName,
+		TFunction<void(float)> &&Func
+	);
 
 	constexpr static FLinearColor m_MeshInteractionLaserColor = FLinearColor(0.07451f, 0.14902f, 0.360784f);
 	constexpr static float m_MeshInteractionLaserMaxDistance = 5000.0f;
 private:
-	EControllerHand m_HandType;
+	TWeakObjectPtr<UMotionControllerComponent> m_MotionController;
+	TWeakObjectPtr<UMotionControllerComponent> m_MotionControllerAim;
 
-	FVector m_AimLerpedPosition;
-	FVector m_AimLerpedDirection;
+	TWeakObjectPtr<UHapticFeedbackEffect_Base> m_HapticEffectController;
+	TWeakObjectPtr<UNiagaraComponent> m_Laser;
+
+	FVector m_LaserStartPosition;
+	FVector m_LaserEndPosition;
+	FVector m_LaserDirection;
+	FLinearColor m_LaserColor = m_MeshInteractionLaserColor;
+	float m_LaserLength = m_MeshInteractionLaserMaxDistance;
+
+	ControllerState m_State = ControllerState::NONE;
 };

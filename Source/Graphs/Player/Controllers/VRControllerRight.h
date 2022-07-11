@@ -5,20 +5,26 @@
 #include "VRControllerRight.generated.h"
 
 UCLASS(ClassGroup=(Custom))
-class GRAPHS_API UVRControllerRight final : public UVRControllerBase {
+class GRAPHS_API UVRControllerRight final : public USceneComponent, public UVRControllerBase {
 	GENERATED_BODY()
 public:
 	explicit UVRControllerRight(const FObjectInitializer &ObjectInitializer);
 
-	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *PlayerInputComponent) const override;
-	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) const override;
+	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *Pic) const override;
 
-	void setUiInteractionEnabled(bool Enabled) const;
+	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) override;
 
-	bool IsUiHit() const;
-	void UiPointerKeyPress() const;
-	void UiPointerKeyRelease() const;
+	virtual void SetState(ControllerState NewState) override;
+
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	FORCEINLINE void SetUiInteractionEnabled(bool Enabled) const;
+	FORCEINLINE void UiLeftMouseButtonPress() const;
+	FORCEINLINE void UiLeftMouseButtonRelease() const;
 private:
+	UFUNCTION()
+	void OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);
+
 	UPROPERTY()
 	UWidgetInteractionComponent *m_UiInteractor;
 };
