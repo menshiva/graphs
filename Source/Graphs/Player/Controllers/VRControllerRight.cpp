@@ -28,16 +28,6 @@ void UVRControllerRight::PlayHapticEffect(APlayerController *PlayerController, c
 	PlayerController->PlayHapticEffect(GetHapticEffectController(), EControllerHand::Right, Scale);
 }
 
-void UVRControllerRight::SetState(const ControllerState NewState) {
-	UVRControllerBase::SetState(NewState);
-	if (NewState != ControllerState::UI) {
-		SetLaserActive(true);
-	}
-	else {
-		SetLaserActive(false);
-	}
-}
-
 void UVRControllerRight::TickComponent(
 	const float DeltaTime,
 	const ELevelTick TickType,
@@ -66,6 +56,6 @@ void UVRControllerRight::OnUiHover(
 ) {
 	if (WidgetComponent == nullptr)
 		SetState(ControllerState::NONE);
-	else
+	else if (GetState() == ControllerState::NONE && WidgetComponent != nullptr)
 		SetState(ControllerState::UI);
 }

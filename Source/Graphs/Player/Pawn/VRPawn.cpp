@@ -77,14 +77,15 @@ bool AVRPawn::OnLeftTriggerReleased() {
 
 bool AVRPawn::OnLeftGripPressed() {
 	// TODO: pass event to active tool
-	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
-	m_LeftController->SetState(ControllerState::TELEPORTATION);
+	if (m_LeftController->GetState() == ControllerState::NONE) {
+		m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
+		m_LeftController->SetState(ControllerState::TELEPORTATION);
+	}
 	return InputInterface::OnLeftGripPressed();
 }
 
 bool AVRPawn::OnLeftGripReleased() {
 	// TODO: pass event to active tool
-	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
 	m_LeftController->SetState(ControllerState::NONE);
 	return InputInterface::OnLeftGripReleased();
 }
@@ -168,7 +169,11 @@ bool AVRPawn::OnLeftThumbstickDown() {
 
 // ReSharper disable once CppUE4BlueprintCallableFunctionMayBeConst
 void AVRPawn::QuitGame() {
-	UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
+	FTimerHandle FadeInHandle;
+	FadeCamera(1.0f);
+	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&] {
+		UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
+	}), m_ScreenFadeDuration, false);
 }
 
 void AVRPawn::BeginPlay() {
@@ -209,8 +214,11 @@ void AVRPawn::ToggleMenu() {
 	static bool isMenuShown = false;
 	isMenuShown = !isMenuShown;
 	m_RightController->SetUiInteractionEnabled(isMenuShown);
-	if (isMenuShown)
+	if (isMenuShown) {
 		m_LeftController->SpawnMainMenu(this);
-	else
+	}
+	else {
 		m_LeftController->DestroyMainMenu();
+		m_RightController->SetState(ControllerState::NONE);
+	}
 }

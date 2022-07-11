@@ -14,8 +14,6 @@ public:
 
 	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) override;
 
-	virtual void SetState(ControllerState NewState) override;
-
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	FORCEINLINE void SetUiInteractionEnabled(bool Enabled) const;

@@ -36,6 +36,8 @@ UVRControllerBase::UVRControllerBase(
 
 void UVRControllerBase::SetState(const ControllerState NewState) {
 	m_State = NewState;
+	SetLaserActive(NewState != ControllerState::UI && NewState != ControllerState::TOOL);
+	UpdateLaser(false);
 }
 
 ControllerState UVRControllerBase::GetState() const {
