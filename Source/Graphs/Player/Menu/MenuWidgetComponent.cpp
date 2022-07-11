@@ -15,7 +15,7 @@ UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectIniti
 	CanCharacterStepUpOn = ECB_No;
 	UPrimitiveComponent::SetCollisionProfileName("VRUI");
 
-	const ConstructorHelpers::FObjectFinder<UStaticMesh> CursorShape(TEXT("/Engine/BasicShapes/Sphere"));
+	const ConstructorHelpers::FObjectFinder<UStaticMesh> CursorShape(TEXT("/Engine/BasicShapes/Plane"));
 	const ConstructorHelpers::FObjectFinder<UMaterial> CursorMaterial(TEXT("/Game/Graphs/Materials/CursorMaterial"));
 	m_Cursor = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, "Cursor");
 	m_Cursor->SetStaticMesh(CursorShape.Object);
@@ -24,6 +24,7 @@ UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectIniti
 	m_Cursor->SetCollisionProfileName("NoCollision");
 	m_Cursor->SetCastShadow(false);
 	m_Cursor->SetRelativeScale3D(FVector(0.3f));
+	m_Cursor->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
 	m_Cursor->SetVisibility(false);
 	m_Cursor->SetupAttachment(this);
 }
