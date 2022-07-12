@@ -11,7 +11,7 @@ public class Graphs : ModuleRules {
 			"Niagara",
 			"UMG"
 		});
-		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay" });
+		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay", "Slate", "SlateCore" });
 		CppStandard = CppStandardVersion.Cpp17;
 	}
 }

@@ -15,7 +15,7 @@ UVRControllerLeft::UVRControllerLeft(
 	m_TeleportPreviewMesh->SetupAttachment(this);
 
 	const ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
-		TEXT("/Game/Graphs/Materials/TeleportPreviewMaterial")
+		TEXT("/Game/Graphs/Materials/Pawn/TeleportPreviewMaterial")
 	);
 	const auto TeleportPreviewMaterialInst = m_TeleportPreviewMesh->CreateAndSetMaterialInstanceDynamicFromMaterial(
 		0,

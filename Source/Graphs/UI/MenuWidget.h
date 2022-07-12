@@ -9,8 +9,8 @@ class GRAPHS_API UMenuWidget final : public UUserWidget {
 public:
 	virtual void NativeConstruct() override;
 
-	void PlayAnimation(UWidgetAnimation *Animation, EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd);
-
+	void PlayShowHideAnimation(EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd);
+protected:
 	UPROPERTY(BlueprintReadOnly, Transient, meta=(BindWidgetAnim))
 	UWidgetAnimation *ShowHideAnimation;
 

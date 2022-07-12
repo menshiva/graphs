@@ -23,10 +23,10 @@ UVRControllerBase::UVRControllerBase(
 	m_MotionControllerAim->SetTrackingMotionSource(FName(GetData(Hand + "Aim")));
 	m_MotionControllerAim->SetupAttachment(Controller);
 
-	const ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> ControllerActionHapticEffectAsset(TEXT(
+	const ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> HapticEffectAsset(TEXT(
 		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
 	));
-	m_HapticEffectController = ControllerActionHapticEffectAsset.Object;
+	m_HapticEffectController = HapticEffectAsset.Object;
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
 	m_Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(Controller, "Laser");

@@ -4,7 +4,7 @@
 #include "../../InputInterface.h"
 #include "../Controllers/VRControllerLeft.h"
 #include "../Controllers/VRControllerRight.h"
-#include "../Menu/MenuWidgetComponent.h"
+#include "../../UI/MenuWidgetComponent.h"
 #include "VRPawn.generated.h"
 
 UCLASS()

@@ -1,6 +1,5 @@
 #include "VRControllerRight.h"
 #include "../Pawn/VRPawn.h"
-#include "../Menu/MenuWidgetComponent.h"
 
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer

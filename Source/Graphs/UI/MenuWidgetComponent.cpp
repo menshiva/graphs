@@ -16,7 +16,7 @@ UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectIniti
 	UPrimitiveComponent::SetCollisionProfileName("VRUI");
 
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> CursorShape(TEXT("/Engine/BasicShapes/Plane"));
-	const ConstructorHelpers::FObjectFinder<UMaterial> CursorMaterial(TEXT("/Game/Graphs/Materials/CursorMaterial"));
+	const ConstructorHelpers::FObjectFinder<UMaterial> CursorMaterial(TEXT("/Game/Graphs/Materials/Pawn/CursorMaterial"));
 	m_Cursor = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, "Cursor");
 	m_Cursor->SetStaticMesh(CursorShape.Object);
 	m_Cursor->SetMaterial(0, CursorMaterial.Object);
@@ -34,11 +34,10 @@ void UMenuWidgetComponent::SetVisble(const bool Visible) {
 	if (Visible) {
 		menuWidget->SetRenderOpacity(0.0f);
 		SetVisibility(Visible);
-		menuWidget->PlayAnimation(menuWidget->ShowHideAnimation, EUMGSequencePlayMode::Forward, [] {});
+		menuWidget->PlayShowHideAnimation(EUMGSequencePlayMode::Forward, [] {});
 	}
 	else {
-		menuWidget->PlayAnimation(
-			menuWidget->ShowHideAnimation,
+		menuWidget->PlayShowHideAnimation(
 			EUMGSequencePlayMode::Reverse,
 			[&] {
 				m_Cursor->SetVisibility(false);
