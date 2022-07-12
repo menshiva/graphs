@@ -9,6 +9,7 @@ class GRAPHS_API UImageButtonWidget final : public UUserWidget {
 	GENERATED_BODY()
 public:
 	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild, sRGB="true"))
 	FLinearColor BackgroundColor = FLinearColor::White;

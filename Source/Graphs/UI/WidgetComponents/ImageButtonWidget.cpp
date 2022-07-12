@@ -7,19 +7,24 @@
 
 void UImageButtonWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
-	if (IBButton) {
+	if (IBButton)
 		IBButton->SetBackgroundColor(BackgroundColor);
-		IBButton->OnClicked = OnClicked;
-		IBButton->OnHovered.AddDynamic(this, &UImageButtonWidget::OnHovered);
-		IBButton->OnUnhovered.AddDynamic(this, &UImageButtonWidget::OnUnhovered);
-		IBButton->OnPressed.AddDynamic(this, &UImageButtonWidget::OnPressed);
-		IBButton->OnReleased.AddDynamic(this, &UImageButtonWidget::OnReleased);
-	}
 	if (IBScaleBox)
 		Cast<UButtonSlot>(IBScaleBox->Slot)->SetPadding(ImagePadding);
 	if (IBImage) {
 		IBImage->SetBrushFromTexture(Image, true);
 		IBImage->SetBrushTintColor(ImageColor);
+	}
+}
+
+void UImageButtonWidget::NativeConstruct() {
+	Super::NativeConstruct();
+	if (IBButton) {
+		IBButton->OnClicked = OnClicked;
+		IBButton->OnHovered.AddDynamic(this, &UImageButtonWidget::OnHovered);
+		IBButton->OnUnhovered.AddDynamic(this, &UImageButtonWidget::OnUnhovered);
+		IBButton->OnPressed.AddDynamic(this, &UImageButtonWidget::OnPressed);
+		IBButton->OnReleased.AddDynamic(this, &UImageButtonWidget::OnReleased);
 	}
 }
 
