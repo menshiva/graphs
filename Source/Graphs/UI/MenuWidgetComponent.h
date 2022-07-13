@@ -11,8 +11,8 @@ public:
 
 	void SetVisble(bool Visible);
 
-	FORCEINLINE void SetCursorVisibility(bool Visible) const;
-	FORCEINLINE void SetCursorLocation(const FVector &Location) const;
+	void SetCursorVisibility(bool Visible) const;
+	void SetCursorLocation(const FVector &Location) const;
 private:
 	UPROPERTY()
 	UStaticMeshComponent *m_Cursor;

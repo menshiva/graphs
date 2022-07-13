@@ -3,6 +3,10 @@
 #include "Components/ButtonSlot.h"
 #include "Components/ScaleBox.h"
 
+UButtonWidget::UButtonWidget(const FObjectInitializer &ObjectInitializer) : UUserWidget(ObjectInitializer) {
+	bHasScriptImplementedTick = false;
+}
+
 void UButtonWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	if (BSizeBox) {

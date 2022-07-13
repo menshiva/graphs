@@ -1,6 +1,8 @@
 #include "TextButtonWidget.h"
 #include "Components/TextBlock.h"
 
+UTextButtonWidget::UTextButtonWidget(const FObjectInitializer &ObjectInitializer) : UButtonWidget(ObjectInitializer) {}
+
 void UTextButtonWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	if (TBText) {

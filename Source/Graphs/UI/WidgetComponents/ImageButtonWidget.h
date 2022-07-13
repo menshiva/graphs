@@ -4,9 +4,11 @@
 #include "ImageButtonWidget.generated.h"
 
 UCLASS(Abstract)
-class GRAPHS_API UImageButtonWidget final : public UButtonWidget {
+// ReSharper disable once CppClassCanBeFinal
+class GRAPHS_API UImageButtonWidget : public UButtonWidget {
 	GENERATED_BODY()
 public:
+	explicit UImageButtonWidget(const FObjectInitializer &ObjectInitializer);
 	virtual void NativePreConstruct() override;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild, sRGB="true"))

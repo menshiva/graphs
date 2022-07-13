@@ -19,23 +19,23 @@ public:
 	);
 	virtual ~UVRControllerBase() = default;
 
-	FORCEINLINE UMotionControllerComponent *GetMotionController() const;
-	FORCEINLINE UMotionControllerComponent *GetMotionControllerAim() const;
-	FORCEINLINE UHapticFeedbackEffect_Base *GetHapticEffectController() const;
+	UMotionControllerComponent *GetMotionController() const;
+	UMotionControllerComponent *GetMotionControllerAim() const;
+	UHapticFeedbackEffect_Base *GetHapticEffectController() const;
 
 	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *Pic) const = 0;
 
 	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) = 0;
 
 	virtual void SetState(ControllerState NewState);
-	FORCEINLINE ControllerState GetState() const;
+	ControllerState GetState() const;
 
-	FORCEINLINE const FVector &GetLaserStartPosition() const;
-	FORCEINLINE const FVector &GetLaserEndPosition() const;
-	FORCEINLINE const FVector &GetLaserDirection() const;
-	FORCEINLINE void SetLaserColor(const FLinearColor &NewColor);
-	FORCEINLINE void SetLaserLength(float NewLength);
-	FORCEINLINE void SetLaserActive(bool IsActive) const;
+	const FVector &GetLaserStartPosition() const;
+	const FVector &GetLaserEndPosition() const;
+	const FVector &GetLaserDirection() const;
+	void SetLaserColor(const FLinearColor &NewColor);
+	void SetLaserLength(float NewLength);
+	void SetLaserActive(bool IsActive) const;
 	void UpdateLaser(bool Lerp = true);
 protected:
 	static void BindAction(

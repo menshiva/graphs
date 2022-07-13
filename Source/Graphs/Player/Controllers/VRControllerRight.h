@@ -17,8 +17,8 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	void SetUiInteractionEnabled(bool Enabled);
-	FORCEINLINE void UiLeftMouseButtonPress() const;
-	FORCEINLINE void UiLeftMouseButtonRelease() const;
+	void UiLeftMouseButtonPress() const;
+	void UiLeftMouseButtonRelease() const;
 private:
 	UFUNCTION()
 	void OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);

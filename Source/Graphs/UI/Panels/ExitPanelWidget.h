@@ -4,7 +4,7 @@
 #include "ExitPanelWidget.generated.h"
 
 UCLASS(Abstract)
-class GRAPHS_API UExitPanelWidget final : public UUserWidget {
+class GRAPHS_API UExitPanelWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
 	virtual void NativeConstruct() override;

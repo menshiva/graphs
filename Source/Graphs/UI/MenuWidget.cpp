@@ -5,6 +5,10 @@
 #include "Components/WidgetSwitcher.h"
 #include "WidgetComponents/ImageButtonWidget.h"
 
+UMenuWidget::UMenuWidget(const FObjectInitializer &ObjectInitializer) : UUserWidget(ObjectInitializer) {
+	bHasScriptImplementedTick = false;
+}
+
 void UMenuWidget::NativeConstruct() {
 	Super::NativeConstruct();
 	if (MenuHomeButton) {
