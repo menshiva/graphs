@@ -1,5 +1,5 @@
 #include "VRControllerRight.h"
-#include "../Pawn/VRPawn.h"
+#include "Graphs/Player/Pawn/VRPawn.h"
 
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
