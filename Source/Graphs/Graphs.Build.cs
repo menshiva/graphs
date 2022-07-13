@@ -7,9 +7,11 @@ public class Graphs : ModuleRules {
 			"Core",
 			"CoreUObject",
 			"Engine",
-			"InputCore"
+			"InputCore",
+			"Niagara",
+			"UMG"
 		});
-		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay", "SteamVR" });
+		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay", "Slate", "SlateCore" });
 		CppStandard = CppStandardVersion.Cpp17;
 	}
 }
