@@ -56,6 +56,9 @@ private:
 	UPROPERTY()
 	UStaticMeshComponent *TeleportPreviewMesh;
 
+	UPROPERTY()
+	UNiagaraComponent *TeleportRing;
+
 	FVector TeleportLocation;
 	float TeleportLaserCurrentDistance = 150.0f;
 

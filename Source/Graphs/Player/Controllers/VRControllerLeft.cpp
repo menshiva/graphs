@@ -36,6 +36,15 @@ UVRControllerLeft::UVRControllerLeft(
 	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", TeleportLaserColor);
 	TeleportPreviewMesh->SetMaterial(0, TeleportPreviewMaterialInst);
 	TeleportPreviewMesh->SetupAttachment(this);
+
+	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> TeleportRingAsset(TEXT("/Game/Graphs/VFX/TeleportRing"));
+	TeleportRing = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "TeleportRing");
+	TeleportRing->SetComponentTickEnabled(false);
+	TeleportRing->SetAsset(TeleportRingAsset.Object);
+	TeleportRing->SetColorParameter("User.CustomColor", TeleportLaserColor);
+	TeleportRing->Deactivate();
+	TeleportRing->SetVisibility(false);
+	TeleportRing->SetupAttachment(this);
 }
 
 void UVRControllerLeft::SetupInputBindings(UInputComponent *Pic) {
@@ -81,6 +90,8 @@ void UVRControllerLeft::TickComponent(
 		TeleportLocation = GetLaserPosition() + GetLaserDirection() * TeleportLaserCurrentDistance;
 		SetLaserStartEnd(TeleportLaser, GetLaserPosition(), TeleportLocation);
 		TeleportPreviewMesh->SetWorldLocation(TeleportLocation);
+		TeleportLocation.Z -= VrPawn->Height;
+		TeleportRing->SetWorldLocation(TeleportLocation);
 	}
 }
 
@@ -102,6 +113,8 @@ void UVRControllerLeft::OnLeftStateChanged(const ControllerState NewState) {
 	NewState == ControllerState::TELEPORTATION ? TeleportLaser->Activate() : TeleportLaser->Deactivate();
 	TeleportLaser->SetVisibility(NewState == ControllerState::TELEPORTATION);
 	TeleportPreviewMesh->SetVisibility(NewState == ControllerState::TELEPORTATION);
+	NewState == ControllerState::TELEPORTATION ? TeleportRing->Activate() : TeleportRing->Deactivate();
+	TeleportRing->SetVisibility(NewState == ControllerState::TELEPORTATION);
 	VrPawn->OnLeftStateChanged(NewState);
 }
 
