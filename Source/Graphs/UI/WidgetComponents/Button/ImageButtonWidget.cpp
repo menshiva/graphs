@@ -10,3 +10,8 @@ void UImageButtonWidget::NativePreConstruct() {
 		IBImage->SetBrushTintColor(ImageColor);
 	}
 }
+
+void UImageButtonWidget::SetImageVisibility(const bool Visible) const {
+	if (IBImage)
+		IBImage->SetVisibility(Visible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);
+}

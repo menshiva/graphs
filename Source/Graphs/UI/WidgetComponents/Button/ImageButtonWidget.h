@@ -10,6 +10,8 @@ class GRAPHS_API UImageButtonWidget : public UButtonWidget {
 public:
 	explicit UImageButtonWidget(const FObjectInitializer &ObjectInitializer);
 	virtual void NativePreConstruct() override;
+
+	void SetImageVisibility(bool Visible) const;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild, sRGB="true"))
 	FLinearColor ImageColor = FLinearColor::Black;

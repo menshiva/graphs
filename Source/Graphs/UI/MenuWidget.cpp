@@ -1,9 +1,8 @@
 #include "MenuWidget.h"
-#include "Graphs/Player/Pawn/VRPawn.h"
 #include "Animation/UMGSequencePlayer.h"
 #include "Components/Border.h"
 #include "Components/WidgetSwitcher.h"
-#include "WidgetComponents/ImageButtonWidget.h"
+#include "WidgetComponents/Button/ImageButtonWidget.h"
 
 UMenuWidget::UMenuWidget(const FObjectInitializer &ObjectInitializer) : UUserWidget(ObjectInitializer) {
 	bHasScriptImplementedTick = false;

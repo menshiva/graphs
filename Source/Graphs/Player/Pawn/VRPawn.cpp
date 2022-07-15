@@ -40,27 +40,30 @@ APlayerController *AVRPawn::GetPlayerController() const {
 }
 
 void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
-	if (!IsCameraFadeAnimationRunning) {
-		FTimerHandle FadeInHandle;
-		IsCameraFadeAnimationRunning = true;
-		FadeCamera(1.0f);
-		GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&, DoAfterFadeIn] {
-			DoAfterFadeIn();
-			FTimerHandle WaitHandle;
-			GetWorldTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&] {
-				FadeCamera(0.0f);
-				FTimerHandle FadeOutHandle;
-				GetWorldTimerManager().SetTimer(FadeOutHandle, FTimerDelegate::CreateLambda([&] {
-					IsCameraFadeAnimationRunning = false;
+	if (CameraFadeAnimationEnabled) {
+		if (!IsCameraFadeAnimationRunning) {
+			FTimerHandle FadeInHandle;
+			IsCameraFadeAnimationRunning = true;
+			FadeCamera(1.0f);
+			GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&, DoAfterFadeIn] {
+				DoAfterFadeIn();
+				FTimerHandle WaitHandle;
+				GetWorldTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&] {
+					FadeCamera(0.0f);
+					FTimerHandle FadeOutHandle;
+					GetWorldTimerManager().SetTimer(FadeOutHandle, FTimerDelegate::CreateLambda([&] {
+						IsCameraFadeAnimationRunning = false;
+					}), ScreenFadeDuration, false);
 				}), ScreenFadeDuration, false);
 			}), ScreenFadeDuration, false);
-		}), ScreenFadeDuration, false);
+		}
 	}
+	else DoAfterFadeIn();
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::ToggleFPS() {
-	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), "stat fps");
+void AVRPawn::ToggleCameraFadeAnimation() {
+	CameraFadeAnimationEnabled = !CameraFadeAnimationEnabled;
+	SaveConfig();
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -86,7 +89,7 @@ bool AVRPawn::OnLeftMenuPressed() {
 }
 
 bool AVRPawn::OnLeftTriggerAction(const bool IsPressed) {
-	if (LeftController->GetState() == ControllerState::TELEPORTATION) {
+	if (IsPressed && LeftController->GetState() == ControllerState::TELEPORTATION) {
 		CameraTeleportAnimation([&] {
 			auto teleportPoint = LeftController->GetTeleportLocation();
 			teleportPoint.Z += Height;
@@ -171,8 +174,6 @@ bool AVRPawn::OnRightThumbstickXAxis(const float Value) {
 
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
-	if (FpsEnabled)
-		ToggleFPS();
 	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);

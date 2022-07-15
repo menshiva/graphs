@@ -13,7 +13,6 @@ public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
-	UFUNCTION(BlueprintCallable)
 	void SetBackgroundColor(const FLinearColor &NewColor);
 
 	UPROPERTY(BlueprintAssignable, Category="Event")
@@ -38,10 +37,10 @@ protected:
 	FMargin ContentPadding;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float HoveredCoefficient = 0.0f;
+	float HoveredCoefficient = 1.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly)
-	float PressedCoefficient = 0.0f;
+	float PressedCoefficient = 1.0f;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class USizeBox *BSizeBox;

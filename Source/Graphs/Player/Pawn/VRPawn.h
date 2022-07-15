@@ -4,7 +4,7 @@
 #include "../Controllers/VRControllerRight.h"
 #include "VRPawn.generated.h"
 
-UCLASS()
+UCLASS(Config = UserPreferences)
 class GRAPHS_API AVRPawn final : public APawn, public LeftControllerInputInterface, public RightControllerInputInterface {
 	GENERATED_BODY()
 public:
@@ -16,7 +16,7 @@ public:
 	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
 
 	UFUNCTION()
-	void ToggleFPS();
+	void ToggleCameraFadeAnimation();
 
 	UFUNCTION()
 	void QuitGame();
@@ -50,6 +50,9 @@ public:
 	UPROPERTY()
 	UVRControllerRight *RightController;
 
+	UPROPERTY(Config)
+	bool CameraFadeAnimationEnabled = true;
+
 	constexpr static float Height = 111.0f;
 protected:
 	virtual void BeginPlay() override;
@@ -65,7 +68,6 @@ private:
 
 	bool IsCameraFadeAnimationRunning = false;
 
-	constexpr static bool FpsEnabled = true;
 	constexpr static float RotationAngle = 45.0f;
 	constexpr static float ScreenFadeDuration = 0.1f;
 };
