@@ -6,8 +6,3 @@ ADefaultGameMode::ADefaultGameMode(const FObjectInitializer &ObjectInitializer) 
 	bPauseable = false;
 	DefaultPawnClass = AVRPawn::StaticClass();
 }
-
-void ADefaultGameMode::InitGame(const FString &MapName, const FString &Options, FString &ErrorMessage) {
-	Super::InitGame(MapName, Options, ErrorMessage);
-	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), "stat fps");
-}

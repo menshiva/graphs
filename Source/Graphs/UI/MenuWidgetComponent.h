@@ -15,5 +15,5 @@ public:
 	void SetCursorLocation(const FVector &Location) const;
 private:
 	UPROPERTY()
-	UStaticMeshComponent *m_Cursor;
+	UStaticMeshComponent *Cursor;
 };

@@ -16,6 +16,9 @@ public:
 	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
 
 	UFUNCTION()
+	void ToggleFPS();
+
+	UFUNCTION()
 	void QuitGame();
 
 	virtual void OnLeftStateChanged(ControllerState NewState) override;
@@ -62,6 +65,7 @@ private:
 
 	bool IsCameraFadeAnimationRunning = false;
 
+	constexpr static bool FpsEnabled = true;
 	constexpr static float RotationAngle = 45.0f;
 	constexpr static float ScreenFadeDuration = 0.1f;
 };

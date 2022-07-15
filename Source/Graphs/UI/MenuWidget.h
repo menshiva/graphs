@@ -43,6 +43,6 @@ private:
 
 	void SetActivePanel(size_t Index);
 
-	TArray<UImageButtonWidget*> MenuButtons;
+	TStaticArray<UImageButtonWidget*, 3> MenuButtons;
 	constexpr static FLinearColor MenuButtonUnselectedColor = FLinearColor(0.03125f, 0.03125f, 0.03125f, 1.0f);
 };

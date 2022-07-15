@@ -28,6 +28,7 @@ UVRControllerLeft::UVRControllerLeft(
 	TeleportPreviewMesh->SetVisibility(false);
 	TeleportPreviewMesh->SetCollisionProfileName(TEXT("NoCollision"));
 	TeleportPreviewMesh->SetCastShadow(false);
+	TeleportPreviewMesh->SetRelativeScale3D(FVector(0.25f));
 	const auto TeleportPreviewMaterialInst = TeleportPreviewMesh->CreateAndSetMaterialInstanceDynamicFromMaterial(
 		0,
 		TeleportPreviewMaterialAsset.Object

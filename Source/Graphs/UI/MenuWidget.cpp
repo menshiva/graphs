@@ -11,18 +11,17 @@ UMenuWidget::UMenuWidget(const FObjectInitializer &ObjectInitializer) : UUserWid
 
 void UMenuWidget::NativeConstruct() {
 	Super::NativeConstruct();
-	if (MenuHomeButton) {
-		MenuButtons.Push(MenuHomeButton);
+
+	MenuButtons[0] = MenuHomeButton;
+	MenuButtons[1] = MenuSettingsButton;
+	MenuButtons[2] = MenuExitButton;
+
+	if (MenuHomeButton)
 		MenuHomeButton->OnClicked.AddDynamic(this, &UMenuWidget::OnMenuHomeClick);
-	}
-	if (MenuSettingsButton) {
-		MenuButtons.Push(MenuSettingsButton);
+	if (MenuSettingsButton)
 		MenuSettingsButton->OnClicked.AddDynamic(this, &UMenuWidget::OnMenuSettingsClick);
-	}
-	if (MenuExitButton) {
-		MenuButtons.Push(MenuExitButton);
+	if (MenuExitButton)
 		MenuExitButton->OnClicked.AddDynamic(this, &UMenuWidget::OnMenuExitClick);
-	}
 }
 
 void UMenuWidget::PlayShowHideAnimation(const EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd) {

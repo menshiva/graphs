@@ -59,6 +59,11 @@ void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::ToggleFPS() {
+	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), "stat fps");
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::QuitGame() {
 	FTimerHandle FadeInHandle;
 	FadeCamera(1.0f);
@@ -166,6 +171,8 @@ bool AVRPawn::OnRightThumbstickXAxis(const float Value) {
 
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
+	if (FpsEnabled)
+		ToggleFPS();
 	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
