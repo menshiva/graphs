@@ -14,30 +14,35 @@ public:
 	UVRControllerBase() = default;
 	UVRControllerBase(
 		const FObjectInitializer &ObjectInitializer,
-		USceneComponent *Controller,
-		const FString &Hand
+		USceneComponent *aController,
+		EControllerHand aControllerType
 	);
 	virtual ~UVRControllerBase() = default;
 
-	UMotionControllerComponent *GetMotionController() const;
-	UMotionControllerComponent *GetMotionControllerAim() const;
-	UHapticFeedbackEffect_Base *GetHapticEffectController() const;
+	void SetupPawn(class AVRPawn *Pawn);
 
-	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *Pic) const = 0;
+	virtual void SetupInputBindings(UInputComponent *Pic) = 0;
 
-	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) = 0;
-
-	virtual void SetState(ControllerState NewState);
 	ControllerState GetState() const;
+	virtual void SetState(ControllerState NewState);
 
-	const FVector &GetLaserStartPosition() const;
-	const FVector &GetLaserEndPosition() const;
+	const FVector &GetLaserPosition() const;
 	const FVector &GetLaserDirection() const;
-	void SetLaserColor(const FLinearColor &NewColor);
-	void SetLaserLength(float NewLength);
 	void SetLaserActive(bool IsActive) const;
 	void UpdateLaser(bool Lerp = true);
+
+	TWeakObjectPtr<UMotionControllerComponent> MotionController;
+	TWeakObjectPtr<UMotionControllerComponent> MotionControllerAim;
+
+	AVRPawn *VrPawn = nullptr;
+
+	bool TriggerPressed = false;
+	bool GripPressed = false;
+
+	float ThumbstickY = 0.0f;
+	float ThumbstickX = 0.0f;
 protected:
+	void PlayActionHapticEffect() const;
 	static void BindAction(
 		UInputComponent *PlayerInputComponent,
 		const FName &ActionName,
@@ -49,21 +54,18 @@ protected:
 		const FName &ActionName,
 		TFunction<void(float)> &&Func
 	);
-
-	constexpr static FLinearColor m_MeshInteractionLaserColor = FLinearColor(0.07451f, 0.14902f, 0.360784f);
-	constexpr static float m_MeshInteractionLaserMaxDistance = 5000.0f;
+	static void SetLaserStartEnd(class UNiagaraComponent *aLaser, const FVector &Start, const FVector &End);
 private:
-	TWeakObjectPtr<UMotionControllerComponent> m_MotionController;
-	TWeakObjectPtr<UMotionControllerComponent> m_MotionControllerAim;
+	TWeakObjectPtr<UHapticFeedbackEffect_Base> HapticEffectController;
+	TWeakObjectPtr<UNiagaraComponent> Laser;
 
-	TWeakObjectPtr<UHapticFeedbackEffect_Base> m_HapticEffectController;
-	TWeakObjectPtr<class UNiagaraComponent> m_Laser;
+	EControllerHand Type;
+	ControllerState State = ControllerState::NONE;
 
-	FVector m_LaserStartPosition;
-	FVector m_LaserEndPosition;
-	FVector m_LaserDirection;
-	FLinearColor m_LaserColor = m_MeshInteractionLaserColor;
-	float m_LaserLength = m_MeshInteractionLaserMaxDistance;
+	FVector LaserPosition;
+	FVector LaserDirection;
 
-	ControllerState m_State = ControllerState::NONE;
+	constexpr static float ActionHapticScale = 0.15f;
+	constexpr static FLinearColor MeshInteractionLaserColor = FLinearColor(0.07451f, 0.14902f, 0.360784f);
+	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
 };

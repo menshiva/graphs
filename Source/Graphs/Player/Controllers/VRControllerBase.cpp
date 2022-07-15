@@ -1,110 +1,91 @@
 #include "VRControllerBase.h"
+#include "Graphs/Player/Pawn/VRPawn.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
 #include "NiagaraComponent.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 
 UVRControllerBase::UVRControllerBase(
 	const FObjectInitializer &ObjectInitializer,
-	USceneComponent *Controller,
-	const FString &Hand
-) {
-	m_MotionController = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
-		Controller,
+	USceneComponent *aController,
+	EControllerHand aControllerType
+) : Type(aControllerType) {
+	const auto UndType = static_cast<__underlying_type(EControllerHand)>(aControllerType);
+	FString ControllerName = StaticEnum<EControllerHand>()->GetNameStringByValue(UndType);
+
+	MotionController = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
+		aController,
 		"MotionController"
 	);
-	m_MotionController->SetShowDeviceModel(true);
-	m_MotionController->SetTrackingMotionSource(FName(GetData(Hand)));
-	m_MotionController->SetupAttachment(Controller);
+	MotionController->SetShowDeviceModel(true);
+	MotionController->SetTrackingMotionSource(FName(GetData(ControllerName)));
+	MotionController->SetupAttachment(aController);
 
-	m_MotionControllerAim = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
-		Controller,
+	MotionControllerAim = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
+		aController,
 		"MotionControllerAim"
 	);
-	m_MotionControllerAim->SetTrackingMotionSource(FName(GetData(Hand + "Aim")));
-	m_MotionControllerAim->SetupAttachment(Controller);
+	MotionControllerAim->SetTrackingMotionSource(FName(GetData(ControllerName + "Aim")));
+	MotionControllerAim->SetupAttachment(aController);
 
 	const ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> HapticEffectAsset(TEXT(
 		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
 	));
-	m_HapticEffectController = HapticEffectAsset.Object;
+	HapticEffectController = HapticEffectAsset.Object;
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
-	m_Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(Controller, "Laser");
-	m_Laser->SetComponentTickEnabled(false);
-	m_Laser->SetAsset(LaserAsset.Object);
-	m_Laser->SetupAttachment(m_MotionControllerAim.Get());
+	Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(aController, "Laser");
+	Laser->SetComponentTickEnabled(false);
+	Laser->SetAsset(LaserAsset.Object);
+	Laser->SetColorParameter("User.CustomColor", MeshInteractionLaserColor);
+	Laser->SetupAttachment(MotionControllerAim.Get());
 }
 
-void UVRControllerBase::SetState(const ControllerState NewState) {
-	m_State = NewState;
-	SetLaserActive(NewState != ControllerState::UI && NewState != ControllerState::TOOL);
-	UpdateLaser(false);
-}
-
-UMotionControllerComponent *UVRControllerBase::GetMotionController() const {
-	return m_MotionController.Get();
-}
-
-UMotionControllerComponent *UVRControllerBase::GetMotionControllerAim() const {
-	return m_MotionControllerAim.Get();
-}
-
-UHapticFeedbackEffect_Base *UVRControllerBase::GetHapticEffectController() const {
-	return m_HapticEffectController.Get();
+void UVRControllerBase::SetupPawn(AVRPawn *Pawn) {
+	VrPawn = Pawn;
 }
 
 ControllerState UVRControllerBase::GetState() const {
-	return m_State;
+	return State;
 }
 
-const FVector &UVRControllerBase::GetLaserStartPosition() const {
-	return m_LaserStartPosition;
+void UVRControllerBase::SetState(const ControllerState NewState) {
+	State = NewState;
 }
 
-const FVector &UVRControllerBase::GetLaserEndPosition() const {
-	return m_LaserEndPosition;
+const FVector &UVRControllerBase::GetLaserPosition() const {
+	return LaserPosition;
 }
 
 const FVector& UVRControllerBase::GetLaserDirection() const {
-	return m_LaserDirection;
-}
-
-void UVRControllerBase::SetLaserColor(const FLinearColor& NewColor) {
-	m_LaserColor = NewColor;
-}
-
-void UVRControllerBase::SetLaserLength(const float NewLength) {
-	m_LaserLength = NewLength;
+	return LaserDirection;
 }
 
 void UVRControllerBase::SetLaserActive(const bool IsActive) const {
-	IsActive ? m_Laser->Activate() : m_Laser->Deactivate();
-	m_Laser->SetVisibility(IsActive);
+	IsActive ? Laser->Activate() : Laser->Deactivate();
+	Laser->SetVisibility(IsActive);
 }
 
 void UVRControllerBase::UpdateLaser(const bool Lerp) {
-	if (!m_Laser->IsVisible()) return;
 	if (Lerp) {
-		m_LaserStartPosition = FMath::Lerp(m_LaserStartPosition, m_MotionControllerAim->GetComponentLocation(), 0.5f);
-		m_LaserDirection = FMath::Lerp(m_LaserDirection, m_MotionControllerAim->GetForwardVector(), 0.25f);
+		LaserPosition = FMath::Lerp(LaserPosition, MotionControllerAim->GetComponentLocation(), 0.5f);
+		LaserDirection = FMath::Lerp(LaserDirection, MotionControllerAim->GetForwardVector(), 0.25f);
 	}
 	else {
-		m_LaserStartPosition = m_MotionControllerAim->GetComponentLocation();
-		m_LaserDirection = m_MotionControllerAim->GetForwardVector();
+		LaserPosition = MotionControllerAim->GetComponentLocation();
+		LaserDirection = MotionControllerAim->GetForwardVector();
 	}
-	m_LaserEndPosition = m_LaserStartPosition + m_LaserDirection * m_LaserLength;
 
-	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
-		m_Laser.Get(),
-		"User.PointArray", 0,
-		m_LaserStartPosition, false
-	);
-	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
-		m_Laser.Get(),
-		"User.PointArray", 1,
-		m_LaserEndPosition, false
-	);
-	m_Laser->SetColorParameter("User.CustomColor", m_LaserColor);
+	if (Laser->IsVisible()) {
+		SetLaserStartEnd(
+			Laser.Get(),
+			LaserPosition,
+			LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance
+		);
+	}
+}
+
+void UVRControllerBase::PlayActionHapticEffect() const {
+	VrPawn->GetPlayerController()->PlayHapticEffect(HapticEffectController.Get(), Type, ActionHapticScale);
 }
 
 void UVRControllerBase::BindAction(
@@ -128,6 +109,20 @@ void UVRControllerBase::BindAxis(
 	PlayerInputComponent->AxisBindings.Push(MoveTemp(AB));
 }
 
+void UVRControllerBase::SetLaserStartEnd(UNiagaraComponent *aLaser, const FVector &Start, const FVector &End) {
+	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
+			aLaser,
+			"User.PointArray", 0,
+			Start, false
+		);
+	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
+		aLaser,
+		"User.PointArray", 1,
+		End, false
+	);
+}
+
+// TODO: trace graph actors
 /*void UVRControllerBase::Tick() {
 	// UWorld::LineTraceSingleByChannel()
 	// ECC_GameTraceChannel2;
