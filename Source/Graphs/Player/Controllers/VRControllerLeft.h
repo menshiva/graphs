@@ -64,6 +64,6 @@ private:
 
 	constexpr static FLinearColor TeleportLaserColor = FLinearColor(0.07451f, 0.360784f, 0.286275f);
 	constexpr static float TeleportLaserLengthDeltaSpeed = 5.0f;
-	constexpr static float TeleportLaserMinDistance = 50.0f;
+	constexpr static float TeleportLaserMinDistance = 25.0f;
 	constexpr static float TeleportLaserMaxDistance = 1500.0f;
 };
