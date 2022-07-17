@@ -5,9 +5,7 @@
 
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
-) : USceneComponent(ObjectInitializer), UVRControllerBase(ObjectInitializer, this, EControllerHand::Left) {
-	PrimaryComponentTick.bCanEverTick = true;
-
+) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
 	TeleportLaser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "TeleportLaser");
 	TeleportLaser->SetComponentTickEnabled(false);
@@ -15,7 +13,7 @@ UVRControllerLeft::UVRControllerLeft(
 	TeleportLaser->SetColorParameter("User.CustomColor", TeleportLaserColor);
 	TeleportLaser->Deactivate();
 	TeleportLaser->SetVisibility(false);
-	TeleportLaser->SetupAttachment(MotionControllerAim.Get());
+	TeleportLaser->SetupAttachment(MotionControllerAim);
 
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Engine/BasicShapes/Sphere"));
 	const ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
@@ -75,8 +73,21 @@ void UVRControllerLeft::SetupInputBindings(UInputComponent *Pic) {
 }
 
 void UVRControllerLeft::SetState(const ControllerState NewState) {
-	OnLeftStateChanged(NewState);
-	UVRControllerBase::SetState(NewState);
+	Super::SetState(NewState);
+	const bool IsTeleportMode = NewState == ControllerState::TELEPORTATION;
+	SetLaserActive(!IsTeleportMode);
+	if (IsTeleportMode) {
+		ResetHitResult();
+		TeleportLaser->Activate();
+		TeleportRing->Activate();
+	}
+	else {
+		TeleportLaser->Deactivate();
+		TeleportRing->Deactivate();
+	}
+	TeleportLaser->SetVisibility(IsTeleportMode);
+	TeleportPreviewMesh->SetVisibility(IsTeleportMode);
+	TeleportRing->SetVisibility(IsTeleportMode);
 }
 
 void UVRControllerLeft::TickComponent(
@@ -85,7 +96,6 @@ void UVRControllerLeft::TickComponent(
 	FActorComponentTickFunction* ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	UpdateLaser();
 	if (GetState() == ControllerState::TELEPORTATION) {
 		TeleportLocation = GetLaserPosition() + GetLaserDirection() * TeleportLaserCurrentDistance;
 		SetLaserStartEnd(TeleportLaser, GetLaserPosition(), TeleportLocation);
@@ -105,17 +115,6 @@ void UVRControllerLeft::AdjustTeleportLaserLength(const float Delta) {
 		TeleportLaserMinDistance,
 		TeleportLaserMaxDistance
 	);
-}
-
-void UVRControllerLeft::OnLeftStateChanged(const ControllerState NewState) {
-	LeftControllerInputInterface::OnLeftStateChanged(NewState);
-	SetLaserActive(NewState != ControllerState::TELEPORTATION);
-	NewState == ControllerState::TELEPORTATION ? TeleportLaser->Activate() : TeleportLaser->Deactivate();
-	TeleportLaser->SetVisibility(NewState == ControllerState::TELEPORTATION);
-	TeleportPreviewMesh->SetVisibility(NewState == ControllerState::TELEPORTATION);
-	NewState == ControllerState::TELEPORTATION ? TeleportRing->Activate() : TeleportRing->Deactivate();
-	TeleportRing->SetVisibility(NewState == ControllerState::TELEPORTATION);
-	VrPawn->OnLeftStateChanged(NewState);
 }
 
 bool UVRControllerLeft::OnLeftMenuPressed() {

@@ -21,8 +21,6 @@ public:
 	UFUNCTION()
 	void QuitGame();
 
-	virtual void OnLeftStateChanged(ControllerState NewState) override;
-
 	virtual bool OnLeftMenuPressed() override;
 
 	virtual bool OnLeftTriggerAction(bool IsPressed) override;
@@ -33,8 +31,6 @@ public:
 
 	virtual bool OnLeftThumbstickYAxis(float Value) override;
 	virtual bool OnLeftThumbstickXAxis(float Value) override;
-
-	virtual void OnRightStateChanged(ControllerState NewState) override;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 

@@ -6,26 +6,27 @@
 
 UVRControllerBase::UVRControllerBase(
 	const FObjectInitializer &ObjectInitializer,
-	USceneComponent *aController,
 	EControllerHand aControllerType
 ) : Type(aControllerType) {
+	PrimaryComponentTick.bCanEverTick = true;
+
 	const auto UndType = static_cast<__underlying_type(EControllerHand)>(aControllerType);
 	FString ControllerName = StaticEnum<EControllerHand>()->GetNameStringByValue(UndType);
 
 	MotionController = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
-		aController,
+		this,
 		"MotionController"
 	);
 	MotionController->SetShowDeviceModel(true);
 	MotionController->SetTrackingMotionSource(FName(GetData(ControllerName)));
-	MotionController->SetupAttachment(aController);
+	MotionController->SetupAttachment(this);
 
 	MotionControllerAim = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
-		aController,
+		this,
 		"MotionControllerAim"
 	);
 	MotionControllerAim->SetTrackingMotionSource(FName(GetData(ControllerName + "Aim")));
-	MotionControllerAim->SetupAttachment(aController);
+	MotionControllerAim->SetupAttachment(this);
 
 	const ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> HapticEffectAsset(TEXT(
 		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
@@ -33,11 +34,22 @@ UVRControllerBase::UVRControllerBase(
 	HapticEffectController = HapticEffectAsset.Object;
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
-	Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(aController, "Laser");
+	Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "Laser");
 	Laser->SetComponentTickEnabled(false);
 	Laser->SetAsset(LaserAsset.Object);
 	Laser->SetColorParameter("User.CustomColor", MeshInteractionLaserColor);
-	Laser->SetupAttachment(MotionControllerAim.Get());
+	Laser->SetupAttachment(MotionControllerAim);
+}
+
+void UVRControllerBase::TickComponent(
+	const float DeltaTime,
+	const ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction
+) {
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	UpdateLaser();
+	if (GetState() == ControllerState::NONE)
+		TraceGraphComponents();
 }
 
 void UVRControllerBase::SetupPawn(AVRPawn *Pawn) {
@@ -61,8 +73,15 @@ const FVector& UVRControllerBase::GetLaserDirection() const {
 }
 
 void UVRControllerBase::SetLaserActive(const bool IsActive) const {
-	IsActive ? Laser->Activate() : Laser->Deactivate();
-	Laser->SetVisibility(IsActive);
+	if (IsActive) {
+		SetLaserStartEnd(Laser, LaserPosition, LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance);
+		Laser->Activate();
+		Laser->SetVisibility(true);
+	}
+	else {
+		Laser->Deactivate();
+		Laser->SetVisibility(false);
+	}
 }
 
 void UVRControllerBase::UpdateLaser(const bool Lerp) {
@@ -75,17 +94,20 @@ void UVRControllerBase::UpdateLaser(const bool Lerp) {
 		LaserDirection = MotionControllerAim->GetForwardVector();
 	}
 
-	if (Laser->IsVisible()) {
-		SetLaserStartEnd(
-			Laser.Get(),
-			LaserPosition,
-			LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance
-		);
-	}
+	if (Laser->IsVisible())
+		SetLaserStartEnd(Laser, LaserPosition, LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance);
+}
+
+const FHitResult& UVRControllerBase::GetHitResult() const {
+	return HitResult;
+}
+
+void UVRControllerBase::ResetHitResult() {
+	HitResult.Reset();
 }
 
 void UVRControllerBase::PlayActionHapticEffect() const {
-	VrPawn->GetPlayerController()->PlayHapticEffect(HapticEffectController.Get(), Type, ActionHapticScale);
+	VrPawn->GetPlayerController()->PlayHapticEffect(HapticEffectController, Type, ActionHapticScale);
 }
 
 void UVRControllerBase::BindAction(
@@ -122,31 +144,11 @@ void UVRControllerBase::SetLaserStartEnd(UNiagaraComponent *aLaser, const FVecto
 	);
 }
 
-// TODO: trace graph actors
-/*void UVRControllerBase::Tick() {
-	// UWorld::LineTraceSingleByChannel()
-	// ECC_GameTraceChannel2;
-	FHitResult res;
-	UKismetSystemLibrary::LineTraceSingle(
-		GetWorld(),
-		m_AimLerpedPosition,
-		m_AimLerpedPosition + m_AimLerpedDirection * m_MeshInteractionLaserMaxDistance,
-		TraceTypeQuery1,
-		false,
-		{},
-		EDrawDebugTrace::ForOneFrame,
-		res,
-		true
+void UVRControllerBase::TraceGraphComponents() {
+	GetWorld()->LineTraceSingleByChannel(
+		HitResult,
+		LaserPosition,
+		LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance,
+		ECC_GameTraceChannel2 // Graph trace channel
 	);
-	UKismetSystemLibrary::LineTraceSingleByProfile(
-		GetWorld(),
-		m_AimLerpedPosition,
-		m_AimLerpedPosition + m_AimLerpedDirection * m_MeshInteractionLaserMaxDistance,
-		"BlockAll",
-		false,
-		{},
-		EDrawDebugTrace::ForOneFrame,
-		res,
-		true
-	);
-}*/
+}

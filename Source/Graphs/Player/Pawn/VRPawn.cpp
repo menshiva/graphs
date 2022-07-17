@@ -26,7 +26,7 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 
 	Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
 	Menu->SetVisibility(false);
-	Menu->SetupAttachment(LeftController->MotionController.Get());
+	Menu->SetupAttachment(LeftController->MotionController);
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
@@ -75,11 +75,6 @@ void AVRPawn::QuitGame() {
 	}), ScreenFadeDuration, false);
 }
 
-void AVRPawn::OnLeftStateChanged(const ControllerState NewState) {
-	LeftControllerInputInterface::OnLeftStateChanged(NewState);
-	// TODO: pass to active tool
-}
-
 bool AVRPawn::OnLeftMenuPressed() {
 	static bool isMenuShown = false;
 	isMenuShown = !isMenuShown;
@@ -89,6 +84,11 @@ bool AVRPawn::OnLeftMenuPressed() {
 }
 
 bool AVRPawn::OnLeftTriggerAction(const bool IsPressed) {
+	if (LeftController->GetHitResult().GetActor() != nullptr) {
+		LeftController->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
+		// TODO: pass to active tool
+		return true;
+	}
 	if (IsPressed && LeftController->GetState() == ControllerState::TELEPORTATION) {
 		CameraTeleportAnimation([&] {
 			auto teleportPoint = LeftController->GetTeleportLocation();
@@ -138,12 +138,12 @@ bool AVRPawn::OnLeftThumbstickXAxis(const float Value) {
 	return LeftControllerInputInterface::OnLeftThumbstickXAxis(Value);
 }
 
-void AVRPawn::OnRightStateChanged(const ControllerState NewState) {
-	RightControllerInputInterface::OnRightStateChanged(NewState);
-	// TODO: pass to active tool
-}
-
 bool AVRPawn::OnRightTriggerAction(const bool IsPressed) {
+	if (RightController->GetHitResult().GetActor() != nullptr) {
+		RightController->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
+		// TODO: pass to active tool
+		return true;
+	}
 	if (RightController->GetState() == ControllerState::UI) {
 		RightController->SetUiInteractorPointerKeyPressed(IsPressed, EKeys::LeftMouseButton);
 		return true;

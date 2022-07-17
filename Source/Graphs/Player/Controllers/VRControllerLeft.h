@@ -8,8 +8,6 @@ public:
 	LeftControllerInputInterface() = default;
 	virtual ~LeftControllerInputInterface() = default;
 
-	virtual void OnLeftStateChanged(ControllerState NewState) {}
-
 	virtual bool OnLeftMenuPressed() { return false; }
 
 	virtual bool OnLeftTriggerAction(bool IsPressed) { return false; }
@@ -23,7 +21,7 @@ public:
 };
 
 UCLASS()
-class GRAPHS_API UVRControllerLeft final : public USceneComponent, public UVRControllerBase, public LeftControllerInputInterface {
+class GRAPHS_API UVRControllerLeft final : public UVRControllerBase, public LeftControllerInputInterface {
 	GENERATED_BODY()
 public:
 	explicit UVRControllerLeft(const FObjectInitializer &ObjectInitializer);
@@ -36,8 +34,6 @@ public:
 
 	const FVector &GetTeleportLocation() const;
 	void AdjustTeleportLaserLength(float Delta);
-
-	virtual void OnLeftStateChanged(ControllerState NewState) override;
 
 	virtual bool OnLeftMenuPressed() override;
 

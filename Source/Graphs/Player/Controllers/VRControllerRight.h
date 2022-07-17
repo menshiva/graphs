@@ -8,8 +8,6 @@ public:
 	RightControllerInputInterface() = default;
 	virtual ~RightControllerInputInterface() = default;
 
-	virtual void OnRightStateChanged(ControllerState NewState) {}
-
 	virtual bool OnRightTriggerAction(bool IsPressed) { return false; }
 
 	virtual bool OnRightThumbstickYAction(float Value) { return false; }
@@ -20,7 +18,7 @@ public:
 };
 
 UCLASS()
-class GRAPHS_API UVRControllerRight final : public USceneComponent, public UVRControllerBase, public RightControllerInputInterface {
+class GRAPHS_API UVRControllerRight final : public UVRControllerBase, public RightControllerInputInterface {
 	GENERATED_BODY()
 public:
 	explicit UVRControllerRight(const FObjectInitializer &ObjectInitializer);
@@ -33,8 +31,6 @@ public:
 
 	void SetUiInteractionEnabled(bool Enabled);
 	void SetUiInteractorPointerKeyPressed(bool IsPressed, const FKey &Key) const;
-
-	virtual void OnRightStateChanged(ControllerState NewState) override;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 
