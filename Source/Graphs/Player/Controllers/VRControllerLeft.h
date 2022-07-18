@@ -3,29 +3,63 @@
 #include "VRControllerBase.h"
 #include "VRControllerLeft.generated.h"
 
-UCLASS(ClassGroup=(Custom))
-class GRAPHS_API UVRControllerLeft final : public USceneComponent, public UVRControllerBase {
+class LeftControllerInputInterface {
+public:
+	LeftControllerInputInterface() = default;
+	virtual ~LeftControllerInputInterface() = default;
+
+	virtual bool OnLeftMenuPressed() { return false; }
+
+	virtual bool OnLeftTriggerAction(bool IsPressed) { return false; }
+	virtual bool OnLeftGripAction(bool IsPressed) { return false; }
+
+	virtual bool OnLeftThumbstickYAction(float Value) { return false; }
+	virtual bool OnLeftThumbstickXAction(float Value) { return false; }
+
+	virtual bool OnLeftThumbstickYAxis(float Value) { return false; }
+	virtual bool OnLeftThumbstickXAxis(float Value) { return false; }
+};
+
+UCLASS()
+class GRAPHS_API UVRControllerLeft final : public UVRControllerBase, public LeftControllerInputInterface {
 	GENERATED_BODY()
 public:
 	explicit UVRControllerLeft(const FObjectInitializer &ObjectInitializer);
 
-	virtual void SetupInputBindings(APawn *Pawn, UInputComponent *Pic) const override;
-
-	virtual void PlayHapticEffect(APlayerController *PlayerController, float Scale) override;
+	virtual void SetupInputBindings(UInputComponent *Pic) override;
 
 	virtual void SetState(ControllerState NewState) override;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
+	const FVector &GetTeleportLocation() const;
 	void AdjustTeleportLaserLength(float Delta);
+
+	virtual bool OnLeftMenuPressed() override;
+
+	virtual bool OnLeftTriggerAction(bool IsPressed) override;
+	virtual bool OnLeftGripAction(bool IsPressed) override;
+
+	virtual bool OnLeftThumbstickYAction(float Value) override;
+	virtual bool OnLeftThumbstickXAction(float Value) override;
+
+	virtual bool OnLeftThumbstickYAxis(float Value) override;
+	virtual bool OnLeftThumbstickXAxis(float Value) override;
 private:
 	UPROPERTY()
-	UStaticMeshComponent *m_TeleportPreviewMesh;
+	UNiagaraComponent *TeleportLaser;
 
-	float m_TeleportLaserCurrentDistance = 150.0f;
+	UPROPERTY()
+	UStaticMeshComponent *TeleportPreviewMesh;
 
-	constexpr static FLinearColor m_TeleportLaserColor = FLinearColor(0.07451f, 0.360784f, 0.286275f);
-	constexpr static float m_TeleportLaserLengthDeltaSpeed = 5.0f;
-	constexpr static float m_TeleportLaserMinDistance = 50.0f;
-	constexpr static float m_TeleportLaserMaxDistance = 1500.0f;
+	UPROPERTY()
+	UNiagaraComponent *TeleportRing;
+
+	FVector TeleportLocation;
+	float TeleportLaserCurrentDistance = 150.0f;
+
+	constexpr static FLinearColor TeleportLaserColor = FLinearColor(0.07451f, 0.360784f, 0.286275f);
+	constexpr static float TeleportLaserLengthDeltaSpeed = 5.0f;
+	constexpr static float TeleportLaserMinDistance = 25.0f;
+	constexpr static float TeleportLaserMaxDistance = 1500.0f;
 };

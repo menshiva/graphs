@@ -1,5 +1,7 @@
 #include "VRPawn.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
+#include "Camera/CameraComponent.h"
+#include "Graphs/UI/MenuWidgetComponent.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInitializer) {
@@ -11,169 +13,163 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 
 	RootComponent = ObjectInitializer.CreateDefaultSubobject<USceneComponent>(this, "VRPlayerRoot");
 
-	m_Camera = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, "VRCamera");
-	m_Camera->SetupAttachment(RootComponent);
+	Camera = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, "VRCamera");
+	Camera->SetupAttachment(RootComponent);
 
-	m_LeftController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
-	m_LeftController->SetupAttachment(RootComponent);
+	LeftController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
+	LeftController->SetupPawn(this);
+	LeftController->SetupAttachment(RootComponent);
 
-	m_RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
-	m_RightController->SetupAttachment(RootComponent);
+	RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
+	RightController->SetupPawn(this);
+	RightController->SetupAttachment(RootComponent);
 
-	m_Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
-	m_Menu->SetVisibility(false);
-	m_Menu->SetupAttachment(m_LeftController->GetMotionController());
+	Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
+	Menu->SetVisibility(false);
+	Menu->SetupAttachment(LeftController->MotionController);
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
-	PlayerInputComponent->BindAction("Menu", IE_Pressed, this, &AVRPawn::ToggleMenu);
 	PlayerInputComponent->BindAction("KeyboardEsc", IE_Pressed, this, &AVRPawn::QuitGame);
-	m_LeftController->SetupInputBindings(this, PlayerInputComponent);
-	m_RightController->SetupInputBindings(this, PlayerInputComponent);
+	LeftController->SetupInputBindings(PlayerInputComponent);
+	RightController->SetupInputBindings(PlayerInputComponent);
 }
 
 APlayerController *AVRPawn::GetPlayerController() const {
 	return Cast<APlayerController>(Controller);
 }
 
-bool AVRPawn::OnRightTriggerPressed() {
-	// TODO: pass event to active tool
-	if (m_RightController->GetState() == ControllerState::UI) {
-		m_RightController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
-		m_RightController->UiLeftMouseButtonPress();
-		return true;
-	}
-	return InputInterface::OnRightTriggerPressed();
-}
-
-bool AVRPawn::OnRightTriggerReleased() {
-	// TODO: pass event to active tool
-	m_RightController->UiLeftMouseButtonRelease();
-	return InputInterface::OnRightTriggerReleased();
-}
-
-bool AVRPawn::OnLeftTriggerPressed() {
-	// TODO: pass event to active tool
-	if (m_LeftController->GetState() == ControllerState::TELEPORTATION) {
-		if (!m_IsCameraFadeAnimationRunning) {
-			m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
-			CameraTeleportAnimation([&] {
-				auto teleportPoint = m_LeftController->GetLaserEndPosition();
-				teleportPoint.Z += 111; // add player's height
-				SetActorLocation(teleportPoint);
-				m_LeftController->UpdateLaser(false);
-				m_RightController->UpdateLaser(false);
-			});
-			return true;
+void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
+	if (CameraFadeAnimationEnabled) {
+		if (!IsCameraFadeAnimationRunning) {
+			FTimerHandle FadeInHandle;
+			IsCameraFadeAnimationRunning = true;
+			FadeCamera(1.0f);
+			GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&, DoAfterFadeIn] {
+				DoAfterFadeIn();
+				FTimerHandle WaitHandle;
+				GetWorldTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&] {
+					FadeCamera(0.0f);
+					FTimerHandle FadeOutHandle;
+					GetWorldTimerManager().SetTimer(FadeOutHandle, FTimerDelegate::CreateLambda([&] {
+						IsCameraFadeAnimationRunning = false;
+					}), ScreenFadeDuration, false);
+				}), ScreenFadeDuration, false);
+			}), ScreenFadeDuration, false);
 		}
 	}
-	return InputInterface::OnLeftTriggerPressed();
+	else DoAfterFadeIn();
 }
 
-bool AVRPawn::OnLeftTriggerReleased() {
-	// TODO: pass event to active tool
-	return InputInterface::OnLeftTriggerReleased();
+void AVRPawn::ToggleCameraFadeAnimation() {
+	CameraFadeAnimationEnabled = !CameraFadeAnimationEnabled;
+	SaveConfig();
 }
 
-bool AVRPawn::OnLeftGripPressed() {
-	// TODO: pass event to active tool
-	if (m_LeftController->GetState() == ControllerState::NONE) {
-		m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
-		m_LeftController->SetState(ControllerState::TELEPORTATION);
-	}
-	return InputInterface::OnLeftGripPressed();
-}
-
-bool AVRPawn::OnLeftGripReleased() {
-	// TODO: pass event to active tool
-	m_LeftController->SetState(ControllerState::NONE);
-	return InputInterface::OnLeftGripReleased();
-}
-
-bool AVRPawn::OnLeftThumbstickY(const float Value) {
-	// TODO: pass OnLeftThumbstickY event to active tool
-	static bool isClicked = false;
-	if (fabsf(Value) >= 0.7f) {
-		if (!isClicked) {
-			isClicked = true;
-			if (Value > 0.0f) {
-				if (OnLeftThumbstickUp())
-					return true;
-			}
-			else {
-				if (OnLeftThumbstickDown())
-					return true;
-			}
-			return true;
-		}
-	}
-	else if (isClicked) {
-		isClicked = false;
-	}
-	if (m_LeftController->GetState() == ControllerState::TELEPORTATION) {
-		m_LeftController->AdjustTeleportLaserLength(Value);
-		return true;
-	}
-	return InputInterface::OnLeftThumbstickY(Value);
-}
-
-bool AVRPawn::OnLeftThumbstickX(const float Value) {
-	// TODO: pass OnLeftThumbstickX event to active tool
-	static bool isClicked = false;
-	if (fabsf(Value) >= 0.7f) {
-		if (!isClicked && !m_IsCameraFadeAnimationRunning) {
-			isClicked = true;
-			if (Value > 0.0f) {
-				if (OnLeftThumbstickRight())
-					return true;
-			}
-			else {
-				if (OnLeftThumbstickLeft())
-					return true;
-			}
-			m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
-			CameraTeleportAnimation([&, Value] {
-				AddActorWorldRotation({0.0f, roundf(Value) * m_RotationAngle, 0.0f});
-				m_LeftController->UpdateLaser(false);
-				m_RightController->UpdateLaser(false);
-			});
-			return true;
-		}
-	}
-	else if (isClicked) {
-		isClicked = false;
-		return true;
-	}
-	return InputInterface::OnLeftThumbstickX(Value);
-}
-
-bool AVRPawn::OnLeftThumbstickLeft() {
-	// TODO: pass event to active tool
-	return InputInterface::OnLeftThumbstickLeft();
-}
-
-bool AVRPawn::OnLeftThumbstickRight() {
-	// TODO: pass event to active tool
-	return InputInterface::OnLeftThumbstickRight();
-}
-
-bool AVRPawn::OnLeftThumbstickUp() {
-	// TODO: pass event to active tool
-	return InputInterface::OnLeftThumbstickUp();
-}
-
-bool AVRPawn::OnLeftThumbstickDown() {
-	// TODO: pass event to active tool
-	return InputInterface::OnLeftThumbstickDown();
-}
-
-// ReSharper disable once CppUE4BlueprintCallableFunctionMayBeConst
+// ReSharper disable once CppMemberFunctionMayBeConst
 void AVRPawn::QuitGame() {
 	FTimerHandle FadeInHandle;
 	FadeCamera(1.0f);
 	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&] {
 		UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
-	}), m_ScreenFadeDuration, false);
+	}), ScreenFadeDuration, false);
+}
+
+bool AVRPawn::OnLeftMenuPressed() {
+	static bool isMenuShown = false;
+	isMenuShown = !isMenuShown;
+	Menu->SetVisble(isMenuShown);
+	RightController->SetUiInteractionEnabled(isMenuShown);
+	return true;
+}
+
+bool AVRPawn::OnLeftTriggerAction(const bool IsPressed) {
+	if (LeftController->GetHitResult().GetActor() != nullptr) {
+		LeftController->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
+		// TODO: pass to active tool
+		return true;
+	}
+	if (IsPressed && LeftController->GetState() == ControllerState::TELEPORTATION) {
+		CameraTeleportAnimation([&] {
+			auto teleportPoint = LeftController->GetTeleportLocation();
+			teleportPoint.Z += Height;
+			SetActorLocation(teleportPoint);
+			LeftController->UpdateLaser(false);
+			RightController->UpdateLaser(false);
+		});
+		return true;
+	}
+	// TODO: pass to active tool
+	return LeftControllerInputInterface::OnLeftTriggerAction(IsPressed);
+}
+
+bool AVRPawn::OnLeftGripAction(const bool IsPressed) {
+	LeftController->SetState(IsPressed ? ControllerState::TELEPORTATION : ControllerState::NONE);
+	// TODO: pass to active tool
+	return true;
+}
+
+bool AVRPawn::OnLeftThumbstickYAction(const float Value) {
+	// TODO: pass to active tool
+	return LeftControllerInputInterface::OnLeftThumbstickYAction(Value);
+}
+
+bool AVRPawn::OnLeftThumbstickXAction(const float Value) {
+	CameraTeleportAnimation([&, Value] {
+		AddActorWorldRotation({0.0f, roundf(Value) * RotationAngle, 0.0f});
+		LeftController->UpdateLaser(false);
+		RightController->UpdateLaser(false);
+	});
+	// TODO: pass to active tool
+	return true;
+}
+
+bool AVRPawn::OnLeftThumbstickYAxis(const float Value) {
+	if (LeftController->GetState() == ControllerState::TELEPORTATION) {
+		LeftController->AdjustTeleportLaserLength(Value);
+		return true;
+	}
+	// TODO: pass to active tool
+	return LeftControllerInputInterface::OnLeftThumbstickYAxis(Value);
+}
+
+bool AVRPawn::OnLeftThumbstickXAxis(const float Value) {
+	// TODO: pass to active tool
+	return LeftControllerInputInterface::OnLeftThumbstickXAxis(Value);
+}
+
+bool AVRPawn::OnRightTriggerAction(const bool IsPressed) {
+	if (RightController->GetHitResult().GetActor() != nullptr) {
+		RightController->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
+		// TODO: pass to active tool
+		return true;
+	}
+	if (RightController->GetState() == ControllerState::UI) {
+		RightController->SetUiInteractorPointerKeyPressed(IsPressed, EKeys::LeftMouseButton);
+		return true;
+	}
+	// TODO: pass to active tool
+	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
+}
+
+bool AVRPawn::OnRightThumbstickYAction(const float Value) {
+	// TODO: pass to active tool
+	return RightControllerInputInterface::OnRightThumbstickYAction(Value);
+}
+
+bool AVRPawn::OnRightThumbstickXAction(const float Value) {
+	// TODO: pass to active tool
+	return RightControllerInputInterface::OnRightThumbstickXAction(Value);
+}
+
+bool AVRPawn::OnRightThumbstickYAxis(const float Value) {
+	// TODO: pass to active tool
+	return RightControllerInputInterface::OnRightThumbstickYAxis(Value);
+}
+
+bool AVRPawn::OnRightThumbstickXAxis(const float Value) {
+	// TODO: pass to active tool
+	return RightControllerInputInterface::OnRightThumbstickXAxis(Value);
 }
 
 void AVRPawn::BeginPlay() {
@@ -183,36 +179,10 @@ void AVRPawn::BeginPlay() {
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
 }
 
-void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
-	FTimerHandle FadeInHandle;
-	m_IsCameraFadeAnimationRunning = true;
-	FadeCamera(1.0f);
-	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&, DoAfterFadeIn] {
-		DoAfterFadeIn();
-		FTimerHandle WaitHandle;
-		GetWorldTimerManager().SetTimer(WaitHandle, FTimerDelegate::CreateLambda([&] {
-			FadeCamera(0.0f);
-			FTimerHandle FadeOutHandle;
-			GetWorldTimerManager().SetTimer(FadeOutHandle, FTimerDelegate::CreateLambda([&] {
-				m_IsCameraFadeAnimationRunning = false;
-			}), m_ScreenFadeDuration, false);
-		}), m_ScreenFadeDuration, false);
-	}), m_ScreenFadeDuration, false);
-}
-
 void AVRPawn::FadeCamera(const float ToValue) const {
 	GetPlayerController()->PlayerCameraManager->StartCameraFade(
 		1.0 - ToValue, ToValue,
-		m_ScreenFadeDuration, FColor::Black,
+		ScreenFadeDuration, FColor::Black,
 		false, static_cast<bool>(ToValue)
 	);
-}
-
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::ToggleMenu() {
-	static bool isMenuShown = false;
-	isMenuShown = !isMenuShown;
-	m_Menu->SetVisble(isMenuShown);
-	m_LeftController->PlayHapticEffect(GetPlayerController(), m_ActionHapticScale);
-	m_RightController->SetUiInteractionEnabled(isMenuShown);
 }

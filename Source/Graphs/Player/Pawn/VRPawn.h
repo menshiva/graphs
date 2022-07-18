@@ -1,14 +1,11 @@
 #pragma once
 
-#include "Camera/CameraComponent.h"
-#include "../../InputInterface.h"
 #include "../Controllers/VRControllerLeft.h"
 #include "../Controllers/VRControllerRight.h"
-#include "../../UI/MenuWidgetComponent.h"
 #include "VRPawn.generated.h"
 
-UCLASS()
-class GRAPHS_API AVRPawn final : public APawn, public InputInterface {
+UCLASS(Config = UserPreferences)
+class GRAPHS_API AVRPawn final : public APawn, public LeftControllerInputInterface, public RightControllerInputInterface {
 	GENERATED_BODY()
 public:
 	explicit AVRPawn(const FObjectInitializer &ObjectInitializer);
@@ -16,49 +13,57 @@ public:
 
 	FORCEINLINE APlayerController *GetPlayerController() const;
 
-	virtual bool OnRightTriggerPressed() override;
-	virtual bool OnRightTriggerReleased() override;
+	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
 
-	virtual bool OnLeftTriggerPressed() override;
-	virtual bool OnLeftTriggerReleased() override;
+	UFUNCTION()
+	void ToggleCameraFadeAnimation();
 
-	virtual bool OnLeftGripPressed() override;
-	virtual bool OnLeftGripReleased() override;
-
-	virtual bool OnLeftThumbstickY(const float Value) override;
-	virtual bool OnLeftThumbstickX(const float Value) override;
-	virtual bool OnLeftThumbstickLeft() override;
-	virtual bool OnLeftThumbstickRight() override;
-	virtual bool OnLeftThumbstickUp() override;
-	virtual bool OnLeftThumbstickDown() override;
-
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION()
 	void QuitGame();
+
+	virtual bool OnLeftMenuPressed() override;
+
+	virtual bool OnLeftTriggerAction(bool IsPressed) override;
+	virtual bool OnLeftGripAction(bool IsPressed) override;
+
+	virtual bool OnLeftThumbstickYAction(float Value) override;
+	virtual bool OnLeftThumbstickXAction(float Value) override;
+
+	virtual bool OnLeftThumbstickYAxis(float Value) override;
+	virtual bool OnLeftThumbstickXAxis(float Value) override;
+
+	virtual bool OnRightTriggerAction(bool IsPressed) override;
+
+	virtual bool OnRightThumbstickYAction(float Value) override;
+	virtual bool OnRightThumbstickXAction(float Value) override;
+
+	virtual bool OnRightThumbstickYAxis(float Value) override;
+	virtual bool OnRightThumbstickXAxis(float Value) override;
+
+	UPROPERTY()
+	UVRControllerLeft *LeftController;
+
+	UPROPERTY()
+	UVRControllerRight *RightController;
+
+	UPROPERTY(Config)
+	bool CameraFadeAnimationEnabled = true;
+
+	constexpr static float Height = 111.0f;
 protected:
 	virtual void BeginPlay() override;
 private:
-	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
-
 	// 1.0f for FadeIn, 0.0f for FadeOut
 	FORCEINLINE void FadeCamera(float ToValue) const;
 
-	void ToggleMenu();
+	UPROPERTY()
+	class UCameraComponent *Camera;
 
 	UPROPERTY()
-	UCameraComponent *m_Camera;
+	class UMenuWidgetComponent *Menu;
 
-	UPROPERTY()
-	UVRControllerLeft *m_LeftController;
+	bool IsCameraFadeAnimationRunning = false;
 
-	UPROPERTY()
-	UVRControllerRight *m_RightController;
-
-	UPROPERTY()
-	UMenuWidgetComponent *m_Menu;
-
-	bool m_IsCameraFadeAnimationRunning = false;
-
-	constexpr static float m_ActionHapticScale = 0.15f;
-	constexpr static float m_RotationAngle = 45.0f;
-	constexpr static float m_ScreenFadeDuration = 0.1f;
+	constexpr static float RotationAngle = 45.0f;
+	constexpr static float ScreenFadeDuration = 0.1f;
 };

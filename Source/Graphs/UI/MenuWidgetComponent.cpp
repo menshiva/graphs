@@ -17,16 +17,16 @@ UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectIniti
 
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> CursorShape(TEXT("/Engine/BasicShapes/Plane"));
 	const ConstructorHelpers::FObjectFinder<UMaterial> CursorMaterial(TEXT("/Game/Graphs/Materials/Pawn/CursorMaterial"));
-	m_Cursor = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, "Cursor");
-	m_Cursor->SetStaticMesh(CursorShape.Object);
-	m_Cursor->SetMaterial(0, CursorMaterial.Object);
-	m_Cursor->SetGenerateOverlapEvents(false);
-	m_Cursor->SetCollisionProfileName("NoCollision");
-	m_Cursor->SetCastShadow(false);
-	m_Cursor->SetRelativeScale3D(FVector(0.3f));
-	m_Cursor->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
-	m_Cursor->SetVisibility(false);
-	m_Cursor->SetupAttachment(this);
+	Cursor = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, "Cursor");
+	Cursor->SetStaticMesh(CursorShape.Object);
+	Cursor->SetMaterial(0, CursorMaterial.Object);
+	Cursor->SetGenerateOverlapEvents(false);
+	Cursor->SetCollisionProfileName("NoCollision");
+	Cursor->SetCastShadow(false);
+	Cursor->SetRelativeScale3D(FVector(0.3f));
+	Cursor->SetRelativeRotation(FRotator(-90.0f, 0.0f, 0.0f));
+	Cursor->SetVisibility(false);
+	Cursor->SetupAttachment(this);
 }
 
 void UMenuWidgetComponent::SetVisble(const bool Visible) {
@@ -40,7 +40,7 @@ void UMenuWidgetComponent::SetVisble(const bool Visible) {
 		menuWidget->PlayShowHideAnimation(
 			EUMGSequencePlayMode::Reverse,
 			[&] {
-				m_Cursor->SetVisibility(false);
+				Cursor->SetVisibility(false);
 				SetVisibility(false);
 			}
 		);
@@ -48,9 +48,9 @@ void UMenuWidgetComponent::SetVisble(const bool Visible) {
 }
 
 void UMenuWidgetComponent::SetCursorVisibility(const bool Visible) const {
-	m_Cursor->SetVisibility(Visible);
+	Cursor->SetVisibility(Visible);
 }
 
 void UMenuWidgetComponent::SetCursorLocation(const FVector &Location) const {
-	m_Cursor->SetWorldLocation(Location);
+	Cursor->SetWorldLocation(Location);
 }
