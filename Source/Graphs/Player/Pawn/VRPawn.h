@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Controllers/VRControllerLeft.h"
-#include "../Controllers/VRControllerRight.h"
+#include "Graphs/Player/Controllers/VRControllerLeft.h"
+#include "Graphs/Player/Controllers/VRControllerRight.h"
 #include "VRPawn.generated.h"
 
 UCLASS(Config = UserPreferences)
@@ -55,6 +55,8 @@ protected:
 private:
 	// 1.0f for FadeIn, 0.0f for FadeOut
 	FORCEINLINE void FadeCamera(float ToValue) const;
+
+	TWeakObjectPtr<class AGraphProvider> CachedProvider;
 
 	UPROPERTY()
 	class UCameraComponent *Camera;

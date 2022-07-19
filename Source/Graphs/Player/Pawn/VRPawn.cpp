@@ -1,7 +1,9 @@
 #include "VRPawn.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
+#include "Graphs/Provider/GraphProvider.h"
 #include "Graphs/UI/MenuWidgetComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInitializer) {
@@ -176,6 +178,25 @@ void AVRPawn::BeginPlay() {
 	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
+	CachedProvider = Cast<AGraphProvider>(UGameplayStatics::GetActorOfClass(GetWorld(), AGraphProvider::StaticClass()));
+
+	// TODO: only for test
+	{
+		const FVector positions[] = {
+			{437.109619f, 225.096985f, 50.0f},
+			{748.974915f, 345.263428f, 260.0f},
+			{504.859009f, -437.556763f, 460.0f},
+			{969.929321f, -452.031494f, 260.0f},
+			{1587.086426f, 611.200684f, 440.0f},
+			{1903.230957f, 502.790161f, 650.0f},
+			{1213.039551f, 60.030151f, 850.0f},
+			{1560.0f, -250.0f, 650.0f},
+		};
+		for (const auto &pos : positions) {
+			auto &newC = CachedProvider->CreateComponent<ANodeEntity>();
+			newC.SetActorLocation(pos);
+		}
+	}
 }
 
 void AVRPawn::FadeCamera(const float ToValue) const {
