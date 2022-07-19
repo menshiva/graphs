@@ -5,7 +5,6 @@
 #include "Kismet/KismetSystemLibrary.h"
 
 AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInitializer) {
-	SetActorTickEnabled(false);
 	PrimaryActorTick.bCanEverTick = false;
 	AutoPossessAI = EAutoPossessAI::Disabled;
 	AIControllerClass = nullptr;

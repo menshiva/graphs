@@ -2,6 +2,8 @@
 #include "MenuWidget.h"
 
 UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectInitializer) : UWidgetComponent(ObjectInitializer) {
+	PrimaryComponentTick.bCanEverTick = true;
+
 	const ConstructorHelpers::FClassFinder<UUserWidget> MenuAsset(TEXT("/Game/Graphs/UI/Blueprints/Menu"));
 	SetWidgetClass(MenuAsset.Class);
 	SetDrawAtDesiredSize(true);

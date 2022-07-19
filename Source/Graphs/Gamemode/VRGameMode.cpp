@@ -2,7 +2,7 @@
 #include "Graphs/Player/Pawn/VRPawn.h"
 #include "Kismet/KismetSystemLibrary.h"
 
-AVRGameMode::AVRGameMode(const FObjectInitializer &ObjectInitializer) : AGameModeBase(ObjectInitializer) {
+AVRGameMode::AVRGameMode() {
 	bPauseable = false;
 	DefaultPawnClass = AVRPawn::StaticClass();
 }

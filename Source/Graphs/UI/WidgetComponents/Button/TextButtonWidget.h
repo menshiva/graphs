@@ -8,7 +8,6 @@ UCLASS(Abstract)
 class GRAPHS_API UTextButtonWidget : public UButtonWidget {
 	GENERATED_BODY()
 public:
-	explicit UTextButtonWidget(const FObjectInitializer &ObjectInitializer);
 	virtual void NativePreConstruct() override;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild, sRGB="true"))

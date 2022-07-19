@@ -7,7 +7,7 @@ UCLASS(Config = UserPreferences)
 class GRAPHS_API AVRGameMode final : public AGameModeBase {
 	GENERATED_BODY()
 public:
-	explicit AVRGameMode(const FObjectInitializer &ObjectInitializer);
+	AVRGameMode();
 
 	virtual void InitGame(const FString &MapName, const FString &Options, FString &ErrorMessage) override;
 	virtual void Logout(AController *Exiting) override;
