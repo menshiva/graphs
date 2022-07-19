@@ -82,6 +82,6 @@ private:
 	FHitResult HitResult;
 
 	constexpr static float ActionHapticScale = 0.15f;
-	constexpr static FLinearColor MeshInteractionLaserColor = FLinearColor(0.07451f, 0.14902f, 0.360784f);
+	constexpr static FLinearColor MeshInteractionLaserColor = FLinearColor(0.033345f, 0.066689f, 0.161458f);
 	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
 };
