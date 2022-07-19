@@ -6,9 +6,10 @@
 enum class EntityType : uint8_t {
 	GRAPH = 0,
 	NODE,
-	CONNECTION,
-	UNDENTIFIED
+	CONNECTION
 };
+
+constexpr static uint32 ENTITY_NONE = static_cast<uint32>(-1);
 
 UCLASS(Abstract)
 class GRAPHS_API AEntity : public AStaticMeshActor {
@@ -19,9 +20,8 @@ public:
 
 	FORCEINLINE uint32 GetId() const;
 	FORCEINLINE EntityType GetType() const;
-	FORCEINLINE bool IsValid() const;
 private:
-	EntityType Type = EntityType::UNDENTIFIED;
+	EntityType Type;
 };
 
 UCLASS()

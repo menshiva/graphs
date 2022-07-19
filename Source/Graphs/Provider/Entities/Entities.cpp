@@ -23,7 +23,3 @@ uint32 AEntity::GetId() const {
 EntityType AEntity::GetType() const {
 	return Type;
 }
-
-bool AEntity::IsValid() const {
-	return Type != EntityType::UNDENTIFIED;
-}
