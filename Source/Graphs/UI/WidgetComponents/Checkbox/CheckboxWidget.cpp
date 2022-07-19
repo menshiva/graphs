@@ -2,10 +2,6 @@
 #include "Components/TextBlock.h"
 #include "Graphs/UI/WidgetComponents/Button/ImageButtonWidget.h"
 
-UCheckboxWidget::UCheckboxWidget(const FObjectInitializer &ObjectInitializer) : UUserWidget(ObjectInitializer) {
-	bHasScriptImplementedTick = false;
-}
-
 void UCheckboxWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	SetTicked(Ticked);

@@ -9,8 +9,6 @@ UCLASS(Abstract)
 class GRAPHS_API UCheckboxWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
-	explicit UCheckboxWidget(const FObjectInitializer &ObjectInitializer);
-
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 

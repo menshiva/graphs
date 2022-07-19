@@ -18,7 +18,7 @@ UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectIniti
 	UPrimitiveComponent::SetCollisionProfileName("VRUI");
 
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> CursorShape(TEXT("/Engine/BasicShapes/Plane"));
-	const ConstructorHelpers::FObjectFinder<UMaterial> CursorMaterial(TEXT("/Game/Graphs/Materials/Pawn/CursorMaterial"));
+	const ConstructorHelpers::FObjectFinder<UMaterial> CursorMaterial(TEXT("/Game/Graphs/Materials/CursorMaterial"));
 	Cursor = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(this, "Cursor");
 	Cursor->SetStaticMesh(CursorShape.Object);
 	Cursor->SetMaterial(0, CursorMaterial.Object);

@@ -4,17 +4,15 @@
 #include "Components/WidgetSwitcher.h"
 #include "WidgetComponents/Button/ImageButtonWidget.h"
 
-UMenuWidget::UMenuWidget(const FObjectInitializer &ObjectInitializer) : UUserWidget(ObjectInitializer) {
-	bHasScriptImplementedTick = false;
+void UMenuWidget::NativePreConstruct() {
+	Super::NativePreConstruct();
+	MenuButtons[0] = MenuHomeButton;
+	MenuButtons[1] = MenuSettingsButton;
+	MenuButtons[2] = MenuExitButton;
 }
 
 void UMenuWidget::NativeConstruct() {
 	Super::NativeConstruct();
-
-	MenuButtons[0] = MenuHomeButton;
-	MenuButtons[1] = MenuSettingsButton;
-	MenuButtons[2] = MenuExitButton;
-
 	if (MenuHomeButton)
 		MenuHomeButton->OnClicked.AddDynamic(this, &UMenuWidget::OnMenuHomeClick);
 	if (MenuSettingsButton)
