@@ -58,7 +58,7 @@ private:
 	FVector TeleportLocation;
 	float TeleportLaserCurrentDistance = 150.0f;
 
-	constexpr static FLinearColor TeleportLaserColor = FLinearColor(0.07451f, 0.360784f, 0.286275f);
+	constexpr static FLinearColor TeleportLaserColor = FLinearColor(0.033345f, 0.161458f, 0.128114f);
 	constexpr static float TeleportLaserLengthDeltaSpeed = 5.0f;
 	constexpr static float TeleportLaserMinDistance = 25.0f;
 	constexpr static float TeleportLaserMaxDistance = 1500.0f;

@@ -1,7 +1,8 @@
 #pragma once
 
-#include "../Controllers/VRControllerLeft.h"
-#include "../Controllers/VRControllerRight.h"
+#include "Graphs/Player/Controllers/VRControllerLeft.h"
+#include "Graphs/Player/Controllers/VRControllerRight.h"
+#include "Graphs/Provider/Entities/Entities.h"
 #include "VRPawn.generated.h"
 
 UCLASS(Config = UserPreferences)
@@ -11,7 +12,7 @@ public:
 	explicit AVRPawn(const FObjectInitializer &ObjectInitializer);
 	virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 
-	FORCEINLINE APlayerController *GetPlayerController() const;
+	APlayerController *GetPlayerController() const;
 
 	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
 
@@ -40,6 +41,8 @@ public:
 	virtual bool OnRightThumbstickYAxis(float Value) override;
 	virtual bool OnRightThumbstickXAxis(float Value) override;
 
+	void OnEntityHitChanged(const UVRControllerBase *ControllerHit, const AEntity *Entity, bool IsHit) const;
+
 	UPROPERTY()
 	UVRControllerLeft *LeftController;
 
@@ -55,6 +58,8 @@ protected:
 private:
 	// 1.0f for FadeIn, 0.0f for FadeOut
 	FORCEINLINE void FadeCamera(float ToValue) const;
+
+	TWeakObjectPtr<class AGraphProvider> CachedProvider;
 
 	UPROPERTY()
 	class UCameraComponent *Camera;

@@ -8,8 +8,7 @@ UCLASS(Abstract)
 class GRAPHS_API UMenuWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
-	explicit UMenuWidget(const FObjectInitializer &ObjectInitializer);
-
+	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
 	void PlayShowHideAnimation(EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd);

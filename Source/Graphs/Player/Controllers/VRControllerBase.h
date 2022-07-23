@@ -26,16 +26,18 @@ public:
 
 	virtual void SetupInputBindings(UInputComponent *Pic) PURE_VIRTUAL(UVRControllerBase::SetupInputBindings);
 
-	FORCEINLINE ControllerState GetState() const;
+	ControllerState GetState() const;
 	virtual void SetState(ControllerState NewState);
 
-	FORCEINLINE const FVector &GetLaserPosition() const;
-	FORCEINLINE const FVector &GetLaserDirection() const;
+	const FVector &GetLaserPosition() const;
+	const FVector &GetLaserDirection() const;
 	void SetLaserActive(bool IsActive) const;
 	void UpdateLaser(bool Lerp = true);
 
-	FORCEINLINE const FHitResult &GetHitResult() const;
-	FORCEINLINE void ResetHitResult();
+	const FHitResult &GetHitResult() const;
+	void ResetHitResult();
+
+	void PlayActionHapticEffect() const;
 
 	UPROPERTY()
 	UMotionControllerComponent *MotionController;
@@ -51,7 +53,6 @@ public:
 	float ThumbstickY = 0.0f;
 	float ThumbstickX = 0.0f;
 protected:
-	FORCEINLINE void PlayActionHapticEffect() const;
 	static void BindAction(
 		UInputComponent *PlayerInputComponent,
 		const FName &ActionName,
@@ -65,8 +66,6 @@ protected:
 	);
 	static void SetLaserStartEnd(class UNiagaraComponent *aLaser, const FVector &Start, const FVector &End);
 private:
-	FORCEINLINE void TraceGraphComponents();
-
 	UPROPERTY()
 	UHapticFeedbackEffect_Base *HapticEffectController;
 
@@ -78,10 +77,11 @@ private:
 
 	FVector LaserPosition;
 	FVector LaserDirection;
+	float LaserLength = MeshInteractionLaserMaxDistance;
 
 	FHitResult HitResult;
 
 	constexpr static float ActionHapticScale = 0.15f;
-	constexpr static FLinearColor MeshInteractionLaserColor = FLinearColor(0.07451f, 0.14902f, 0.360784f);
+	constexpr static FLinearColor MeshInteractionLaserColor = FLinearColor(0.033345f, 0.066689f, 0.161458f);
 	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
 };

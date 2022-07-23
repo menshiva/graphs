@@ -17,7 +17,7 @@ UVRControllerLeft::UVRControllerLeft(
 
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Engine/BasicShapes/Sphere"));
 	const ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
-		TEXT("/Game/Graphs/Materials/Pawn/TeleportPreviewMaterial")
+		TEXT("/Game/Graphs/Materials/TeleportPreviewMaterial")
 	);
 	TeleportPreviewMesh = ObjectInitializer.CreateDefaultSubobject<UStaticMeshComponent>(
 		this, "TeleportPreviewMesh"

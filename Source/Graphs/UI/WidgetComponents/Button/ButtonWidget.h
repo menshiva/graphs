@@ -8,8 +8,6 @@ UCLASS(Abstract)
 class GRAPHS_API UButtonWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
-	explicit UButtonWidget(const FObjectInitializer &ObjectInitializer);
-
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 

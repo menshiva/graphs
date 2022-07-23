@@ -8,7 +8,6 @@ UCLASS(Abstract)
 class GRAPHS_API UImageButtonWidget : public UButtonWidget {
 	GENERATED_BODY()
 public:
-	explicit UImageButtonWidget(const FObjectInitializer &ObjectInitializer);
 	virtual void NativePreConstruct() override;
 
 	void SetImageVisibility(bool Visible) const;
