@@ -26,18 +26,18 @@ public:
 
 	virtual void SetupInputBindings(UInputComponent *Pic) PURE_VIRTUAL(UVRControllerBase::SetupInputBindings);
 
-	FORCEINLINE ControllerState GetState() const;
+	ControllerState GetState() const;
 	virtual void SetState(ControllerState NewState);
 
-	FORCEINLINE const FVector &GetLaserPosition() const;
-	FORCEINLINE const FVector &GetLaserDirection() const;
+	const FVector &GetLaserPosition() const;
+	const FVector &GetLaserDirection() const;
 	void SetLaserActive(bool IsActive) const;
 	void UpdateLaser(bool Lerp = true);
 
-	FORCEINLINE const FHitResult &GetHitResult() const;
-	FORCEINLINE void ResetHitResult();
+	const FHitResult &GetHitResult() const;
+	void ResetHitResult();
 
-	FORCEINLINE void PlayActionHapticEffect() const;
+	void PlayActionHapticEffect() const;
 
 	UPROPERTY()
 	UMotionControllerComponent *MotionController;

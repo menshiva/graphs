@@ -12,7 +12,7 @@ public:
 	explicit AVRPawn(const FObjectInitializer &ObjectInitializer);
 	virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 
-	FORCEINLINE APlayerController *GetPlayerController() const;
+	APlayerController *GetPlayerController() const;
 
 	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
 
