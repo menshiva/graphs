@@ -47,9 +47,39 @@ void UVRControllerBase::TickComponent(
 	FActorComponentTickFunction* ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
+	if (GetState() == ControllerState::NONE) {
+		FHitResult NewHitResult;
+		GetWorld()->LineTraceSingleByChannel(
+			NewHitResult,
+			LaserPosition,
+			LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance,
+			ECC_GameTraceChannel2 // Graph trace channel
+		);
+
+		if (NewHitResult.GetActor() != HitResult.GetActor()) {
+			if (HitResult.bBlockingHit && HitResult.GetActor() != nullptr) {
+				// unhit previously hitted entity
+				VrPawn->OnEntityHitChanged(this, Cast<AEntity>(HitResult.GetActor()), false);
+			}
+			const auto NewHitEntity = Cast<AEntity>(NewHitResult.GetActor());
+			if (NewHitResult.bBlockingHit && NewHitEntity != nullptr) {
+				// hit newely hit entity
+				VrPawn->OnEntityHitChanged(this, NewHitEntity, true);
+			}
+		}
+
+		HitResult = NewHitResult;
+		if (HitResult.GetActor() != nullptr && Cast<AEntity>(HitResult.GetActor()) == nullptr)
+			HitResult.Reset();
+
+		if (HitResult.bBlockingHit && HitResult.GetActor() != nullptr)
+			LaserLength = FVector::Dist(LaserPosition, HitResult.ImpactPoint);
+		else
+			LaserLength = MeshInteractionLaserMaxDistance;
+	}
+
 	UpdateLaser();
-	if (GetState() == ControllerState::NONE)
-		TraceGraphComponents();
 }
 
 void UVRControllerBase::SetupPawn(AVRPawn *Pawn) {
@@ -74,7 +104,7 @@ const FVector& UVRControllerBase::GetLaserDirection() const {
 
 void UVRControllerBase::SetLaserActive(const bool IsActive) const {
 	if (IsActive) {
-		SetLaserStartEnd(Laser, LaserPosition, LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance);
+		SetLaserStartEnd(Laser, LaserPosition, LaserPosition + LaserDirection * LaserLength);
 		Laser->Activate();
 		Laser->SetVisibility(true);
 	}
@@ -95,7 +125,7 @@ void UVRControllerBase::UpdateLaser(const bool Lerp) {
 	}
 
 	if (Laser->IsVisible())
-		SetLaserStartEnd(Laser, LaserPosition, LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance);
+		SetLaserStartEnd(Laser, LaserPosition, LaserPosition + LaserDirection * LaserLength);
 }
 
 const FHitResult& UVRControllerBase::GetHitResult() const {
@@ -103,6 +133,8 @@ const FHitResult& UVRControllerBase::GetHitResult() const {
 }
 
 void UVRControllerBase::ResetHitResult() {
+	if (HitResult.bBlockingHit && HitResult.GetActor() != nullptr)
+		VrPawn->OnEntityHitChanged(this, Cast<AEntity>(HitResult.GetActor()), false);
 	HitResult.Reset();
 }
 
@@ -141,14 +173,5 @@ void UVRControllerBase::SetLaserStartEnd(UNiagaraComponent *aLaser, const FVecto
 		aLaser,
 		"User.PointArray", 1,
 		End, false
-	);
-}
-
-void UVRControllerBase::TraceGraphComponents() {
-	GetWorld()->LineTraceSingleByChannel(
-		HitResult,
-		LaserPosition,
-		LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance,
-		ECC_GameTraceChannel2 // Graph trace channel
 	);
 }

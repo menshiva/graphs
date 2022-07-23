@@ -16,7 +16,7 @@ class GRAPHS_API AEntity : public AStaticMeshActor {
 	GENERATED_BODY()
 public:
 	AEntity() = default;
-	explicit AEntity(const TCHAR *MeshAssetName, const TCHAR *MeshMaterialAssetName, EntityType EntType);
+	AEntity(const TCHAR *MeshAssetName, const TCHAR *MeshMaterialAssetName, EntityType EntType);
 
 	FORCEINLINE uint32 GetId() const;
 	FORCEINLINE EntityType GetType() const;

@@ -37,6 +37,8 @@ public:
 	FORCEINLINE const FHitResult &GetHitResult() const;
 	FORCEINLINE void ResetHitResult();
 
+	FORCEINLINE void PlayActionHapticEffect() const;
+
 	UPROPERTY()
 	UMotionControllerComponent *MotionController;
 
@@ -51,7 +53,6 @@ public:
 	float ThumbstickY = 0.0f;
 	float ThumbstickX = 0.0f;
 protected:
-	FORCEINLINE void PlayActionHapticEffect() const;
 	static void BindAction(
 		UInputComponent *PlayerInputComponent,
 		const FName &ActionName,
@@ -65,8 +66,6 @@ protected:
 	);
 	static void SetLaserStartEnd(class UNiagaraComponent *aLaser, const FVector &Start, const FVector &End);
 private:
-	FORCEINLINE void TraceGraphComponents();
-
 	UPROPERTY()
 	UHapticFeedbackEffect_Base *HapticEffectController;
 
@@ -78,6 +77,7 @@ private:
 
 	FVector LaserPosition;
 	FVector LaserDirection;
+	float LaserLength = MeshInteractionLaserMaxDistance;
 
 	FHitResult HitResult;
 

@@ -173,6 +173,21 @@ bool AVRPawn::OnRightThumbstickXAxis(const float Value) {
 	return RightControllerInputInterface::OnRightThumbstickXAxis(Value);
 }
 
+void AVRPawn::OnEntityHitChanged(const UVRControllerBase *ControllerHit, const AEntity *Entity, const bool IsHit) const {
+	// TODO: pass to tool controller and decide if we should hit based on active tool
+	if (const auto PrimitiveComponent = Cast<UPrimitiveComponent>(Entity->GetStaticMeshComponent())) {
+		if (IsHit)
+			ControllerHit->PlayActionHapticEffect();
+		UVRControllerBase *OtherController;
+		if (ControllerHit == RightController)
+			OtherController = LeftController;
+		else
+			OtherController = RightController;
+		if (OtherController->GetHitResult().GetActor() != Entity)
+			PrimitiveComponent->SetRenderCustomDepth(IsHit);
+	}
+}
+
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
 	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);

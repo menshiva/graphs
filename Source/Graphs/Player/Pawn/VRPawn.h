@@ -2,6 +2,7 @@
 
 #include "Graphs/Player/Controllers/VRControllerLeft.h"
 #include "Graphs/Player/Controllers/VRControllerRight.h"
+#include "Graphs/Provider/Entities/Entities.h"
 #include "VRPawn.generated.h"
 
 UCLASS(Config = UserPreferences)
@@ -39,6 +40,8 @@ public:
 
 	virtual bool OnRightThumbstickYAxis(float Value) override;
 	virtual bool OnRightThumbstickXAxis(float Value) override;
+
+	void OnEntityHitChanged(const UVRControllerBase *ControllerHit, const AEntity *Entity, bool IsHit) const;
 
 	UPROPERTY()
 	UVRControllerLeft *LeftController;
