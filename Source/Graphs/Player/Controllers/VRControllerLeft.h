@@ -8,16 +8,7 @@ public:
 	LeftControllerInputInterface() = default;
 	virtual ~LeftControllerInputInterface() = default;
 
-	virtual bool OnLeftMenuPressed() { return false; }
-
 	virtual bool OnLeftTriggerAction(bool IsPressed) { return false; }
-	virtual bool OnLeftGripAction(bool IsPressed) { return false; }
-
-	virtual bool OnLeftThumbstickYAction(float Value) { return false; }
-	virtual bool OnLeftThumbstickXAction(float Value) { return false; }
-
-	virtual bool OnLeftThumbstickYAxis(float Value) { return false; }
-	virtual bool OnLeftThumbstickXAxis(float Value) { return false; }
 };
 
 UCLASS()
@@ -28,23 +19,9 @@ public:
 
 	virtual void SetupInputBindings(UInputComponent *Pic) override;
 
-	virtual void SetState(ControllerState NewState) override;
-
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	const FVector &GetTeleportLocation() const;
-	void AdjustTeleportLaserLength(float Delta);
-
-	virtual bool OnLeftMenuPressed() override;
-
 	virtual bool OnLeftTriggerAction(bool IsPressed) override;
-	virtual bool OnLeftGripAction(bool IsPressed) override;
-
-	virtual bool OnLeftThumbstickYAction(float Value) override;
-	virtual bool OnLeftThumbstickXAction(float Value) override;
-
-	virtual bool OnLeftThumbstickYAxis(float Value) override;
-	virtual bool OnLeftThumbstickXAxis(float Value) override;
 private:
 	UPROPERTY()
 	UNiagaraComponent *TeleportLaser;

@@ -45,7 +45,8 @@ UVRControllerLeft::UVRControllerLeft(
 
 void UVRControllerLeft::SetupInputBindings(UInputComponent *Pic) {
 	BindAction(Pic, "LeftMenu", IE_Pressed, [this] {
-		OnLeftMenuPressed();
+		GetVrPawn()->ToggleMenu();
+		PlayActionHapticEffect();
 	});
 
 	BindAction(Pic, "LeftTrigger", IE_Pressed, [this] {
@@ -56,40 +57,50 @@ void UVRControllerLeft::SetupInputBindings(UInputComponent *Pic) {
 	});
 
 	BindAction(Pic, "LeftGrip", IE_Pressed, [this] {
-		OnLeftGripAction(true);
+		SetState(ControllerState::TELEPORTATION);
+		if (IsLaserVisibleFlag())
+			SetLaserActive(false, false);
+		ResetHitResult();
+		TeleportLaser->Activate();
+		TeleportRing->Activate();
+		TeleportLaser->SetVisibility(true);
+		TeleportRing->SetVisibility(true);
+		TeleportPreviewMesh->SetVisibility(true);
+		PlayActionHapticEffect();
 	});
 	BindAction(Pic, "LeftGrip", IE_Released, [this] {
-		OnLeftGripAction(false);
+		SetState(ControllerState::NONE);
+		if (IsLaserVisibleFlag())
+			SetLaserActive(true, false);
+		TeleportLaser->Deactivate();
+		TeleportRing->Deactivate();
+		TeleportLaser->SetVisibility(false);
+		TeleportRing->SetVisibility(false);
+		TeleportPreviewMesh->SetVisibility(false);
 	});
 
 	BindAxis(Pic, "LeftThumbstickAxisY", [this] (const float Value) {
-		OnLeftThumbstickYAxis(Value);
+		if (GetState() == ControllerState::TELEPORTATION) {
+			TeleportLaserCurrentDistance = FMath::Clamp(
+				TeleportLaserCurrentDistance + Value * TeleportLaserLengthDeltaSpeed,
+				TeleportLaserMinDistance,
+				TeleportLaserMaxDistance
+			);
+		}
 	});
 	BindAxis(Pic, "LeftThumbstickAxisX", [this] (const float Value) {
-		OnLeftThumbstickXAxis(Value);
+		static bool isClicked = false;
+		if (fabsf(Value) >= 0.7f) {
+			if (!isClicked) {
+				isClicked = true;
+				if (Value > 0.0f) GetVrPawn()->Rotate(1.0f);
+				else GetVrPawn()->Rotate(-1.0f);
+				PlayActionHapticEffect();
+			}
+		}
+		else if (isClicked)
+			isClicked = false;
 	});
-}
-
-void UVRControllerLeft::SetState(const ControllerState NewState) {
-	Super::SetState(NewState);
-	const bool IsTeleportMode = NewState == ControllerState::TELEPORTATION;
-	static bool IsLaserActiveBefore = false;
-	if (IsTeleportMode) {
-		IsLaserActiveBefore = IsLaserActive();
-		if (IsLaserActiveBefore)
-			SetLaserActive(false);
-		TeleportLaser->Activate();
-		TeleportRing->Activate();
-	}
-	else {
-		if (IsLaserActiveBefore)
-			SetLaserActive(true);
-		TeleportLaser->Deactivate();
-		TeleportRing->Deactivate();
-	}
-	TeleportLaser->SetVisibility(IsTeleportMode);
-	TeleportRing->SetVisibility(IsTeleportMode);
-	TeleportPreviewMesh->SetVisibility(IsTeleportMode);
 }
 
 void UVRControllerLeft::TickComponent(
@@ -99,96 +110,23 @@ void UVRControllerLeft::TickComponent(
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (GetState() == ControllerState::TELEPORTATION) {
-		TeleportLocation = GetLaserPosition() + GetLaserDirection() * TeleportLaserCurrentDistance;
-		SetLaserStartEnd(TeleportLaser, GetLaserPosition(), TeleportLocation);
+		TeleportLocation = GetLaserStartPosition() + GetLaserDirection() * TeleportLaserCurrentDistance;
+		SetLaserStartEnd(TeleportLaser, GetLaserStartPosition(), TeleportLocation);
 		TeleportPreviewMesh->SetWorldLocation(TeleportLocation);
-		TeleportLocation.Z -= GetVrPawn()->Height;
-		TeleportRing->SetWorldLocation(TeleportLocation);
+		TeleportRing->SetWorldLocation({TeleportLocation.X, TeleportLocation.Y, TeleportLocation.Z - AVRPawn::GetHeight()});
 	}
-}
-
-const FVector &UVRControllerLeft::GetTeleportLocation() const {
-	return TeleportLocation;
-}
-
-void UVRControllerLeft::AdjustTeleportLaserLength(const float Delta) {
-	TeleportLaserCurrentDistance = FMath::Clamp(
-		TeleportLaserCurrentDistance + Delta * TeleportLaserLengthDeltaSpeed,
-		TeleportLaserMinDistance,
-		TeleportLaserMaxDistance
-	);
-}
-
-bool UVRControllerLeft::OnLeftMenuPressed() {
-	if (GetVrPawn()->OnLeftMenuPressed()) {
-		PlayActionHapticEffect();
-		return true;
-	}
-	return LeftControllerInputInterface::OnLeftMenuPressed();
 }
 
 bool UVRControllerLeft::OnLeftTriggerAction(const bool IsPressed) {
-	TriggerPressed = IsPressed;
+	if (IsPressed && GetState() == ControllerState::TELEPORTATION) {
+		GetVrPawn()->Teleport(TeleportLocation);
+		PlayActionHapticEffect();
+		return true;
+	}
 	if (GetVrPawn()->OnLeftTriggerAction(IsPressed)) {
 		if (IsPressed)
 			PlayActionHapticEffect();
 		return true;
 	}
 	return LeftControllerInputInterface::OnLeftTriggerAction(IsPressed);
-}
-
-bool UVRControllerLeft::OnLeftGripAction(const bool IsPressed) {
-	GripPressed = IsPressed;
-	if (GetVrPawn()->OnLeftGripAction(IsPressed)) {
-		if (IsPressed)
-			PlayActionHapticEffect();
-		return true;
-	}
-	return LeftControllerInputInterface::OnLeftGripAction(IsPressed);
-}
-
-bool UVRControllerLeft::OnLeftThumbstickYAction(const float Value) {
-	if (GetVrPawn()->OnLeftThumbstickYAction(Value)) {
-		PlayActionHapticEffect();
-		return true;
-	}
-	return LeftControllerInputInterface::OnLeftThumbstickYAction(Value);
-}
-
-bool UVRControllerLeft::OnLeftThumbstickXAction(const float Value) {
-	if (GetVrPawn()->OnLeftThumbstickXAction(Value)) {
-		PlayActionHapticEffect();
-		return true;
-	}
-	return LeftControllerInputInterface::OnLeftThumbstickXAction(Value);
-}
-
-bool UVRControllerLeft::OnLeftThumbstickYAxis(const float Value) {
-	ThumbstickY = Value;
-	static bool isClicked = false;
-	if (fabsf(Value) >= 0.7f) {
-		if (!isClicked) {
-			isClicked = true;
-			if (Value > 0.0f) OnLeftThumbstickYAction(1.0f);
-			else OnLeftThumbstickYAction(-1.0f);
-		}
-	}
-	else if (isClicked)
-		isClicked = false;
-	return GetVrPawn()->OnLeftThumbstickYAxis(Value);
-}
-
-bool UVRControllerLeft::OnLeftThumbstickXAxis(const float Value) {
-	ThumbstickX = Value;
-	static bool isClicked = false;
-	if (fabsf(Value) >= 0.7f) {
-		if (!isClicked) {
-			isClicked = true;
-			if (Value > 0.0f) OnLeftThumbstickXAction(1.0f);
-			else OnLeftThumbstickXAction(-1.0f);
-		}
-	}
-	else if (isClicked)
-		isClicked = false;
-	return GetVrPawn()->OnLeftThumbstickXAxis(Value);
 }

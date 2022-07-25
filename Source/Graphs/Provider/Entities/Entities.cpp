@@ -15,11 +15,3 @@ AEntity::AEntity(const TCHAR *MeshAssetName, const TCHAR *MeshMaterialAssetName,
 	Smc->SetCollisionProfileName("Graph");
 	Smc->SetCastShadow(false);
 }
-
-uint32 AEntity::GetId() const {
-	return GetUniqueID();
-}
-
-EntityType AEntity::GetType() const {
-	return Type;
-}

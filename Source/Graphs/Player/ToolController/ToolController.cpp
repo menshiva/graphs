@@ -3,14 +3,11 @@
 #include "Kismet/GameplayStatics.h"
 
 UToolController::UToolController() {
-	PrimaryComponentTick.bCanEverTick = false;
+	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void UToolController::SetupPawn(AVRPawn *Pawn) {
-	VrPawn = Pawn;
-}
-
-void UToolController::OnEntityHitChanged(const UVRControllerBase *ControllerHit, const AEntity* Entity, bool IsHit) const {
+void UToolController::OnEntityHitChanged(const UVRControllerBase *ControllerHit, const AEntity* Entity, const bool IsHit) const {
+	// TODO: do it only if active tool can handle this entity
 	if (const auto PrimitiveComponent = Cast<UPrimitiveComponent>(Entity->GetStaticMeshComponent())) {
 		if (IsHit)
 			ControllerHit->PlayActionHapticEffect();
@@ -22,6 +19,35 @@ void UToolController::OnEntityHitChanged(const UVRControllerBase *ControllerHit,
 		if (OtherController->GetHitResult().GetActor() != Entity)
 			PrimitiveComponent->SetRenderCustomDepth(IsHit);
 	}
+}
+
+bool UToolController::OnLeftTriggerAction(const bool IsPressed) {
+	// TODO: do it only if active tool can handle this entity
+	if (VrPawn->GetLeftController()->GetHitResult().GetActor() != nullptr) {
+		VrPawn->GetLeftController()->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
+		return true;
+	}
+	// TODO: pass to active tool
+	return LeftControllerInputInterface::OnLeftTriggerAction(IsPressed);
+}
+
+bool UToolController::OnRightTriggerAction(const bool IsPressed) {
+	// TODO: do it only if active tool can handle this entity
+	if (VrPawn->GetRightController()->GetHitResult().GetActor() != nullptr) {
+		VrPawn->GetRightController()->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
+		return true;
+	}
+	// TODO: pass to active tool
+	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
+}
+
+void UToolController::TickComponent(
+	const float DeltaTime,
+	const ELevelTick TickType,
+	FActorComponentTickFunction* ThisTickFunction
+) {
+	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	// TODO: pass to active tool
 }
 
 void UToolController::BeginPlay() {

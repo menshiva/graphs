@@ -7,9 +7,7 @@ UCLASS()
 class GRAPHS_API AGraphProvider final : public AActor {
 	GENERATED_BODY()
 public:
-	AGraphProvider() {
-		PrimaryActorTick.bCanEverTick = false;
-	}
+	AGraphProvider();
 
 	template <class Entity>
 	Entity &CreateEntity() {
@@ -30,12 +28,7 @@ public:
 		CommandQueue.Enqueue(MakeUnique<Command>(Forward<ArgsType>(Args)...));
 	}
 
-	void MarkDirty() {
-		while (!CommandQueue.IsEmpty()) {
-			CommandQueue.Peek()->Get()->Execute(*this);
-			CommandQueue.Pop();
-		}
-	}
+	void MarkDirty();
 
 	struct Command {
 		Command() = default;

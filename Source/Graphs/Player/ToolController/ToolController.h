@@ -5,14 +5,19 @@
 #include "ToolController.generated.h"
 
 UCLASS()
-class GRAPHS_API UToolController final : public UActorComponent {
+class GRAPHS_API UToolController final : public UActorComponent, public LeftControllerInputInterface, public RightControllerInputInterface {
 	GENERATED_BODY()
 public:
 	UToolController();
 
-	void SetupPawn(AVRPawn *Pawn);
+	FORCEINLINE void SetupPawn(AVRPawn *Pawn) { VrPawn = Pawn; }
 
 	void OnEntityHitChanged(const UVRControllerBase *ControllerHit, const AEntity *Entity, bool IsHit) const;
+
+	virtual bool OnLeftTriggerAction(bool IsPressed) override;
+	virtual bool OnRightTriggerAction(bool IsPressed) override;
+
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 protected:
 	virtual void BeginPlay() override;
 private:

@@ -48,11 +48,3 @@ void UMenuWidgetComponent::SetVisble(const bool Visible) {
 		);
 	}
 }
-
-void UMenuWidgetComponent::SetCursorVisibility(const bool Visible) const {
-	Cursor->SetVisibility(Visible);
-}
-
-void UMenuWidgetComponent::SetCursorLocation(const FVector &Location) const {
-	Cursor->SetWorldLocation(Location);
-}

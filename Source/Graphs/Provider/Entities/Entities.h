@@ -18,8 +18,8 @@ public:
 	AEntity() = default;
 	AEntity(const TCHAR *MeshAssetName, const TCHAR *MeshMaterialAssetName, EntityType EntType);
 
-	uint32 GetId() const;
-	FORCEINLINE EntityType GetType() const;
+	FORCEINLINE uint32 GetId() const { return GetUniqueID(); }
+	FORCEINLINE EntityType GetType() const { return Type; }
 private:
 	EntityType Type;
 };

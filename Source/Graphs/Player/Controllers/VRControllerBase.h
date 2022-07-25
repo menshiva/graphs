@@ -20,35 +20,32 @@ public:
 		EControllerHand aControllerType
 	);
 
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-	void SetupPawn(class AVRPawn *Pawn);
-
 	virtual void SetupInputBindings(UInputComponent *Pic) PURE_VIRTUAL(UVRControllerBase::SetupInputBindings);
 
-	ControllerState GetState() const;
-	virtual void SetState(ControllerState NewState);
+	FORCEINLINE UMotionControllerComponent *GetMotionController() const { return MotionController; }
+	FORCEINLINE UMotionControllerComponent *GetMotionControllerAim() const { return MotionControllerAim; }
 
-	UMotionControllerComponent *GetMotionController() const;
-	UMotionControllerComponent *GetMotionControllerAim() const;
-	AVRPawn *GetVrPawn() const;
+	FORCEINLINE class AVRPawn *GetVrPawn() const { return VrPawn.Get(); }
+	void SetupVrPawn(AVRPawn *Pawn);
 
-	const FVector &GetLaserPosition() const;
-	const FVector &GetLaserDirection() const;
-	bool IsLaserActive() const;
-	void SetLaserActive(bool IsActive);
-	void UpdateLaser(bool Lerp = true);
+	FORCEINLINE const FVector &GetLaserStartPosition() const { return LaserStartPosition; }
+	FORCEINLINE FVector GetLaserEndPosition() const { return LaserStartPosition + LaserLength * LaserDirection; }
+	FORCEINLINE const FVector &GetLaserDirection() const { return LaserDirection; }
 
-	const FHitResult &GetHitResult() const;
+	FORCEINLINE bool IsLaserVisibleFlag() const { return LaserVisibleFlag; }
+	void SetLaserActive(bool IsActive, bool UpdateFlag);
+	void ForceUpdateLaserTransform();
+
+	class AEntity *GetHitEntity() const;
+	FORCEINLINE const FHitResult &GetHitResult() const { return HitResult; }
 	void ResetHitResult();
+
+	FORCEINLINE ControllerState GetState() const { return State; }
+	virtual void SetState(const ControllerState NewState);
 
 	void PlayActionHapticEffect() const;
 
-	bool TriggerPressed = false;
-	bool GripPressed = false;
-
-	float ThumbstickY = 0.0f;
-	float ThumbstickX = 0.0f;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 protected:
 	static void BindAction(
 		UInputComponent *PlayerInputComponent,
@@ -69,18 +66,19 @@ private:
 	UPROPERTY()
 	UMotionControllerComponent *MotionControllerAim;
 
-	TWeakObjectPtr<AVRPawn> VrPawn;
+	UPROPERTY()
+	UNiagaraComponent *Laser;
 
 	UPROPERTY()
 	UHapticFeedbackEffect_Base *HapticEffectController;
 
-	UPROPERTY()
-	UNiagaraComponent *Laser;
-
 	EControllerHand Type;
 	ControllerState State = ControllerState::NONE;
 
-	FVector LaserPosition;
+	TWeakObjectPtr<AVRPawn> VrPawn;
+
+	bool LaserVisibleFlag = false;
+	FVector LaserStartPosition;
 	FVector LaserDirection;
 	float LaserLength = MeshInteractionLaserMaxDistance;
 

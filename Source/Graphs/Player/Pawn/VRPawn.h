@@ -11,45 +11,35 @@ public:
 	explicit AVRPawn(const FObjectInitializer &ObjectInitializer);
 	virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 
-	APlayerController *GetPlayerController() const;
-	UVRControllerLeft *GetLeftController() const;
-	UVRControllerRight *GetRightController() const;
-	class UToolController *GetToolController() const;
+	FORCEINLINE APlayerController *GetPlayerController() const { return Cast<APlayerController>(Controller); }
+	FORCEINLINE UVRControllerLeft *GetLeftController() const { return LeftController; }
+	FORCEINLINE UVRControllerRight *GetRightController() const { return RightController; }
+	FORCEINLINE class UToolController *GetToolController() const { return ToolController; }
 
-	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
+	// https://docs.unrealengine.com/4.27/en-US/SharingAndReleasing/XRDevelopment/VR/VRPlatforms/SteamVR/HowTo/SeatedCamera/#:~:text=Z%20value%20to-,121,-.
+	FORCEINLINE static float GetHeight() { return 121.0f; }
 
 	UFUNCTION()
 	void ToggleCameraFadeAnimation();
+	FORCEINLINE bool IsCameraFadeAnimationEnabled() const { return CameraFadeAnimationEnabled; }
+
+	void ToggleMenu() const;
+
+	// -1.0f for left rotation, +1.0f for right rotation
+	void Rotate(float Value);
+
+	void Teleport(const FVector &Location);
 
 	UFUNCTION()
 	void QuitGame();
 
-	virtual bool OnLeftMenuPressed() override;
-
 	virtual bool OnLeftTriggerAction(bool IsPressed) override;
-	virtual bool OnLeftGripAction(bool IsPressed) override;
-
-	virtual bool OnLeftThumbstickYAction(float Value) override;
-	virtual bool OnLeftThumbstickXAction(float Value) override;
-
-	virtual bool OnLeftThumbstickYAxis(float Value) override;
-	virtual bool OnLeftThumbstickXAxis(float Value) override;
-
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
-
-	virtual bool OnRightThumbstickYAction(float Value) override;
-	virtual bool OnRightThumbstickXAction(float Value) override;
-
-	virtual bool OnRightThumbstickYAxis(float Value) override;
-	virtual bool OnRightThumbstickXAxis(float Value) override;
-
-	UPROPERTY(Config)
-	bool CameraFadeAnimationEnabled = true;
-
-	constexpr static float Height = 111.0f;
 protected:
 	virtual void BeginPlay() override;
 private:
+	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
+
 	// 1.0f for FadeIn, 0.0f for FadeOut
 	FORCEINLINE void FadeCamera(float ToValue) const;
 
@@ -67,6 +57,9 @@ private:
 
 	UPROPERTY()
 	UToolController *ToolController;
+
+	UPROPERTY(Config)
+	bool CameraFadeAnimationEnabled = true;
 
 	bool IsCameraFadeAnimationRunning = false;
 

@@ -1,9 +1,8 @@
 #include "VRControllerBase.h"
-#include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/Player/ToolController/ToolController.h"
-#include "Haptics/HapticFeedbackEffect_Base.h"
 #include "NiagaraComponent.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
+#include "Haptics/HapticFeedbackEffect_Base.h"
+#include "Graphs/Player/ToolController/ToolController.h"
 
 UVRControllerBase::UVRControllerBase(
 	const FObjectInitializer &ObjectInitializer,
@@ -29,18 +28,66 @@ UVRControllerBase::UVRControllerBase(
 	MotionControllerAim->SetTrackingMotionSource(FName(GetData(ControllerName + "Aim")));
 	MotionControllerAim->SetupAttachment(this);
 
-	const ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> HapticEffectAsset(TEXT(
-		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
-	));
-	HapticEffectController = HapticEffectAsset.Object;
-
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
 	Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "Laser");
 	Laser->SetAsset(LaserAsset.Object);
 	Laser->SetColorParameter("User.CustomColor", MeshInteractionLaserColor);
-	Laser->Deactivate();
-	Laser->SetVisibility(false);
+	if (!LaserVisibleFlag) {
+		Laser->Deactivate();
+		Laser->SetVisibility(false);
+	}
 	Laser->SetupAttachment(MotionControllerAim);
+	ForceUpdateLaserTransform();
+
+	const ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> HapticEffectAsset(TEXT(
+		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
+	));
+	HapticEffectController = HapticEffectAsset.Object;
+}
+
+void UVRControllerBase::SetupVrPawn(AVRPawn *Pawn) {
+	VrPawn = Pawn;
+}
+
+void UVRControllerBase::SetLaserActive(const bool IsActive, const bool UpdateFlag) {
+	if (IsActive) {
+		SetLaserStartEnd(Laser, LaserStartPosition, GetLaserEndPosition());
+		Laser->Activate();
+		Laser->SetVisibility(true);
+	}
+	else {
+		Laser->Deactivate();
+		Laser->SetVisibility(false);
+		ResetHitResult();
+	}
+	if (UpdateFlag)
+		LaserVisibleFlag = IsActive;
+}
+
+void UVRControllerBase::ForceUpdateLaserTransform() {
+	LaserStartPosition = MotionControllerAim->GetComponentLocation();
+	LaserDirection = MotionControllerAim->GetForwardVector();
+}
+
+AEntity *UVRControllerBase::GetHitEntity() const {
+	if (HitResult.bBlockingHit)
+		if (const auto Entity = Cast<AEntity>(HitResult.GetActor()))
+			return Entity;
+	return nullptr;
+}
+
+void UVRControllerBase::ResetHitResult() {
+	if (const auto HitEntity = GetHitEntity())
+		VrPawn->GetToolController()->OnEntityHitChanged(this, HitEntity, false);
+	HitResult.Reset();
+}
+
+void UVRControllerBase::SetState(const ControllerState NewState) {
+	State = NewState;
+}
+
+void UVRControllerBase::PlayActionHapticEffect() const {
+	VrPawn->GetPlayerController()->PlayHapticEffect(HapticEffectController, Type, ActionHapticScale);
 }
 
 void UVRControllerBase::TickComponent(
@@ -50,115 +97,40 @@ void UVRControllerBase::TickComponent(
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (Laser->IsVisible() && GetState() == ControllerState::NONE) {
+	if (State == ControllerState::NONE && Laser->IsVisible()) {
 		FHitResult NewHitResult;
 		GetWorld()->LineTraceSingleByChannel(
 			NewHitResult,
-			LaserPosition,
-			LaserPosition + LaserDirection * MeshInteractionLaserMaxDistance,
+			LaserStartPosition,
+			LaserStartPosition + MeshInteractionLaserMaxDistance * LaserDirection,
 			ECC_GameTraceChannel2 // Graph trace channel
 		);
 
 		if (NewHitResult.GetActor() != HitResult.GetActor()) {
-			if (HitResult.bBlockingHit && HitResult.GetActor() != nullptr) {
-				// unhit previously hitted entity
-				VrPawn->GetToolController()->OnEntityHitChanged(this, Cast<AEntity>(HitResult.GetActor()), false);
-			}
-			const auto NewHitEntity = Cast<AEntity>(NewHitResult.GetActor());
-			if (NewHitResult.bBlockingHit && NewHitEntity != nullptr) {
-				// hit newely hit entity
-				VrPawn->GetToolController()->OnEntityHitChanged(this, NewHitEntity, true);
-			}
+			if (const auto PrevHitEntity = GetHitEntity())
+				VrPawn->GetToolController()->OnEntityHitChanged(this, PrevHitEntity, false);
+			if (NewHitResult.bBlockingHit)
+				if (const auto NewHitEntity = Cast<AEntity>(NewHitResult.GetActor()))
+					VrPawn->GetToolController()->OnEntityHitChanged(this, NewHitEntity, true);
 		}
 
 		HitResult = NewHitResult;
-		if (HitResult.GetActor() != nullptr && Cast<AEntity>(HitResult.GetActor()) == nullptr)
+		if (HitResult.GetActor() != nullptr && Cast<AEntity>(HitResult.GetActor()) == nullptr) {
+			// make sure that hit actor is AEntity
 			HitResult.Reset();
+		}
 
-		if (HitResult.bBlockingHit && HitResult.GetActor() != nullptr)
-			LaserLength = FVector::Dist(LaserPosition, HitResult.ImpactPoint);
+		if (GetHitEntity() != nullptr)
+			LaserLength = FVector::Dist(LaserStartPosition, HitResult.ImpactPoint);
 		else
 			LaserLength = MeshInteractionLaserMaxDistance;
 	}
 
-	UpdateLaser();
-}
-
-void UVRControllerBase::SetupPawn(AVRPawn *Pawn) {
-	VrPawn = Pawn;
-}
-
-ControllerState UVRControllerBase::GetState() const {
-	return State;
-}
-
-void UVRControllerBase::SetState(const ControllerState NewState) {
-	State = NewState;
-}
-
-UMotionControllerComponent *UVRControllerBase::GetMotionController() const {
-	return MotionController;
-}
-
-UMotionControllerComponent *UVRControllerBase::GetMotionControllerAim() const {
-	return MotionControllerAim;
-}
-
-AVRPawn* UVRControllerBase::GetVrPawn() const {
-	return VrPawn.Get();
-}
-
-const FVector &UVRControllerBase::GetLaserPosition() const {
-	return LaserPosition;
-}
-
-const FVector& UVRControllerBase::GetLaserDirection() const {
-	return LaserDirection;
-}
-
-bool UVRControllerBase::IsLaserActive() const {
-	return Laser->IsVisible();
-}
-
-void UVRControllerBase::SetLaserActive(const bool IsActive) {
-	if (IsActive) {
-		SetLaserStartEnd(Laser, LaserPosition, LaserPosition + LaserDirection * LaserLength);
-		Laser->Activate();
-		Laser->SetVisibility(true);
-	}
-	else {
-		Laser->Deactivate();
-		Laser->SetVisibility(false);
-		ResetHitResult();
-	}
-}
-
-void UVRControllerBase::UpdateLaser(const bool Lerp) {
-	if (Lerp) {
-		LaserPosition = FMath::Lerp(LaserPosition, MotionControllerAim->GetComponentLocation(), 0.5f);
-		LaserDirection = FMath::Lerp(LaserDirection, MotionControllerAim->GetForwardVector(), 0.25f);
-	}
-	else {
-		LaserPosition = MotionControllerAim->GetComponentLocation();
-		LaserDirection = MotionControllerAim->GetForwardVector();
-	}
+	LaserStartPosition = FMath::Lerp(LaserStartPosition, MotionControllerAim->GetComponentLocation(), 0.5f);
+	LaserDirection = FMath::Lerp(LaserDirection, MotionControllerAim->GetForwardVector(), 0.25f);
 
 	if (Laser->IsVisible())
-		SetLaserStartEnd(Laser, LaserPosition, LaserPosition + LaserDirection * LaserLength);
-}
-
-const FHitResult& UVRControllerBase::GetHitResult() const {
-	return HitResult;
-}
-
-void UVRControllerBase::ResetHitResult() {
-	if (HitResult.bBlockingHit && HitResult.GetActor() != nullptr)
-		VrPawn->GetToolController()->OnEntityHitChanged(this, Cast<AEntity>(HitResult.GetActor()), false);
-	HitResult.Reset();
-}
-
-void UVRControllerBase::PlayActionHapticEffect() const {
-	VrPawn->GetPlayerController()->PlayHapticEffect(HapticEffectController, Type, ActionHapticScale);
+		SetLaserStartEnd(Laser, LaserStartPosition, GetLaserEndPosition());
 }
 
 void UVRControllerBase::BindAction(

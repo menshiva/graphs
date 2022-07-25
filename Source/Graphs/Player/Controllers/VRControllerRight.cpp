@@ -21,32 +21,6 @@ void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
 	BindAction(Pic, "RightTrigger", IE_Released, [this] {
 		OnRightTriggerAction(false);
 	});
-
-	BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
-		OnRightThumbstickYAxis(Value);
-	});
-	BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
-		OnRightThumbstickXAxis(Value);
-	});
-}
-
-void UVRControllerRight::SetState(const ControllerState NewState) {
-	Super::SetState(NewState);
-	static bool IsLaserActiveBefore = false;
-	if (NewState == ControllerState::UI) {
-		IsLaserActiveBefore = IsLaserActive();
-		if (IsLaserActiveBefore)
-			SetLaserActive(false);
-	}
-	else {
-		if (IsLaserActiveBefore)
-			SetLaserActive(true);
-		if (NewState == ControllerState::NONE && UiInteractor->IsVisible()) {
-			// fixes UI mode when pointing at ui right after TOOL mode
-			if (const auto menu = Cast<UMenuWidgetComponent>(UiInteractor->GetHoveredWidgetComponent()))
-				OnUiHover(menu, nullptr);
-		}
-	}
 }
 
 void UVRControllerRight::TickComponent(
@@ -62,34 +36,22 @@ void UVRControllerRight::TickComponent(
 	}
 }
 
-void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
-	if (Enabled) {
-		UiInteractor->Activate();
-		UiInteractor->SetVisibility(true);
-		// fixes UI mode when pointing at ui before it becomes visible
-		if (const auto menu = Cast<UMenuWidgetComponent>(UiInteractor->GetHoveredWidgetComponent()))
-			OnUiHover(menu, nullptr);
-	}
-	else {
-		SetUiInteractorPointerKeyPressed(false, EKeys::LeftMouseButton);
-		UiInteractor->Deactivate();
-		UiInteractor->SetVisibility(false);
-		if (GetState() != ControllerState::TOOL)
-			SetState(ControllerState::NONE);
-	}
-}
-
-void UVRControllerRight::SetUiInteractorPointerKeyPressed(const bool IsPressed, const FKey &Key) const {
-	if (IsPressed)
-		UiInteractor->PressPointerKey(Key);
-	else
-		UiInteractor->ReleasePointerKey(Key);
-}
-
 bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 	TriggerPressed = IsPressed;
-	if (!IsPressed && GetState() == ControllerState::UI && UiInteractor->IsVisible() && !UiInteractor->IsOverHitTestVisibleWidget())
-		SetState(ControllerState::NONE);
+	if (!IsPressed && GetState() == ControllerState::UI && !UiInteractor->IsOverHitTestVisibleWidget()) {
+		OnUiHover(nullptr, nullptr);
+		return true;
+	}
+	if (GetState() == ControllerState::UI) {
+		if (IsPressed) {
+			UiInteractor->PressPointerKey(EKeys::LeftMouseButton);
+			PlayActionHapticEffect();
+		}
+		else {
+			UiInteractor->ReleasePointerKey(EKeys::LeftMouseButton);
+		}
+		return true;
+	}
 	if (GetVrPawn()->OnRightTriggerAction(IsPressed)) {
 		if (IsPressed)
 			PlayActionHapticEffect();
@@ -98,64 +60,46 @@ bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
 }
 
-bool UVRControllerRight::OnRightThumbstickYAction(const float Value) {
-	if (GetVrPawn()->OnRightThumbstickYAction(Value)) {
-		PlayActionHapticEffect();
-		return true;
-	}
-	return RightControllerInputInterface::OnRightThumbstickYAction(Value);
+void UVRControllerRight::SetState(const ControllerState NewState) {
+	Super::SetState(NewState);
+	if (NewState == ControllerState::NONE && UiInteractor->IsVisible() && UiInteractor->IsOverHitTestVisibleWidget())
+		OnUiHover(UiInteractor->GetHoveredWidgetComponent(), nullptr);
 }
 
-bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
-	if (GetVrPawn()->OnRightThumbstickXAction(Value)) {
-		PlayActionHapticEffect();
-		return true;
+void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
+	if (Enabled) {
+		UiInteractor->Activate();
+		UiInteractor->SetVisibility(true);
+		if (UiInteractor->IsOverHitTestVisibleWidget())
+			OnUiHover(UiInteractor->GetHoveredWidgetComponent(), nullptr);
 	}
-	return RightControllerInputInterface::OnRightThumbstickXAction(Value);
-}
-
-bool UVRControllerRight::OnRightThumbstickYAxis(const float Value) {
-	ThumbstickY = Value;
-	static bool isClicked = false;
-	if (fabsf(Value) >= 0.7f) {
-		if (!isClicked) {
-			isClicked = true;
-			if (Value > 0.0f) OnRightThumbstickYAction(1.0f);
-			else OnRightThumbstickYAction(-1.0f);
-		}
+	else {
+		UiInteractor->ReleasePointerKey(EKeys::LeftMouseButton);
+		UiInteractor->Deactivate();
+		UiInteractor->SetVisibility(false);
+		if (GetState() == ControllerState::UI)
+			OnUiHover(nullptr, nullptr);
 	}
-	else if (isClicked)
-		isClicked = false;
-	return GetVrPawn()->OnRightThumbstickYAxis(Value);
-}
-
-bool UVRControllerRight::OnRightThumbstickXAxis(const float Value) {
-	ThumbstickX = Value;
-	static bool isClicked = false;
-	if (fabsf(Value) >= 0.7f) {
-		if (!isClicked) {
-			isClicked = true;
-			if (Value > 0.0f) OnRightThumbstickXAction(1.0f);
-			else OnRightThumbstickXAction(-1.0f);
-		}
-	}
-	else if (isClicked)
-		isClicked = false;
-	return GetVrPawn()->OnRightThumbstickXAxis(Value);
 }
 
 void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent) {
-	if (const auto menu = Cast<UMenuWidgetComponent>(WidgetComponent)) {
+	if (const auto Menu = Cast<UMenuWidgetComponent>(WidgetComponent)) {
 		if (GetState() != ControllerState::TOOL) {
 			SetState(ControllerState::UI);
-			menu->SetCursorLocation(UiInteractor->GetLastHitResult().ImpactPoint);
-			menu->SetCursorVisibility(true);
+			if (IsLaserVisibleFlag())
+				SetLaserActive(false, false);
+			ResetHitResult();
+			Menu->SetCursorLocation(UiInteractor->GetLastHitResult().ImpactPoint);
+			Menu->SetCursorVisibility(true);
 		}
 	}
 	else {
-		if (!TriggerPressed)
+		if (!UiInteractor->IsVisible() || !TriggerPressed) {
 			SetState(ControllerState::NONE);
-		if (const auto prevMenu = Cast<UMenuWidgetComponent>(PreviousWidgetComponent))
-			prevMenu->SetCursorVisibility(false);
+			if (IsLaserVisibleFlag())
+				SetLaserActive(true, false);
+		}
+		if (const auto PrevMenu = Cast<UMenuWidgetComponent>(PreviousWidgetComponent))
+			PrevMenu->SetCursorVisibility(false);
 	}
 }

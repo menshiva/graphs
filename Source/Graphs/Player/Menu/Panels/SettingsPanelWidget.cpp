@@ -9,7 +9,7 @@ void USettingsPanelWidget::NativeConstruct() {
 	const auto Pawn = Cast<AVRPawn>(GetOwningPlayerPawn());
 	const auto Gamemode = Cast<AVRGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 	if (CameraFadeAnimationTick) {
-		CameraFadeAnimationTick->SetTicked(Pawn->CameraFadeAnimationEnabled);
+		CameraFadeAnimationTick->SetTicked(Pawn->IsCameraFadeAnimationEnabled());
 		CameraFadeAnimationTick->OnClicked.AddDynamic(Pawn, &AVRPawn::ToggleCameraFadeAnimation);
 	}
 	if (FpsStatsTick) {

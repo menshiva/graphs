@@ -17,11 +17,11 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 	Camera->SetupAttachment(RootComponent);
 
 	LeftController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
-	LeftController->SetupPawn(this);
+	LeftController->SetupVrPawn(this);
 	LeftController->SetupAttachment(RootComponent);
 
 	RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
-	RightController->SetupPawn(this);
+	RightController->SetupVrPawn(this);
 	RightController->SetupAttachment(RootComponent);
 
 	Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
@@ -36,20 +36,56 @@ void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
 	RightController->SetupInputBindings(PlayerInputComponent);
 }
 
-APlayerController *AVRPawn::GetPlayerController() const {
-	return Cast<APlayerController>(Controller);
+void AVRPawn::ToggleCameraFadeAnimation() {
+	CameraFadeAnimationEnabled = !CameraFadeAnimationEnabled;
+	SaveConfig();
 }
 
-UVRControllerLeft *AVRPawn::GetLeftController() const {
-	return LeftController;
+void AVRPawn::ToggleMenu() const {
+	bool isMenuShown = Menu->IsVisible();
+	isMenuShown = !isMenuShown;
+	Menu->SetVisble(isMenuShown);
+	RightController->SetUiInteractionEnabled(isMenuShown);
 }
 
-UVRControllerRight *AVRPawn::GetRightController() const {
-	return RightController;
+void AVRPawn::Rotate(const float Value) {
+	CameraTeleportAnimation([&, Value] {
+		AddActorWorldRotation({0.0f, roundf(Value) * RotationAngle, 0.0f});
+		LeftController->ForceUpdateLaserTransform();
+		RightController->ForceUpdateLaserTransform();
+	});
 }
 
-UToolController *AVRPawn::GetToolController() const {
-	return ToolController;
+void AVRPawn::Teleport(const FVector &Location) {
+	CameraTeleportAnimation([&] {
+		SetActorLocation(Location);
+		LeftController->ForceUpdateLaserTransform();
+		RightController->ForceUpdateLaserTransform();
+	});
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::QuitGame() {
+	FTimerHandle FadeInHandle;
+	FadeCamera(1.0f);
+	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&] {
+		UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
+	}), ScreenFadeDuration, false);
+}
+
+bool AVRPawn::OnLeftTriggerAction(const bool IsPressed) {
+	return ToolController->OnLeftTriggerAction(IsPressed);
+}
+
+bool AVRPawn::OnRightTriggerAction(const bool IsPressed) {
+	return ToolController->OnRightTriggerAction(IsPressed);
+}
+
+void AVRPawn::BeginPlay() {
+	Super::BeginPlay();
+	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);
+	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
 }
 
 void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
@@ -72,124 +108,6 @@ void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
 		}
 	}
 	else DoAfterFadeIn();
-}
-
-void AVRPawn::ToggleCameraFadeAnimation() {
-	CameraFadeAnimationEnabled = !CameraFadeAnimationEnabled;
-	SaveConfig();
-}
-
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::QuitGame() {
-	FTimerHandle FadeInHandle;
-	FadeCamera(1.0f);
-	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&] {
-		UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
-	}), ScreenFadeDuration, false);
-}
-
-bool AVRPawn::OnLeftMenuPressed() {
-	static bool isMenuShown = Menu->IsVisible();
-	isMenuShown = !isMenuShown;
-	Menu->SetVisble(isMenuShown);
-	RightController->SetUiInteractionEnabled(isMenuShown);
-	return true;
-}
-
-bool AVRPawn::OnLeftTriggerAction(const bool IsPressed) {
-	if (LeftController->GetHitResult().GetActor() != nullptr) {
-		LeftController->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
-		// TODO: pass to active tool
-		return true;
-	}
-	if (IsPressed && LeftController->GetState() == ControllerState::TELEPORTATION) {
-		CameraTeleportAnimation([&] {
-			auto teleportPoint = LeftController->GetTeleportLocation();
-			teleportPoint.Z += Height;
-			SetActorLocation(teleportPoint);
-			LeftController->UpdateLaser(false);
-			RightController->UpdateLaser(false);
-		});
-		return true;
-	}
-	// TODO: pass to active tool
-	return LeftControllerInputInterface::OnLeftTriggerAction(IsPressed);
-}
-
-bool AVRPawn::OnLeftGripAction(const bool IsPressed) {
-	LeftController->SetState(IsPressed ? ControllerState::TELEPORTATION : ControllerState::NONE);
-	// TODO: pass to active tool
-	return true;
-}
-
-bool AVRPawn::OnLeftThumbstickYAction(const float Value) {
-	// TODO: pass to active tool
-	return LeftControllerInputInterface::OnLeftThumbstickYAction(Value);
-}
-
-bool AVRPawn::OnLeftThumbstickXAction(const float Value) {
-	CameraTeleportAnimation([&, Value] {
-		AddActorWorldRotation({0.0f, roundf(Value) * RotationAngle, 0.0f});
-		LeftController->UpdateLaser(false);
-		RightController->UpdateLaser(false);
-	});
-	// TODO: pass to active tool
-	return true;
-}
-
-bool AVRPawn::OnLeftThumbstickYAxis(const float Value) {
-	if (LeftController->GetState() == ControllerState::TELEPORTATION) {
-		LeftController->AdjustTeleportLaserLength(Value);
-		return true;
-	}
-	// TODO: pass to active tool
-	return LeftControllerInputInterface::OnLeftThumbstickYAxis(Value);
-}
-
-bool AVRPawn::OnLeftThumbstickXAxis(const float Value) {
-	// TODO: pass to active tool
-	return LeftControllerInputInterface::OnLeftThumbstickXAxis(Value);
-}
-
-bool AVRPawn::OnRightTriggerAction(const bool IsPressed) {
-	if (RightController->GetHitResult().GetActor() != nullptr) {
-		RightController->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
-		// TODO: pass to active tool
-		return true;
-	}
-	if (RightController->GetState() == ControllerState::UI) {
-		RightController->SetUiInteractorPointerKeyPressed(IsPressed, EKeys::LeftMouseButton);
-		return true;
-	}
-	// TODO: pass to active tool
-	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
-}
-
-bool AVRPawn::OnRightThumbstickYAction(const float Value) {
-	// TODO: pass to active tool
-	return RightControllerInputInterface::OnRightThumbstickYAction(Value);
-}
-
-bool AVRPawn::OnRightThumbstickXAction(const float Value) {
-	// TODO: pass to active tool
-	return RightControllerInputInterface::OnRightThumbstickXAction(Value);
-}
-
-bool AVRPawn::OnRightThumbstickYAxis(const float Value) {
-	// TODO: pass to active tool
-	return RightControllerInputInterface::OnRightThumbstickYAxis(Value);
-}
-
-bool AVRPawn::OnRightThumbstickXAxis(const float Value) {
-	// TODO: pass to active tool
-	return RightControllerInputInterface::OnRightThumbstickXAxis(Value);
-}
-
-void AVRPawn::BeginPlay() {
-	Super::BeginPlay();
-	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);
-	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
-		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
 }
 
 void AVRPawn::FadeCamera(const float ToValue) const {
