@@ -1,7 +1,8 @@
 #include "VRControllerRight.h"
+#include "NiagaraComponent.h"
 #include "Components/WidgetInteractionComponent.h"
+#include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/UI/MenuWidgetComponent.h"
 
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
@@ -9,10 +10,7 @@ UVRControllerRight::UVRControllerRight(
 	UiInteractor = ObjectInitializer.CreateDefaultSubobject<UWidgetInteractionComponent>(this, "UiInteractor");
 	UiInteractor->PointerIndex = 1;
 	UiInteractor->TraceChannel = ECC_GameTraceChannel1; // VRUI trace channel
-	UiInteractor->SetAutoActivate(false);
 	UiInteractor->OnHoveredWidgetChanged.AddDynamic(this, &UVRControllerRight::OnUiHover);
-	UiInteractor->Deactivate();
-	UiInteractor->SetVisibility(false);
 	UiInteractor->SetupAttachment(MotionControllerAim);
 }
 
@@ -34,13 +32,16 @@ void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
 
 void UVRControllerRight::SetState(const ControllerState NewState) {
 	Super::SetState(NewState);
-	if (GetState() == ControllerState::UI) {
-		SetLaserActive(false);
-		ResetHitResult();
+	static bool IsLaserActiveBefore = false;
+	if (NewState == ControllerState::UI) {
+		IsLaserActiveBefore = IsLaserActive();
+		if (IsLaserActiveBefore)
+			SetLaserActive(false);
 	}
 	else {
-		SetLaserActive(true);
-		if (GetState() == ControllerState::NONE && UiInteractor->IsVisible()) {
+		if (IsLaserActiveBefore)
+			SetLaserActive(true);
+		if (NewState == ControllerState::NONE && UiInteractor->IsVisible()) {
 			// fixes UI mode when pointing at ui right after TOOL mode
 			if (const auto menu = Cast<UMenuWidgetComponent>(UiInteractor->GetHoveredWidgetComponent()))
 				OnUiHover(menu, nullptr);

@@ -1,6 +1,6 @@
 #include "CheckboxWidget.h"
 #include "Components/TextBlock.h"
-#include "Graphs/UI/WidgetComponents/Button/ImageButtonWidget.h"
+#include "Graphs/UI/Button/ImageButtonWidget.h"
 
 void UCheckboxWidget::NativePreConstruct() {
 	Super::NativePreConstruct();

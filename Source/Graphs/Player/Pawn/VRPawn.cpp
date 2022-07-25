@@ -1,8 +1,8 @@
 #include "VRPawn.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
+#include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Provider/Commands/NodeCommands.h"
-#include "Graphs/UI/MenuWidgetComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetSystemLibrary.h"
 
@@ -26,7 +26,6 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 	RightController->SetupAttachment(RootComponent);
 
 	Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
-	Menu->SetVisibility(false);
 	Menu->SetupAttachment(LeftController->MotionController);
 }
 
@@ -77,7 +76,7 @@ void AVRPawn::QuitGame() {
 }
 
 bool AVRPawn::OnLeftMenuPressed() {
-	static bool isMenuShown = false;
+	static bool isMenuShown = Menu->IsVisible();
 	isMenuShown = !isMenuShown;
 	Menu->SetVisble(isMenuShown);
 	RightController->SetUiInteractionEnabled(isMenuShown);

@@ -2,7 +2,7 @@
 #include "Animation/UMGSequencePlayer.h"
 #include "Components/Border.h"
 #include "Components/WidgetSwitcher.h"
-#include "WidgetComponents/Button/ImageButtonWidget.h"
+#include "Graphs/UI/Button/ImageButtonWidget.h"
 
 void UMenuWidget::NativePreConstruct() {
 	Super::NativePreConstruct();

@@ -31,7 +31,8 @@ public:
 
 	const FVector &GetLaserPosition() const;
 	const FVector &GetLaserDirection() const;
-	void SetLaserActive(bool IsActive) const;
+	bool IsLaserActive() const;
+	void SetLaserActive(bool IsActive);
 	void UpdateLaser(bool Lerp = true);
 
 	const FHitResult &GetHitResult() const;

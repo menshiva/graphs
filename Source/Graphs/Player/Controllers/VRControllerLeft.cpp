@@ -75,19 +75,23 @@ void UVRControllerLeft::SetupInputBindings(UInputComponent *Pic) {
 void UVRControllerLeft::SetState(const ControllerState NewState) {
 	Super::SetState(NewState);
 	const bool IsTeleportMode = NewState == ControllerState::TELEPORTATION;
-	SetLaserActive(!IsTeleportMode);
+	static bool IsLaserActiveBefore = false;
 	if (IsTeleportMode) {
-		ResetHitResult();
+		IsLaserActiveBefore = IsLaserActive();
+		if (IsLaserActiveBefore)
+			SetLaserActive(false);
 		TeleportLaser->Activate();
 		TeleportRing->Activate();
 	}
 	else {
+		if (IsLaserActiveBefore)
+			SetLaserActive(true);
 		TeleportLaser->Deactivate();
 		TeleportRing->Deactivate();
 	}
 	TeleportLaser->SetVisibility(IsTeleportMode);
-	TeleportPreviewMesh->SetVisibility(IsTeleportMode);
 	TeleportRing->SetVisibility(IsTeleportMode);
+	TeleportPreviewMesh->SetVisibility(IsTeleportMode);
 }
 
 void UVRControllerLeft::TickComponent(

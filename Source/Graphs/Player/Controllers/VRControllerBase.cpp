@@ -38,6 +38,8 @@ UVRControllerBase::UVRControllerBase(
 	Laser->SetComponentTickEnabled(false);
 	Laser->SetAsset(LaserAsset.Object);
 	Laser->SetColorParameter("User.CustomColor", MeshInteractionLaserColor);
+	Laser->Deactivate();
+	Laser->SetVisibility(false);
 	Laser->SetupAttachment(MotionControllerAim);
 }
 
@@ -48,7 +50,7 @@ void UVRControllerBase::TickComponent(
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (GetState() == ControllerState::NONE) {
+	if (Laser->IsVisible() && GetState() == ControllerState::NONE) {
 		FHitResult NewHitResult;
 		GetWorld()->LineTraceSingleByChannel(
 			NewHitResult,
@@ -102,7 +104,11 @@ const FVector& UVRControllerBase::GetLaserDirection() const {
 	return LaserDirection;
 }
 
-void UVRControllerBase::SetLaserActive(const bool IsActive) const {
+bool UVRControllerBase::IsLaserActive() const {
+	return Laser->IsVisible();
+}
+
+void UVRControllerBase::SetLaserActive(const bool IsActive) {
 	if (IsActive) {
 		SetLaserStartEnd(Laser, LaserPosition, LaserPosition + LaserDirection * LaserLength);
 		Laser->Activate();
@@ -111,6 +117,7 @@ void UVRControllerBase::SetLaserActive(const bool IsActive) const {
 	else {
 		Laser->Deactivate();
 		Laser->SetVisibility(false);
+		ResetHitResult();
 	}
 }
 

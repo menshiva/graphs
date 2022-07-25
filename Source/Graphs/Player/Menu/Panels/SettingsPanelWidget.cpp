@@ -1,7 +1,7 @@
 #include "SettingsPanelWidget.h"
 #include "Graphs/Gamemode/VRGameMode.h"
 #include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/UI/WidgetComponents/Checkbox/CheckboxWidget.h"
+#include "Graphs/UI/Checkbox/CheckboxWidget.h"
 #include "Kismet/GameplayStatics.h"
 
 void USettingsPanelWidget::NativeConstruct() {
