@@ -8,12 +8,11 @@ UVRControllerLeft::UVRControllerLeft(
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
 	TeleportLaser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "TeleportLaser");
-	TeleportLaser->SetComponentTickEnabled(false);
 	TeleportLaser->SetAsset(LaserAsset.Object);
 	TeleportLaser->SetColorParameter("User.CustomColor", TeleportLaserColor);
 	TeleportLaser->Deactivate();
 	TeleportLaser->SetVisibility(false);
-	TeleportLaser->SetupAttachment(MotionControllerAim);
+	TeleportLaser->SetupAttachment(GetMotionControllerAim());
 
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Engine/BasicShapes/Sphere"));
 	const ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
@@ -37,7 +36,6 @@ UVRControllerLeft::UVRControllerLeft(
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> TeleportRingAsset(TEXT("/Game/Graphs/VFX/TeleportRing"));
 	TeleportRing = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "TeleportRing");
-	TeleportRing->SetComponentTickEnabled(false);
 	TeleportRing->SetAsset(TeleportRingAsset.Object);
 	TeleportRing->SetColorParameter("User.CustomColor", TeleportLaserColor);
 	TeleportRing->Deactivate();
@@ -104,7 +102,7 @@ void UVRControllerLeft::TickComponent(
 		TeleportLocation = GetLaserPosition() + GetLaserDirection() * TeleportLaserCurrentDistance;
 		SetLaserStartEnd(TeleportLaser, GetLaserPosition(), TeleportLocation);
 		TeleportPreviewMesh->SetWorldLocation(TeleportLocation);
-		TeleportLocation.Z -= VrPawn->Height;
+		TeleportLocation.Z -= GetVrPawn()->Height;
 		TeleportRing->SetWorldLocation(TeleportLocation);
 	}
 }
@@ -122,7 +120,7 @@ void UVRControllerLeft::AdjustTeleportLaserLength(const float Delta) {
 }
 
 bool UVRControllerLeft::OnLeftMenuPressed() {
-	if (VrPawn->OnLeftMenuPressed()) {
+	if (GetVrPawn()->OnLeftMenuPressed()) {
 		PlayActionHapticEffect();
 		return true;
 	}
@@ -131,7 +129,7 @@ bool UVRControllerLeft::OnLeftMenuPressed() {
 
 bool UVRControllerLeft::OnLeftTriggerAction(const bool IsPressed) {
 	TriggerPressed = IsPressed;
-	if (VrPawn->OnLeftTriggerAction(IsPressed)) {
+	if (GetVrPawn()->OnLeftTriggerAction(IsPressed)) {
 		if (IsPressed)
 			PlayActionHapticEffect();
 		return true;
@@ -141,7 +139,7 @@ bool UVRControllerLeft::OnLeftTriggerAction(const bool IsPressed) {
 
 bool UVRControllerLeft::OnLeftGripAction(const bool IsPressed) {
 	GripPressed = IsPressed;
-	if (VrPawn->OnLeftGripAction(IsPressed)) {
+	if (GetVrPawn()->OnLeftGripAction(IsPressed)) {
 		if (IsPressed)
 			PlayActionHapticEffect();
 		return true;
@@ -150,7 +148,7 @@ bool UVRControllerLeft::OnLeftGripAction(const bool IsPressed) {
 }
 
 bool UVRControllerLeft::OnLeftThumbstickYAction(const float Value) {
-	if (VrPawn->OnLeftThumbstickYAction(Value)) {
+	if (GetVrPawn()->OnLeftThumbstickYAction(Value)) {
 		PlayActionHapticEffect();
 		return true;
 	}
@@ -158,7 +156,7 @@ bool UVRControllerLeft::OnLeftThumbstickYAction(const float Value) {
 }
 
 bool UVRControllerLeft::OnLeftThumbstickXAction(const float Value) {
-	if (VrPawn->OnLeftThumbstickXAction(Value)) {
+	if (GetVrPawn()->OnLeftThumbstickXAction(Value)) {
 		PlayActionHapticEffect();
 		return true;
 	}
@@ -177,7 +175,7 @@ bool UVRControllerLeft::OnLeftThumbstickYAxis(const float Value) {
 	}
 	else if (isClicked)
 		isClicked = false;
-	return VrPawn->OnLeftThumbstickYAxis(Value);
+	return GetVrPawn()->OnLeftThumbstickYAxis(Value);
 }
 
 bool UVRControllerLeft::OnLeftThumbstickXAxis(const float Value) {
@@ -192,5 +190,5 @@ bool UVRControllerLeft::OnLeftThumbstickXAxis(const float Value) {
 	}
 	else if (isClicked)
 		isClicked = false;
-	return VrPawn->OnLeftThumbstickXAxis(Value);
+	return GetVrPawn()->OnLeftThumbstickXAxis(Value);
 }

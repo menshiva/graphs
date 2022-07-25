@@ -10,7 +10,7 @@ enum class GRAPHS_API ControllerState {
 	TOOL
 };
 
-UCLASS()
+UCLASS(Abstract)
 class GRAPHS_API UVRControllerBase : public USceneComponent {
 	GENERATED_BODY()
 public:
@@ -29,6 +29,10 @@ public:
 	ControllerState GetState() const;
 	virtual void SetState(ControllerState NewState);
 
+	UMotionControllerComponent *GetMotionController() const;
+	UMotionControllerComponent *GetMotionControllerAim() const;
+	AVRPawn *GetVrPawn() const;
+
 	const FVector &GetLaserPosition() const;
 	const FVector &GetLaserDirection() const;
 	bool IsLaserActive() const;
@@ -39,14 +43,6 @@ public:
 	void ResetHitResult();
 
 	void PlayActionHapticEffect() const;
-
-	UPROPERTY()
-	UMotionControllerComponent *MotionController;
-
-	UPROPERTY()
-	UMotionControllerComponent *MotionControllerAim;
-
-	TWeakObjectPtr<AVRPawn> VrPawn;
 
 	bool TriggerPressed = false;
 	bool GripPressed = false;
@@ -67,6 +63,14 @@ protected:
 	);
 	static void SetLaserStartEnd(class UNiagaraComponent *aLaser, const FVector &Start, const FVector &End);
 private:
+	UPROPERTY()
+	UMotionControllerComponent *MotionController;
+
+	UPROPERTY()
+	UMotionControllerComponent *MotionControllerAim;
+
+	TWeakObjectPtr<AVRPawn> VrPawn;
+
 	UPROPERTY()
 	UHapticFeedbackEffect_Base *HapticEffectController;
 

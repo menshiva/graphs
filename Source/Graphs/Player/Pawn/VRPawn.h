@@ -2,7 +2,6 @@
 
 #include "Graphs/Player/Controllers/VRControllerLeft.h"
 #include "Graphs/Player/Controllers/VRControllerRight.h"
-#include "Graphs/Provider/Entities/Entities.h"
 #include "VRPawn.generated.h"
 
 UCLASS(Config = UserPreferences)
@@ -13,6 +12,9 @@ public:
 	virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 
 	APlayerController *GetPlayerController() const;
+	UVRControllerLeft *GetLeftController() const;
+	UVRControllerRight *GetRightController() const;
+	class UToolController *GetToolController() const;
 
 	void CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn);
 
@@ -41,14 +43,6 @@ public:
 	virtual bool OnRightThumbstickYAxis(float Value) override;
 	virtual bool OnRightThumbstickXAxis(float Value) override;
 
-	void OnEntityHitChanged(const UVRControllerBase *ControllerHit, const AEntity *Entity, bool IsHit) const;
-
-	UPROPERTY()
-	UVRControllerLeft *LeftController;
-
-	UPROPERTY()
-	UVRControllerRight *RightController;
-
 	UPROPERTY(Config)
 	bool CameraFadeAnimationEnabled = true;
 
@@ -59,13 +53,20 @@ private:
 	// 1.0f for FadeIn, 0.0f for FadeOut
 	FORCEINLINE void FadeCamera(float ToValue) const;
 
-	TWeakObjectPtr<class AGraphProvider> CachedProvider;
+	UPROPERTY()
+	UVRControllerLeft *LeftController;
+
+	UPROPERTY()
+	UVRControllerRight *RightController;
 
 	UPROPERTY()
 	class UCameraComponent *Camera;
 
 	UPROPERTY()
 	class UMenuWidgetComponent *Menu;
+
+	UPROPERTY()
+	UToolController *ToolController;
 
 	bool IsCameraFadeAnimationRunning = false;
 

@@ -1,5 +1,6 @@
 #include "VRControllerBase.h"
 #include "Graphs/Player/Pawn/VRPawn.h"
+#include "Graphs/Player/ToolController/ToolController.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
 #include "NiagaraComponent.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
@@ -35,7 +36,6 @@ UVRControllerBase::UVRControllerBase(
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
 	Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "Laser");
-	Laser->SetComponentTickEnabled(false);
 	Laser->SetAsset(LaserAsset.Object);
 	Laser->SetColorParameter("User.CustomColor", MeshInteractionLaserColor);
 	Laser->Deactivate();
@@ -62,12 +62,12 @@ void UVRControllerBase::TickComponent(
 		if (NewHitResult.GetActor() != HitResult.GetActor()) {
 			if (HitResult.bBlockingHit && HitResult.GetActor() != nullptr) {
 				// unhit previously hitted entity
-				VrPawn->OnEntityHitChanged(this, Cast<AEntity>(HitResult.GetActor()), false);
+				VrPawn->GetToolController()->OnEntityHitChanged(this, Cast<AEntity>(HitResult.GetActor()), false);
 			}
 			const auto NewHitEntity = Cast<AEntity>(NewHitResult.GetActor());
 			if (NewHitResult.bBlockingHit && NewHitEntity != nullptr) {
 				// hit newely hit entity
-				VrPawn->OnEntityHitChanged(this, NewHitEntity, true);
+				VrPawn->GetToolController()->OnEntityHitChanged(this, NewHitEntity, true);
 			}
 		}
 
@@ -94,6 +94,18 @@ ControllerState UVRControllerBase::GetState() const {
 
 void UVRControllerBase::SetState(const ControllerState NewState) {
 	State = NewState;
+}
+
+UMotionControllerComponent *UVRControllerBase::GetMotionController() const {
+	return MotionController;
+}
+
+UMotionControllerComponent *UVRControllerBase::GetMotionControllerAim() const {
+	return MotionControllerAim;
+}
+
+AVRPawn* UVRControllerBase::GetVrPawn() const {
+	return VrPawn.Get();
 }
 
 const FVector &UVRControllerBase::GetLaserPosition() const {
@@ -141,7 +153,7 @@ const FHitResult& UVRControllerBase::GetHitResult() const {
 
 void UVRControllerBase::ResetHitResult() {
 	if (HitResult.bBlockingHit && HitResult.GetActor() != nullptr)
-		VrPawn->OnEntityHitChanged(this, Cast<AEntity>(HitResult.GetActor()), false);
+		VrPawn->GetToolController()->OnEntityHitChanged(this, Cast<AEntity>(HitResult.GetActor()), false);
 	HitResult.Reset();
 }
 

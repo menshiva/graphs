@@ -11,7 +11,7 @@ UVRControllerRight::UVRControllerRight(
 	UiInteractor->PointerIndex = 1;
 	UiInteractor->TraceChannel = ECC_GameTraceChannel1; // VRUI trace channel
 	UiInteractor->OnHoveredWidgetChanged.AddDynamic(this, &UVRControllerRight::OnUiHover);
-	UiInteractor->SetupAttachment(MotionControllerAim);
+	UiInteractor->SetupAttachment(GetMotionControllerAim());
 }
 
 void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
@@ -90,7 +90,7 @@ bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 	TriggerPressed = IsPressed;
 	if (!IsPressed && GetState() == ControllerState::UI && UiInteractor->IsVisible() && !UiInteractor->IsOverHitTestVisibleWidget())
 		SetState(ControllerState::NONE);
-	if (VrPawn->OnRightTriggerAction(IsPressed)) {
+	if (GetVrPawn()->OnRightTriggerAction(IsPressed)) {
 		if (IsPressed)
 			PlayActionHapticEffect();
 		return true;
@@ -99,7 +99,7 @@ bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 }
 
 bool UVRControllerRight::OnRightThumbstickYAction(const float Value) {
-	if (VrPawn->OnRightThumbstickYAction(Value)) {
+	if (GetVrPawn()->OnRightThumbstickYAction(Value)) {
 		PlayActionHapticEffect();
 		return true;
 	}
@@ -107,7 +107,7 @@ bool UVRControllerRight::OnRightThumbstickYAction(const float Value) {
 }
 
 bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
-	if (VrPawn->OnRightThumbstickXAction(Value)) {
+	if (GetVrPawn()->OnRightThumbstickXAction(Value)) {
 		PlayActionHapticEffect();
 		return true;
 	}
@@ -126,7 +126,7 @@ bool UVRControllerRight::OnRightThumbstickYAxis(const float Value) {
 	}
 	else if (isClicked)
 		isClicked = false;
-	return VrPawn->OnRightThumbstickYAxis(Value);
+	return GetVrPawn()->OnRightThumbstickYAxis(Value);
 }
 
 bool UVRControllerRight::OnRightThumbstickXAxis(const float Value) {
@@ -141,7 +141,7 @@ bool UVRControllerRight::OnRightThumbstickXAxis(const float Value) {
 	}
 	else if (isClicked)
 		isClicked = false;
-	return VrPawn->OnRightThumbstickXAxis(Value);
+	return GetVrPawn()->OnRightThumbstickXAxis(Value);
 }
 
 void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent) {
