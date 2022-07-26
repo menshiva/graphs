@@ -1,12 +1,19 @@
 ﻿#include "NodeCommands.h"
 
-NodeCommands::Create::Create(uint32 *NewId, const FVector &Pos) : NewNodeEntityId(NewId), Position(Pos) {}
+NodeCommands::Create::Create(const FVector &Pos) : Position(Pos) {}
 
 void NodeCommands::Create::Execute(AGraphProvider &Provider) {
 	auto &NewEntity = Provider.CreateEntity<ANodeEntity>();
 	NewEntity.SetActorLocation(Position);
-	if (NewNodeEntityId)
-		*NewNodeEntityId = NewEntity.GetId();
+}
+
+NodeCommands::SetSelectionType::SetSelectionType(
+	ANodeEntity *Node,
+	const SelectionType NewType
+) : Node(Node), Selection(NewType) {}
+
+void NodeCommands::SetSelectionType::Execute(AGraphProvider &Provider) {
+	Node->SetSelectionType(Selection);
 }
 
 // TODO

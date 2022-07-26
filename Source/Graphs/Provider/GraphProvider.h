@@ -1,26 +1,23 @@
 #pragma once
 
-#include "Entities/Entities.h"
+#include "Entities/Entity.h"
 #include "GraphProvider.generated.h"
 
 UCLASS()
 class GRAPHS_API AGraphProvider final : public AActor {
 	GENERATED_BODY()
 public:
-	AGraphProvider();
+	AGraphProvider() {
+		PrimaryActorTick.bCanEverTick = false;
+	}
 
 	template <class Entity>
 	Entity &CreateEntity() {
 		FActorSpawnParameters s;
 		s.Owner = this;
 		const auto NewActor = GetWorld()->SpawnActor<Entity>(s);
-		Entities.Add(NewActor->GetId(), NewActor);
+		Entities.Push(NewActor);
 		return *NewActor;
-	}
-
-	template <class Entity>
-	Entity *GetEntity(const uint32 EntityId) {
-		return Cast<Entity>(Entities.FindChecked(EntityId));
 	}
 
 	template <class Command, typename... ArgsType>
@@ -28,7 +25,12 @@ public:
 		CommandQueue.Enqueue(MakeUnique<Command>(Forward<ArgsType>(Args)...));
 	}
 
-	void MarkDirty();
+	void MarkDirty() {
+		while (!CommandQueue.IsEmpty()) {
+			CommandQueue.Peek()->Get()->Execute(*this);
+			CommandQueue.Pop();
+		}
+	}
 
 	struct Command {
 		Command() = default;
@@ -37,7 +39,7 @@ public:
 	};
 private:
 	UPROPERTY()
-	TMap<uint32, AEntity*> Entities;
+	TArray<AEntity*> Entities;
 
 	TQueue<TUniquePtr<Command>> CommandQueue;
 };

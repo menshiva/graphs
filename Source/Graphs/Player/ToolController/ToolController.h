@@ -12,7 +12,7 @@ public:
 
 	FORCEINLINE void SetupPawn(AVRPawn *Pawn) { VrPawn = Pawn; }
 
-	void OnEntityHitChanged(const UVRControllerBase *ControllerHit, const AEntity *Entity, bool IsHit) const;
+	void OnEntityHitChanged(const UVRControllerBase *ControllerHit, AEntity *Entity, bool IsHit) const;
 
 	virtual bool OnLeftTriggerAction(bool IsPressed) override;
 	virtual bool OnRightTriggerAction(bool IsPressed) override;

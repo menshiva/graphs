@@ -36,6 +36,12 @@ void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
 	RightController->SetupInputBindings(PlayerInputComponent);
 }
 
+UVRControllerBase *AVRPawn::GetOtherController(const UVRControllerBase *ThisController) const {
+	if (ThisController == RightController)
+		return LeftController;
+	return RightController;
+}
+
 void AVRPawn::ToggleCameraFadeAnimation() {
 	CameraFadeAnimationEnabled = !CameraFadeAnimationEnabled;
 	SaveConfig();

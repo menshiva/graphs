@@ -16,6 +16,8 @@ public:
 	FORCEINLINE UVRControllerRight *GetRightController() const { return RightController; }
 	FORCEINLINE class UToolController *GetToolController() const { return ToolController; }
 
+	UVRControllerBase *GetOtherController(const UVRControllerBase *ThisController) const;
+
 	// https://docs.unrealengine.com/4.27/en-US/SharingAndReleasing/XRDevelopment/VR/VRPlatforms/SteamVR/HowTo/SeatedCamera/#:~:text=Z%20value%20to-,121,-.
 	FORCEINLINE static float GetHeight() { return 121.0f; }
 

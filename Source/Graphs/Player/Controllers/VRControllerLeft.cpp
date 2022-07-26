@@ -2,6 +2,7 @@
 #include "NiagaraComponent.h"
 #include "NiagaraSystem.h"
 #include "Graphs/Player/Pawn/VRPawn.h"
+#include "Graphs/Utils/Colors.h"
 
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
@@ -9,7 +10,7 @@ UVRControllerLeft::UVRControllerLeft(
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
 	TeleportLaser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "TeleportLaser");
 	TeleportLaser->SetAsset(LaserAsset.Object);
-	TeleportLaser->SetColorParameter("User.CustomColor", TeleportLaserColor);
+	TeleportLaser->SetColorParameter("User.CustomColor", ColorUtils::TeleportColor);
 	TeleportLaser->Deactivate();
 	TeleportLaser->SetVisibility(false);
 	TeleportLaser->SetupAttachment(GetMotionControllerAim());
@@ -30,14 +31,14 @@ UVRControllerLeft::UVRControllerLeft(
 		0,
 		TeleportPreviewMaterialAsset.Object
 	);
-	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", TeleportLaserColor);
+	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", ColorUtils::TeleportColor);
 	TeleportPreviewMesh->SetMaterial(0, TeleportPreviewMaterialInst);
 	TeleportPreviewMesh->SetupAttachment(this);
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> TeleportRingAsset(TEXT("/Game/Graphs/VFX/TeleportRing"));
 	TeleportRing = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "TeleportRing");
 	TeleportRing->SetAsset(TeleportRingAsset.Object);
-	TeleportRing->SetColorParameter("User.CustomColor", TeleportLaserColor);
+	TeleportRing->SetColorParameter("User.CustomColor", ColorUtils::TeleportColor);
 	TeleportRing->Deactivate();
 	TeleportRing->SetVisibility(false);
 	TeleportRing->SetupAttachment(this);

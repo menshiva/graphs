@@ -6,23 +6,21 @@ UToolController::UToolController() {
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-void UToolController::OnEntityHitChanged(const UVRControllerBase *ControllerHit, const AEntity* Entity, const bool IsHit) const {
-	// TODO: do it only if active tool can handle this entity
-	if (const auto PrimitiveComponent = Cast<UPrimitiveComponent>(Entity->GetStaticMeshComponent())) {
-		if (IsHit)
-			ControllerHit->PlayActionHapticEffect();
-		UVRControllerBase *OtherController;
-		if (ControllerHit == VrPawn->GetRightController())
-			OtherController = VrPawn->GetLeftController();
-		else
-			OtherController = VrPawn->GetRightController();
-		if (OtherController->GetHitResult().GetActor() != Entity)
-			PrimitiveComponent->SetRenderCustomDepth(IsHit);
+void UToolController::OnEntityHitChanged(const UVRControllerBase *ControllerHit, AEntity *Entity, const bool IsHit) const {
+	SelectionType NewSelection = IsHit ? SelectionType::HIT : SelectionType::NONE;
+	if (IsHit)
+		ControllerHit->PlayActionHapticEffect();
+	if (const auto NodeEntity = Cast<ANodeEntity>(Entity)) {
+		const auto OtherController = VrPawn->GetOtherController(ControllerHit);
+		if (OtherController->GetHitEntity() != Entity) {
+			Provider->PushCommand<NodeCommands::SetSelectionType>(NodeEntity, NewSelection);
+			Provider->MarkDirty();
+		}
 	}
 }
 
 bool UToolController::OnLeftTriggerAction(const bool IsPressed) {
-	// TODO: do it only if active tool can handle this entity
+	// TODO: only for test
 	if (VrPawn->GetLeftController()->GetHitResult().GetActor() != nullptr) {
 		VrPawn->GetLeftController()->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
 		return true;
@@ -32,7 +30,7 @@ bool UToolController::OnLeftTriggerAction(const bool IsPressed) {
 }
 
 bool UToolController::OnRightTriggerAction(const bool IsPressed) {
-	// TODO: do it only if active tool can handle this entity
+	// TODO: only for test
 	if (VrPawn->GetRightController()->GetHitResult().GetActor() != nullptr) {
 		VrPawn->GetRightController()->SetState(IsPressed ? ControllerState::TOOL : ControllerState::NONE);
 		return true;
@@ -66,7 +64,7 @@ void UToolController::BeginPlay() {
 			{1560.0f, -250.0f, 650.0f},
 		};
 		for (const auto &Pos : Positions)
-			Provider->PushCommand<NodeCommands::Create>(nullptr, Pos);
+			Provider->PushCommand<NodeCommands::Create>(Pos);
 		Provider->MarkDirty();
 	}
 }

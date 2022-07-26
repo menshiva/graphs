@@ -3,6 +3,7 @@
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
 #include "Graphs/Player/ToolController/ToolController.h"
+#include "Graphs/Utils/Colors.h"
 
 UVRControllerBase::UVRControllerBase(
 	const FObjectInitializer &ObjectInitializer,
@@ -31,7 +32,7 @@ UVRControllerBase::UVRControllerBase(
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
 	Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "Laser");
 	Laser->SetAsset(LaserAsset.Object);
-	Laser->SetColorParameter("User.CustomColor", MeshInteractionLaserColor);
+	Laser->SetColorParameter("User.CustomColor", ColorUtils::SelectionColor);
 	if (!LaserVisibleFlag) {
 		Laser->Deactivate();
 		Laser->SetVisibility(false);
