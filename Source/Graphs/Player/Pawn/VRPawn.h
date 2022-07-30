@@ -5,18 +5,15 @@
 #include "VRPawn.generated.h"
 
 UCLASS(Config = UserPreferences)
-class GRAPHS_API AVRPawn final : public APawn, public LeftControllerInputInterface, public RightControllerInputInterface {
+class GRAPHS_API AVRPawn final : public APawn, public RightControllerInputInterface {
 	GENERATED_BODY()
 public:
 	explicit AVRPawn(const FObjectInitializer &ObjectInitializer);
 	virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 
 	FORCEINLINE APlayerController *GetPlayerController() const { return Cast<APlayerController>(Controller); }
-	FORCEINLINE UVRControllerLeft *GetLeftController() const { return LeftController; }
-	FORCEINLINE UVRControllerRight *GetRightController() const { return RightController; }
-	FORCEINLINE class UToolController *GetToolController() const { return ToolController; }
-
-	UVRControllerBase *GetOtherController(const UVRControllerBase *ThisController) const;
+	FORCEINLINE UVRControllerRight *GetRightVrController() const { return RightVrController; }
+	FORCEINLINE class UToolProvider *GetToolProvider() const { return ToolProvider; }
 
 	// https://docs.unrealengine.com/4.27/en-US/SharingAndReleasing/XRDevelopment/VR/VRPlatforms/SteamVR/HowTo/SeatedCamera/#:~:text=Z%20value%20to-,121,-.
 	FORCEINLINE static float GetHeight() { return 121.0f; }
@@ -35,7 +32,6 @@ public:
 	UFUNCTION()
 	void QuitGame();
 
-	virtual bool OnLeftTriggerAction(bool IsPressed) override;
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 protected:
 	virtual void BeginPlay() override;
@@ -46,10 +42,10 @@ private:
 	FORCEINLINE void FadeCamera(float ToValue) const;
 
 	UPROPERTY()
-	UVRControllerLeft *LeftController;
+	UVRControllerLeft *LeftVrController;
 
 	UPROPERTY()
-	UVRControllerRight *RightController;
+	UVRControllerRight *RightVrController;
 
 	UPROPERTY()
 	class UCameraComponent *Camera;
@@ -58,7 +54,7 @@ private:
 	class UMenuWidgetComponent *Menu;
 
 	UPROPERTY()
-	UToolController *ToolController;
+	UToolProvider *ToolProvider;
 
 	UPROPERTY(Config)
 	bool CameraFadeAnimationEnabled = true;

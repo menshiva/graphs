@@ -1,12 +1,16 @@
 #include "VRControllerRight.h"
-#include "NiagaraComponent.h"
 #include "Components/WidgetInteractionComponent.h"
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
-#include "Graphs/Player/Pawn/VRPawn.h"
+#include "Graphs/Player/ToolProvider/ToolProvider.h"
+#include "Graphs/Utils/Colors.h"
 
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Right) {
+	SetLaserNiagaraColor(ColorUtils::SelectionColor);
+	SetLaserLength(MeshInteractionLaserMaxDistance);
+	UVRControllerBase::SetLaserActive(LaserVisibleFlag);
+
 	UiInteractor = ObjectInitializer.CreateDefaultSubobject<UWidgetInteractionComponent>(this, "UiInteractor");
 	UiInteractor->PointerIndex = 1;
 	UiInteractor->TraceChannel = ECC_GameTraceChannel1; // VRUI trace channel
@@ -29,20 +33,36 @@ void UVRControllerRight::TickComponent(
 	FActorComponentTickFunction* ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (GetState() == ControllerState::UI) {
-		const auto &hr = UiInteractor->GetLastHitResult();
-		if (const auto menu = Cast<UMenuWidgetComponent>(hr.Component.Get()))
-			menu->SetCursorLocation(hr.ImpactPoint);
+	if (State == ControllerState::UI) {
+		const auto &UiHitResult = UiInteractor->GetLastHitResult();
+		if (const auto Menu = Cast<UMenuWidgetComponent>(UiHitResult.Component.Get()))
+			Menu->SetCursorLocation(UiHitResult.ImpactPoint);
+	}
+	else if (State == ControllerState::NONE && IsLaserActive()) {
+		FHitResult NewHitResult;
+		GetWorld()->LineTraceSingleByChannel(
+			NewHitResult,
+			GetLaserStartPosition(),
+			GetLaserStartPosition() + MeshInteractionLaserMaxDistance * GetLaserDirection(),
+			ECC_GameTraceChannel2 // Graph trace channel
+		);
+		const auto ToolProvider = GetVrPawn()->GetToolProvider();
+		if (NewHitResult.GetActor() != ToolProvider->GetHitResult().GetActor())
+			ToolProvider->SetHitResult(NewHitResult);
+		if (NewHitResult.bBlockingHit)
+			SetLaserLength(FVector::Dist(GetLaserStartPosition(), NewHitResult.ImpactPoint));
+		else
+			SetLaserLength(MeshInteractionLaserMaxDistance);
 	}
 }
 
 bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 	TriggerPressed = IsPressed;
-	if (!IsPressed && GetState() == ControllerState::UI && !UiInteractor->IsOverHitTestVisibleWidget()) {
+	if (!IsPressed && State == ControllerState::UI && !UiInteractor->IsOverHitTestVisibleWidget()) {
 		OnUiHover(nullptr, nullptr);
 		return true;
 	}
-	if (GetState() == ControllerState::UI) {
+	if (State == ControllerState::UI) {
 		if (IsPressed) {
 			UiInteractor->PressPointerKey(EKeys::LeftMouseButton);
 			PlayActionHapticEffect();
@@ -60,10 +80,12 @@ bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
 }
 
-void UVRControllerRight::SetState(const ControllerState NewState) {
-	Super::SetState(NewState);
-	if (NewState == ControllerState::NONE && UiInteractor->IsVisible() && UiInteractor->IsOverHitTestVisibleWidget())
-		OnUiHover(UiInteractor->GetHoveredWidgetComponent(), nullptr);
+void UVRControllerRight::SetLaserActive(const bool IsActive) {
+	LaserVisibleFlag = IsActive;
+	if (State != ControllerState::UI) {
+		Super::SetLaserActive(IsActive);
+		GetVrPawn()->GetToolProvider()->ResetHitResult();
+	}
 }
 
 void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
@@ -77,27 +99,42 @@ void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
 		UiInteractor->ReleasePointerKey(EKeys::LeftMouseButton);
 		UiInteractor->Deactivate();
 		UiInteractor->SetVisibility(false);
-		if (GetState() == ControllerState::UI)
+		if (State == ControllerState::UI)
 			OnUiHover(nullptr, nullptr);
+	}
+}
+
+void UVRControllerRight::SetToolStateEnabled(const bool Enabled) {
+	if (Enabled) {
+		State = ControllerState::TOOL;
+		UVRControllerBase::SetLaserActive(false);
+	}
+	else {
+		State = ControllerState::NONE;
+		if (UiInteractor->IsVisible() && UiInteractor->IsOverHitTestVisibleWidget())
+			OnUiHover(UiInteractor->GetHoveredWidgetComponent(), nullptr);
+		if (State == ControllerState::NONE && LaserVisibleFlag)
+			UVRControllerBase::SetLaserActive(true);
 	}
 }
 
 void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent) {
 	if (const auto Menu = Cast<UMenuWidgetComponent>(WidgetComponent)) {
-		if (GetState() != ControllerState::TOOL) {
-			SetState(ControllerState::UI);
-			if (IsLaserVisibleFlag())
-				SetLaserActive(false, false);
-			ResetHitResult();
+		if (State != ControllerState::TOOL) {
+			State = ControllerState::UI;
+			if (LaserVisibleFlag) {
+				UVRControllerBase::SetLaserActive(false);
+				GetVrPawn()->GetToolProvider()->ResetHitResult();
+			}
 			Menu->SetCursorLocation(UiInteractor->GetLastHitResult().ImpactPoint);
 			Menu->SetCursorVisibility(true);
 		}
 	}
 	else {
 		if (!UiInteractor->IsVisible() || !TriggerPressed) {
-			SetState(ControllerState::NONE);
-			if (IsLaserVisibleFlag())
-				SetLaserActive(true, false);
+			State = ControllerState::NONE;
+			if (LaserVisibleFlag)
+				UVRControllerBase::SetLaserActive(true);
 		}
 		if (const auto PrevMenu = Cast<UMenuWidgetComponent>(PreviousWidgetComponent))
 			PrevMenu->SetCursorVisibility(false);

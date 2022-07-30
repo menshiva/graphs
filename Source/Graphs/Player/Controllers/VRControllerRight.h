@@ -3,6 +3,12 @@
 #include "VRControllerBase.h"
 #include "VRControllerRight.generated.h"
 
+enum class ControllerState : uint8_t {
+	NONE,
+	UI,
+	TOOL
+};
+
 class RightControllerInputInterface {
 public:
 	RightControllerInputInterface() = default;
@@ -23,9 +29,11 @@ public:
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 
-	virtual void SetState(const ControllerState NewState) override;
+	virtual void SetLaserActive(bool IsActive) override;
 
 	void SetUiInteractionEnabled(bool Enabled);
+
+	void SetToolStateEnabled(bool Enabled);
 private:
 	UFUNCTION()
 	void OnUiHover(class UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);
@@ -33,5 +41,11 @@ private:
 	UPROPERTY()
 	class UWidgetInteractionComponent *UiInteractor;
 
+	ControllerState State = ControllerState::NONE;
+
 	bool TriggerPressed = false;
+
+	bool LaserVisibleFlag = true;
+
+	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
 };

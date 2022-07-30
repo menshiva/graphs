@@ -2,7 +2,7 @@
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
-#include "Graphs/Player/ToolController/ToolController.h"
+#include "Graphs/Player/ToolProvider/ToolProvider.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInitializer) {
@@ -16,30 +16,24 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 	Camera = ObjectInitializer.CreateDefaultSubobject<UCameraComponent>(this, "VRCamera");
 	Camera->SetupAttachment(RootComponent);
 
-	LeftController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
-	LeftController->SetupVrPawn(this);
-	LeftController->SetupAttachment(RootComponent);
+	LeftVrController = ObjectInitializer.CreateDefaultSubobject<UVRControllerLeft>(this, "VRLeftController");
+	LeftVrController->SetupVrPawn(this);
+	LeftVrController->SetupAttachment(RootComponent);
 
-	RightController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
-	RightController->SetupVrPawn(this);
-	RightController->SetupAttachment(RootComponent);
+	RightVrController = ObjectInitializer.CreateDefaultSubobject<UVRControllerRight>(this, "VRRightController");
+	RightVrController->SetupVrPawn(this);
+	RightVrController->SetupAttachment(RootComponent);
 
 	Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
-	Menu->SetupAttachment(LeftController->GetMotionController());
+	Menu->SetupAttachment(LeftVrController->GetMotionController());
 
-	ToolController = ObjectInitializer.CreateDefaultSubobject<UToolController>(this, "ToolController");
-	ToolController->SetupPawn(this);
+	ToolProvider = ObjectInitializer.CreateDefaultSubobject<UToolProvider>(this, "ToolProvider");
+	ToolProvider->SetupPawn(this);
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
-	LeftController->SetupInputBindings(PlayerInputComponent);
-	RightController->SetupInputBindings(PlayerInputComponent);
-}
-
-UVRControllerBase *AVRPawn::GetOtherController(const UVRControllerBase *ThisController) const {
-	if (ThisController == RightController)
-		return LeftController;
-	return RightController;
+	LeftVrController->SetupInputBindings(PlayerInputComponent);
+	RightVrController->SetupInputBindings(PlayerInputComponent);
 }
 
 void AVRPawn::ToggleCameraFadeAnimation() {
@@ -50,23 +44,23 @@ void AVRPawn::ToggleCameraFadeAnimation() {
 void AVRPawn::ToggleMenu() const {
 	bool isMenuShown = Menu->IsVisible();
 	isMenuShown = !isMenuShown;
+	RightVrController->SetUiInteractionEnabled(isMenuShown);
 	Menu->SetVisble(isMenuShown);
-	RightController->SetUiInteractionEnabled(isMenuShown);
 }
 
 void AVRPawn::Rotate(const float Value) {
 	CameraTeleportAnimation([&, Value] {
 		AddActorWorldRotation({0.0f, roundf(Value) * RotationAngle, 0.0f});
-		LeftController->ForceUpdateLaserTransform();
-		RightController->ForceUpdateLaserTransform();
+		LeftVrController->ForceUpdateLaserTransform();
+		RightVrController->ForceUpdateLaserTransform();
 	});
 }
 
 void AVRPawn::Teleport(const FVector &Location) {
 	CameraTeleportAnimation([&] {
 		SetActorLocation(Location);
-		LeftController->ForceUpdateLaserTransform();
-		RightController->ForceUpdateLaserTransform();
+		LeftVrController->ForceUpdateLaserTransform();
+		RightVrController->ForceUpdateLaserTransform();
 	});
 }
 
@@ -79,12 +73,8 @@ void AVRPawn::QuitGame() {
 	}), ScreenFadeDuration, false);
 }
 
-bool AVRPawn::OnLeftTriggerAction(const bool IsPressed) {
-	return ToolController->OnLeftTriggerAction(IsPressed);
-}
-
 bool AVRPawn::OnRightTriggerAction(const bool IsPressed) {
-	return ToolController->OnRightTriggerAction(IsPressed);
+	return ToolProvider->OnRightTriggerAction(IsPressed);
 }
 
 void AVRPawn::BeginPlay() {

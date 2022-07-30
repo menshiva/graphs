@@ -1,9 +1,8 @@
 #include "VRControllerBase.h"
 #include "NiagaraComponent.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
+#include "Graphs/Player/Pawn/VRPawn.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
-#include "Graphs/Player/ToolController/ToolController.h"
-#include "Graphs/Utils/Colors.h"
 
 UVRControllerBase::UVRControllerBase(
 	const FObjectInitializer &ObjectInitializer,
@@ -32,13 +31,9 @@ UVRControllerBase::UVRControllerBase(
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
 	Laser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "Laser");
 	Laser->SetAsset(LaserAsset.Object);
-	Laser->SetColorParameter("User.CustomColor", ColorUtils::SelectionColor);
-	if (!LaserVisibleFlag) {
-		Laser->Deactivate();
-		Laser->SetVisibility(false);
-	}
+	Laser->Deactivate();
+	Laser->SetVisibility(false);
 	Laser->SetupAttachment(MotionControllerAim);
-	ForceUpdateLaserTransform();
 
 	const ConstructorHelpers::FObjectFinder<UHapticFeedbackEffect_Base> HapticEffectAsset(TEXT(
 		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
@@ -50,41 +45,26 @@ void UVRControllerBase::SetupVrPawn(AVRPawn *Pawn) {
 	VrPawn = Pawn;
 }
 
-void UVRControllerBase::SetLaserActive(const bool IsActive, const bool UpdateFlag) {
+bool UVRControllerBase::IsLaserActive() const {
+	return Laser->IsVisible();
+}
+
+void UVRControllerBase::SetLaserActive(const bool IsActive) {
 	if (IsActive) {
-		SetLaserStartEnd(Laser, LaserStartPosition, GetLaserEndPosition());
+		ForceUpdateLaserTransform();
+		SetLaserNiagaraStartEnd(Laser, LaserStartPosition, GetLaserEndPosition());
 		Laser->Activate();
 		Laser->SetVisibility(true);
 	}
 	else {
 		Laser->Deactivate();
 		Laser->SetVisibility(false);
-		ResetHitResult();
 	}
-	if (UpdateFlag)
-		LaserVisibleFlag = IsActive;
 }
 
 void UVRControllerBase::ForceUpdateLaserTransform() {
 	LaserStartPosition = MotionControllerAim->GetComponentLocation();
 	LaserDirection = MotionControllerAim->GetForwardVector();
-}
-
-AEntity *UVRControllerBase::GetHitEntity() const {
-	if (HitResult.bBlockingHit)
-		if (const auto Entity = Cast<AEntity>(HitResult.GetActor()))
-			return Entity;
-	return nullptr;
-}
-
-void UVRControllerBase::ResetHitResult() {
-	if (const auto HitEntity = GetHitEntity())
-		VrPawn->GetToolController()->OnEntityHitChanged(this, HitEntity, false);
-	HitResult.Reset();
-}
-
-void UVRControllerBase::SetState(const ControllerState NewState) {
-	State = NewState;
 }
 
 void UVRControllerBase::PlayActionHapticEffect() const {
@@ -98,40 +78,16 @@ void UVRControllerBase::TickComponent(
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 
-	if (State == ControllerState::NONE && Laser->IsVisible()) {
-		FHitResult NewHitResult;
-		GetWorld()->LineTraceSingleByChannel(
-			NewHitResult,
-			LaserStartPosition,
-			LaserStartPosition + MeshInteractionLaserMaxDistance * LaserDirection,
-			ECC_GameTraceChannel2 // Graph trace channel
-		);
-
-		if (NewHitResult.GetActor() != HitResult.GetActor()) {
-			if (const auto PrevHitEntity = GetHitEntity())
-				VrPawn->GetToolController()->OnEntityHitChanged(this, PrevHitEntity, false);
-			if (NewHitResult.bBlockingHit)
-				if (const auto NewHitEntity = Cast<AEntity>(NewHitResult.GetActor()))
-					VrPawn->GetToolController()->OnEntityHitChanged(this, NewHitEntity, true);
-		}
-
-		HitResult = NewHitResult;
-		if (HitResult.GetActor() != nullptr && Cast<AEntity>(HitResult.GetActor()) == nullptr) {
-			// make sure that hit actor is AEntity
-			HitResult.Reset();
-		}
-
-		if (GetHitEntity() != nullptr)
-			LaserLength = FVector::Dist(LaserStartPosition, HitResult.ImpactPoint);
-		else
-			LaserLength = MeshInteractionLaserMaxDistance;
-	}
-
 	LaserStartPosition = FMath::Lerp(LaserStartPosition, MotionControllerAim->GetComponentLocation(), 0.5f);
 	LaserDirection = FMath::Lerp(LaserDirection, MotionControllerAim->GetForwardVector(), 0.25f);
 
-	if (Laser->IsVisible())
-		SetLaserStartEnd(Laser, LaserStartPosition, GetLaserEndPosition());
+	if (IsLaserActive())
+		SetLaserNiagaraStartEnd(Laser, LaserStartPosition, GetLaserEndPosition());
+}
+
+void UVRControllerBase::BeginPlay() {
+	Super::BeginPlay();
+	ForceUpdateLaserTransform();
 }
 
 void UVRControllerBase::BindAction(
@@ -155,12 +111,16 @@ void UVRControllerBase::BindAxis(
 	PlayerInputComponent->AxisBindings.Push(MoveTemp(AB));
 }
 
-void UVRControllerBase::SetLaserStartEnd(UNiagaraComponent *aLaser, const FVector &Start, const FVector &End) {
+void UVRControllerBase::SetLaserNiagaraColor(const FLinearColor &Color) const {
+	Laser->SetColorParameter("User.CustomColor", Color);
+}
+
+void UVRControllerBase::SetLaserNiagaraStartEnd(UNiagaraComponent *aLaser, const FVector &Start, const FVector &End) {
 	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
-			aLaser,
-			"User.PointArray", 0,
-			Start, false
-		);
+		aLaser,
+		"User.PointArray", 0,
+		Start, false
+	);
 	UNiagaraDataInterfaceArrayFunctionLibrary::SetNiagaraArrayVectorValue(
 		aLaser,
 		"User.PointArray", 1,

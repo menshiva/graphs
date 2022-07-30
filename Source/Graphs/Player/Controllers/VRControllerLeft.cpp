@@ -1,19 +1,14 @@
 #include "VRControllerLeft.h"
 #include "NiagaraComponent.h"
-#include "NiagaraSystem.h"
 #include "Graphs/Player/Pawn/VRPawn.h"
 #include "Graphs/Utils/Colors.h"
 
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
-	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
-	TeleportLaser = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "TeleportLaser");
-	TeleportLaser->SetAsset(LaserAsset.Object);
-	TeleportLaser->SetColorParameter("User.CustomColor", ColorUtils::TeleportColor);
-	TeleportLaser->Deactivate();
-	TeleportLaser->SetVisibility(false);
-	TeleportLaser->SetupAttachment(GetMotionControllerAim());
+	SetLaserNiagaraColor(ColorUtils::TeleportColor);
+	SetLaserLength(TeleportLaserDefaultLength);
+	UVRControllerBase::SetLaserActive(false);
 
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> TeleportPreviewMeshAsset(TEXT("/Engine/BasicShapes/Sphere"));
 	const ConstructorHelpers::FObjectFinder<UMaterial> TeleportPreviewMaterialAsset(
@@ -51,41 +46,34 @@ void UVRControllerLeft::SetupInputBindings(UInputComponent *Pic) {
 	});
 
 	BindAction(Pic, "LeftTrigger", IE_Pressed, [this] {
-		OnLeftTriggerAction(true);
-	});
-	BindAction(Pic, "LeftTrigger", IE_Released, [this] {
-		OnLeftTriggerAction(false);
+		if (IsLaserActive()) {
+			GetVrPawn()->Teleport(GetLaserEndPosition());
+			PlayActionHapticEffect();
+		}
 	});
 
 	BindAction(Pic, "LeftGrip", IE_Pressed, [this] {
-		SetState(ControllerState::TELEPORTATION);
-		if (IsLaserVisibleFlag())
-			SetLaserActive(false, false);
-		ResetHitResult();
-		TeleportLaser->Activate();
+		SetLaserActive(true);
 		TeleportRing->Activate();
-		TeleportLaser->SetVisibility(true);
 		TeleportRing->SetVisibility(true);
 		TeleportPreviewMesh->SetVisibility(true);
 		PlayActionHapticEffect();
 	});
 	BindAction(Pic, "LeftGrip", IE_Released, [this] {
-		SetState(ControllerState::NONE);
-		if (IsLaserVisibleFlag())
-			SetLaserActive(true, false);
-		TeleportLaser->Deactivate();
+		SetLaserActive(false);
 		TeleportRing->Deactivate();
-		TeleportLaser->SetVisibility(false);
 		TeleportRing->SetVisibility(false);
 		TeleportPreviewMesh->SetVisibility(false);
 	});
 
 	BindAxis(Pic, "LeftThumbstickAxisY", [this] (const float Value) {
-		if (GetState() == ControllerState::TELEPORTATION) {
-			TeleportLaserCurrentDistance = FMath::Clamp(
-				TeleportLaserCurrentDistance + Value * TeleportLaserLengthDeltaSpeed,
-				TeleportLaserMinDistance,
-				TeleportLaserMaxDistance
+		if (IsLaserActive()) {
+			SetLaserLength(
+				FMath::Clamp(
+					GetLaserLength() + Value * TeleportLaserLengthDeltaSpeed,
+					TeleportLaserMinLength,
+					TeleportLaserMaxLength
+				)
 			);
 		}
 	});
@@ -110,24 +98,10 @@ void UVRControllerLeft::TickComponent(
 	FActorComponentTickFunction* ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	if (GetState() == ControllerState::TELEPORTATION) {
-		TeleportLocation = GetLaserStartPosition() + GetLaserDirection() * TeleportLaserCurrentDistance;
-		SetLaserStartEnd(TeleportLaser, GetLaserStartPosition(), TeleportLocation);
+	if (IsLaserActive()) {
+		auto TeleportLocation = GetLaserEndPosition();
 		TeleportPreviewMesh->SetWorldLocation(TeleportLocation);
-		TeleportRing->SetWorldLocation({TeleportLocation.X, TeleportLocation.Y, TeleportLocation.Z - AVRPawn::GetHeight()});
+		TeleportLocation.Z -= AVRPawn::GetHeight();
+		TeleportRing->SetWorldLocation(TeleportLocation);
 	}
-}
-
-bool UVRControllerLeft::OnLeftTriggerAction(const bool IsPressed) {
-	if (IsPressed && GetState() == ControllerState::TELEPORTATION) {
-		GetVrPawn()->Teleport(TeleportLocation);
-		PlayActionHapticEffect();
-		return true;
-	}
-	if (GetVrPawn()->OnLeftTriggerAction(IsPressed)) {
-		if (IsPressed)
-			PlayActionHapticEffect();
-		return true;
-	}
-	return LeftControllerInputInterface::OnLeftTriggerAction(IsPressed);
 }
