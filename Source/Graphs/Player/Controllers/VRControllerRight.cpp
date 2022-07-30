@@ -27,17 +27,28 @@ void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
 	});
 	BindAction(Pic, "RightGrip", IE_Pressed, [this] {
 		GripPressed = true;
-		const auto ToolProvider = GetVrPawn()->GetToolProvider();
-		const auto &HitResult = ToolProvider->GetHitResult();
-		if (HitResult.bBlockingHit)
-			ToolProvider->SetHitResult(HitResult);
+		if (State != ControllerState::TOOL) {
+			const auto ToolProvider = GetVrPawn()->GetToolProvider();
+			const auto &HitResult = ToolProvider->GetHitResult();
+			if (HitResult.bBlockingHit)
+				ToolProvider->SetHitResult(HitResult);
+		}
 	});
 	BindAction(Pic, "RightGrip", IE_Released, [this] {
 		GripPressed = false;
-		const auto ToolProvider = GetVrPawn()->GetToolProvider();
-		const auto &HitResult = ToolProvider->GetHitResult();
-		if (HitResult.bBlockingHit)
-			ToolProvider->SetHitResult(HitResult);
+		if (State != ControllerState::TOOL) {
+			const auto ToolProvider = GetVrPawn()->GetToolProvider();
+			const auto &HitResult = ToolProvider->GetHitResult();
+			if (HitResult.bBlockingHit)
+				ToolProvider->SetHitResult(HitResult);
+		}
+	});
+
+	BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
+		OnRightThumbstickY(Value);
+	});
+	BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
+		// TODO
 	});
 }
 
@@ -94,12 +105,16 @@ bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
 }
 
+bool UVRControllerRight::OnRightThumbstickY(const float Value) {
+	return GetVrPawn()->OnRightThumbstickY(Value);
+}
+
 void UVRControllerRight::SetLaserActive(const bool IsActive) {
 	LaserVisibleFlag = IsActive;
-	if (State != ControllerState::UI) {
+	if (State != ControllerState::UI)
 		Super::SetLaserActive(IsActive);
+	if (State != ControllerState::TOOL)
 		GetVrPawn()->GetToolProvider()->ResetHitResult();
-	}
 }
 
 void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {

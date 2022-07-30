@@ -19,8 +19,5 @@ private:
 	UPROPERTY()
 	UNiagaraComponent *TeleportRing;
 
-	constexpr static float TeleportLaserLengthDeltaSpeed = 5.0f;
 	constexpr static float TeleportLaserDefaultLength = 150.0f;
-	constexpr static float TeleportLaserMinLength = 25.0f;
-	constexpr static float TeleportLaserMaxLength = 1500.0f;
 };

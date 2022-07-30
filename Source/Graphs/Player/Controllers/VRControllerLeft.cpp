@@ -67,15 +67,8 @@ void UVRControllerLeft::SetupInputBindings(UInputComponent *Pic) {
 	});
 
 	BindAxis(Pic, "LeftThumbstickAxisY", [this] (const float Value) {
-		if (IsLaserActive()) {
-			SetLaserLength(
-				FMath::Clamp(
-					GetLaserLength() + Value * TeleportLaserLengthDeltaSpeed,
-					TeleportLaserMinLength,
-					TeleportLaserMaxLength
-				)
-			);
-		}
+		if (IsLaserActive())
+			SetLaserLengthDelta(Value);
 	});
 	BindAxis(Pic, "LeftThumbstickAxisX", [this] (const float Value) {
 		static bool isClicked = false;

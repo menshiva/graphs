@@ -3,9 +3,12 @@
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Kismet/GameplayStatics.h"
+#include "Tools/Editor/EditorTool.h"
 
-UToolProvider::UToolProvider() {
+UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UActorComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
+
+	RegisterTool<UEditorTool>(ObjectInitializer);
 }
 
 void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
@@ -37,17 +40,15 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 }
 
 bool UToolProvider::OnRightTriggerAction(const bool IsPressed) {
-	// TODO: only for test
-	if (HitResult.bBlockingHit) {
-		VrPawn->GetRightVrController()->SetToolStateEnabled(IsPressed);
-		return true;
-	}
-	// if (IsPressed && HitEntityId != ENTITY_NONE) {
-	// 	GraphProvider->ExecuteCommand<VertexCommands::Remove>(HitEntityId);
-	// 	return true;
-	// }
-	// TODO: pass to active tool
+	if (ActiveTool.IsValid())
+		ActiveTool->OnRightTriggerAction(IsPressed);
 	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
+}
+
+bool UToolProvider::OnRightThumbstickY(const float Value) {
+	if (ActiveTool.IsValid())
+		ActiveTool->OnRightThumbstickY(Value);
+	return RightControllerInputInterface::OnRightThumbstickY(Value);
 }
 
 void UToolProvider::TickComponent(
@@ -56,7 +57,16 @@ void UToolProvider::TickComponent(
 	FActorComponentTickFunction* ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-	// TODO: pass to active tool
+	if (ActiveTool.IsValid())
+		ActiveTool->TickTool();
+}
+
+void UToolProvider::SetActiveTool(UTool *NewTool) {
+	if (ActiveTool.IsValid())
+		ActiveTool->OnDetach();
+	ActiveTool = NewTool;
+	if (ActiveTool.IsValid())
+		ActiveTool->OnAttach();
 }
 
 void UToolProvider::BeginPlay() {
@@ -78,6 +88,8 @@ void UToolProvider::BeginPlay() {
 		GraphProvider->ExecuteCommand<GraphCommands::Create>(&GraphId);
 		for (const auto &Pos : Positions)
 			GraphProvider->ExecuteCommand<VertexCommands::Create>(GraphId, nullptr, Pos);
+
+		SetActiveTool(Tools[0]);
 	}
 }
 

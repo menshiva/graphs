@@ -77,6 +77,10 @@ bool AVRPawn::OnRightTriggerAction(const bool IsPressed) {
 	return ToolProvider->OnRightTriggerAction(IsPressed);
 }
 
+bool AVRPawn::OnRightThumbstickY(const float Value) {
+	return ToolProvider->OnRightThumbstickY(Value);
+}
+
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
 	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);

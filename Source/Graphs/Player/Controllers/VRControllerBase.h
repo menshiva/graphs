@@ -23,7 +23,11 @@ public:
 	bool IsLaserActive() const;
 	virtual void SetLaserActive(bool IsActive);
 
+	FORCEINLINE const FVector &GetLaserStartPosition() const { return LaserStartPosition; }
 	FORCEINLINE FVector GetLaserEndPosition() const { return LaserStartPosition + LaserLength * LaserDirection; }
+	FORCEINLINE float GetLaserLength() const { return LaserLength; }
+	void SetLaserLength(float NewLength);
+	void SetLaserLengthDelta(float Delta);
 	void ForceUpdateLaserTransform();
 
 	void PlayActionHapticEffect() const;
@@ -47,9 +51,6 @@ protected:
 	);
 
 	void SetLaserNiagaraColor(const FLinearColor &Color) const;
-	FORCEINLINE float GetLaserLength() const { return LaserLength; }
-	FORCEINLINE void SetLaserLength(const float NewLength) { LaserLength = NewLength; }
-	FORCEINLINE const FVector &GetLaserStartPosition() const { return LaserStartPosition; }
 	FORCEINLINE const FVector &GetLaserDirection() const { return LaserDirection; }
 private:
 	static void SetLaserNiagaraStartEnd(class UNiagaraComponent *aLaser, const FVector &Start, const FVector &End);
@@ -75,4 +76,7 @@ private:
 	float LaserLength = 0;
 
 	constexpr static float ActionHapticScale = 0.15f;
+	constexpr static float LaserMinLength = 15.0f;
+	constexpr static float LaserMaxLength = 5000.0f;
+	constexpr static float LaserLengthDeltaSpeed = 7.0f;
 };

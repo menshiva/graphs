@@ -62,6 +62,14 @@ void UVRControllerBase::SetLaserActive(const bool IsActive) {
 	}
 }
 
+void UVRControllerBase::SetLaserLength(const float NewLength) {
+	LaserLength = FMath::Clamp(NewLength, LaserMinLength, LaserMaxLength);
+}
+
+void UVRControllerBase::SetLaserLengthDelta(const float Delta) {
+	LaserLength = FMath::Clamp(LaserLength + Delta * LaserLengthDeltaSpeed, LaserMinLength, LaserMaxLength);
+}
+
 void UVRControllerBase::ForceUpdateLaserTransform() {
 	LaserStartPosition = MotionControllerAim->GetComponentLocation();
 	LaserDirection = MotionControllerAim->GetForwardVector();

@@ -17,3 +17,9 @@ GraphCommands::SetSelectionType::SetSelectionType(
 	for (const auto VertexId : Graph->VerticesIds)
 		Provider.ExecuteCommand<VertexCommands::SetSelectionType>(VertexId, NewType);
 }) {}
+
+GraphCommands::Move::Move(EntityId Id, const FVector &Delta) : Command([Id, &Delta] (AGraphProvider &Provider) {
+	const auto Graph = dynamic_cast<const GraphEntity*>(Provider.GetConstEntity(Id));
+	for (const auto VertexId : Graph->VerticesIds)
+		Provider.ExecuteCommand<VertexCommands::Move>(VertexId, Delta);
+}) {}

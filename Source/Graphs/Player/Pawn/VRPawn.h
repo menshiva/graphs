@@ -33,6 +33,7 @@ public:
 	void QuitGame();
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
+	virtual bool OnRightThumbstickY(float Value) override;
 protected:
 	virtual void BeginPlay() override;
 private:

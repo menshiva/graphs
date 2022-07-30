@@ -15,6 +15,7 @@ public:
 	virtual ~RightControllerInputInterface() = default;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) { return false; }
+	virtual bool OnRightThumbstickY(float Value) { return false; }
 };
 
 UCLASS()
@@ -28,11 +29,13 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
+	virtual bool OnRightThumbstickY(float Value) override;
 
 	virtual void SetLaserActive(bool IsActive) override;
 
 	void SetUiInteractionEnabled(bool Enabled);
 
+	FORCEINLINE bool IsInToolState() const { return State == ControllerState::TOOL; }
 	void SetToolStateEnabled(bool Enabled);
 
 	FORCEINLINE bool IsGripPressed() const { return GripPressed; }
@@ -48,7 +51,7 @@ private:
 	bool TriggerPressed = false;
 	bool GripPressed = false;
 
-	bool LaserVisibleFlag = true;
+	bool LaserVisibleFlag = false;
 
 	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
 };
