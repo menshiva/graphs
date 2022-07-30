@@ -1,57 +1,39 @@
 #include "ToolProvider.h"
-#include "Graphs/Provider/Commands/GraphCommands.h"
-#include "Graphs/Provider/Commands/NodeCommands.h"
+#include "Graphs/GraphProvider/Commands/GraphCommands.h"
+#include "Graphs/GraphProvider/Commands/VertexCommands.h"
+#include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Kismet/GameplayStatics.h"
 
 UToolProvider::UToolProvider() {
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
-/*void UToolController::SetSelectionMode(const SelectionMode NewMode) {
-	const auto RightHitEntity = VrPawn->GetRightController()->GetHitEntity();
-	auto LeftHitEntity = VrPawn->GetLeftController()->GetHitEntity();
-	if (RightHitEntity == LeftHitEntity) {
-		VrPawn->GetLeftController()->ResetHitResult();
-		LeftHitEntity = nullptr;
-	}
-	if (RightHitEntity != nullptr)
-		OnEntityHitChanged(VrPawn->GetRightController(), RightHitEntity, false);
-	if (LeftHitEntity != nullptr)
-		OnEntityHitChanged(VrPawn->GetLeftController(), LeftHitEntity, false);
-	SMode = NewMode;
-	if (RightHitEntity != nullptr)
-		OnEntityHitChanged(VrPawn->GetRightController(), RightHitEntity, true);
-	if (LeftHitEntity != nullptr)
-		OnEntityHitChanged(VrPawn->GetLeftController(), LeftHitEntity, true);
-}
+void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
+	if (HitEntityId != ENTITY_NONE && GraphProvider->IsEntityValid(HitEntityId))
+		SetEntitySelectionType(SelectionType::NONE);
+	HitResult.Reset();
+	HitEntityId = ENTITY_NONE;
+	if (NewHitResult.bBlockingHit && NewHitResult.GetActor()) {
+		EntityId Id = NewHitResult.GetActor()->GetUniqueID();
+		if (GraphProvider->IsEntityValid(Id)) {
+			const auto RightController = VrPawn->GetRightVrController();
+			if (RightController->IsGripPressed()) {
+				const auto Entity = GraphProvider->GetConstEntity(Id);
+				if (Entity->GetType() == EntityType::VERTEX) {
+					const auto Vertex = dynamic_cast<const VertexEntity*>(Entity);
+					Id = Vertex->GraphId;
+				}
+				else if (Entity->GetType() == EntityType::EDGE) {
+					// TODO
+				}
+			}
 
-void UToolController::OnEntityHitChanged(const UVRControllerBase *Controller, AEntity *Entity, const bool IsHit) const {
-	if (SMode == SelectionMode::NONE) return;
-	SelectionType NewSelection = IsHit ? SelectionType::HIT : SelectionType::NONE;
-	if (IsHit)
-		Controller->PlayActionHapticEffect();
-	if (const auto NodeEntity = Cast<ANodeEntity>(Entity)) {
-		const auto OtherController = VrPawn->GetOtherController(Controller);
-		if (SMode == SelectionMode::COMPONENT) {
-			if (OtherController->GetHitEntity() != Entity) {
-				Provider->PushCommand<NodeCommands::SetSelectionType>(NodeEntity, NewSelection);
-				Provider->ExecuteQueueCommands();
-			}
-		}
-		else {
-			const auto ParentGraph = Entity->GetParentGraph();
-			if (OtherController->GetHitEntity() == nullptr || OtherController->GetHitEntity()->GetParentGraph() != ParentGraph) {
-				Provider->PushCommand<GraphCommands::SetSelectionType>(ParentGraph, NewSelection);
-				Provider->ExecuteQueueCommands();
-			}
+			HitResult = NewHitResult;
+			HitEntityId = Id;
+			SetEntitySelectionType(SelectionType::HIT);
+			RightController->PlayActionHapticEffect();
 		}
 	}
-}*/
-
-void UToolProvider::SetHitResult(const FHitResult& NewHitResult) {
-	HitResult = NewHitResult;
-	// TODO
-	UKismetSystemLibrary::PrintString(GetWorld(), FString::FromInt(HitResult.bBlockingHit));
 }
 
 bool UToolProvider::OnRightTriggerAction(const bool IsPressed) {
@@ -60,6 +42,10 @@ bool UToolProvider::OnRightTriggerAction(const bool IsPressed) {
 		VrPawn->GetRightVrController()->SetToolStateEnabled(IsPressed);
 		return true;
 	}
+	// if (IsPressed && HitEntityId != ENTITY_NONE) {
+	// 	GraphProvider->ExecuteCommand<VertexCommands::Remove>(HitEntityId);
+	// 	return true;
+	// }
 	// TODO: pass to active tool
 	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
 }
@@ -88,15 +74,29 @@ void UToolProvider::BeginPlay() {
 			{1213.039551f, 60.030151f, 850.0f},
 			{1560.0f, -250.0f, 650.0f},
 		};
-		/*UGraph *TestGraph = nullptr;
-		Provider->PushCommand<GraphCommands::Create>(&TestGraph);
-		check(TestGraph == nullptr);
-		Provider->ExecuteQueueCommands();
-		check(TestGraph != nullptr);
+		EntityId GraphId = ENTITY_NONE;
+		GraphProvider->ExecuteCommand<GraphCommands::Create>(&GraphId);
 		for (const auto &Pos : Positions)
-			Provider->PushCommand<NodeCommands::Create>(TestGraph, Pos);
-		Provider->ExecuteQueueCommands();*/
-		// for (const auto &Pos : Positions)
-		// 	Provider->ExecuteCommand<NodeCommands::Create>(Pos);
+			GraphProvider->ExecuteCommand<VertexCommands::Create>(GraphId, nullptr, Pos);
+	}
+}
+
+void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const {
+	const auto Entity = GraphProvider->GetConstEntity(HitEntityId);
+	if (Entity->Selection != Selection) {
+		switch (Entity->GetType()) {
+			case EntityType::VERTEX: {
+				GraphProvider->ExecuteCommand<VertexCommands::SetSelectionType>(HitEntityId, Selection);
+				break;
+			}
+			case EntityType::EDGE: {
+				// TODO
+				break;
+			}
+			case EntityType::GRAPH: {
+				GraphProvider->ExecuteCommand<GraphCommands::SetSelectionType>(HitEntityId, Selection);
+				break;
+			}
+		}
 	}
 }

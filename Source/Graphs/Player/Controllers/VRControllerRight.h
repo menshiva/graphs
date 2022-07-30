@@ -34,6 +34,8 @@ public:
 	void SetUiInteractionEnabled(bool Enabled);
 
 	void SetToolStateEnabled(bool Enabled);
+
+	FORCEINLINE bool IsGripPressed() const { return GripPressed; }
 private:
 	UFUNCTION()
 	void OnUiHover(class UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);
@@ -44,6 +46,7 @@ private:
 	ControllerState State = ControllerState::NONE;
 
 	bool TriggerPressed = false;
+	bool GripPressed = false;
 
 	bool LaserVisibleFlag = true;
 

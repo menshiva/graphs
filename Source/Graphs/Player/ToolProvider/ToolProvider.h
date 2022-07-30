@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/Provider/GraphProvider.h"
+#include "Graphs/GraphProvider/GraphProvider.h"
 #include "ToolProvider.generated.h"
 
 UCLASS()
@@ -23,6 +23,8 @@ public:
 protected:
 	virtual void BeginPlay() override;
 private:
+	void SetEntitySelectionType(SelectionType Selection) const;
+
 	TWeakObjectPtr<AVRPawn> VrPawn;
 	TWeakObjectPtr<AGraphProvider> GraphProvider;
 

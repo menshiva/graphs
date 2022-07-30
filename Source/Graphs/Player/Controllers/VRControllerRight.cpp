@@ -25,6 +25,20 @@ void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
 	BindAction(Pic, "RightTrigger", IE_Released, [this] {
 		OnRightTriggerAction(false);
 	});
+	BindAction(Pic, "RightGrip", IE_Pressed, [this] {
+		GripPressed = true;
+		const auto ToolProvider = GetVrPawn()->GetToolProvider();
+		const auto &HitResult = ToolProvider->GetHitResult();
+		if (HitResult.bBlockingHit)
+			ToolProvider->SetHitResult(HitResult);
+	});
+	BindAction(Pic, "RightGrip", IE_Released, [this] {
+		GripPressed = false;
+		const auto ToolProvider = GetVrPawn()->GetToolProvider();
+		const auto &HitResult = ToolProvider->GetHitResult();
+		if (HitResult.bBlockingHit)
+			ToolProvider->SetHitResult(HitResult);
+	});
 }
 
 void UVRControllerRight::TickComponent(
@@ -107,14 +121,11 @@ void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
 void UVRControllerRight::SetToolStateEnabled(const bool Enabled) {
 	if (Enabled) {
 		State = ControllerState::TOOL;
-		UVRControllerBase::SetLaserActive(false);
 	}
 	else {
 		State = ControllerState::NONE;
 		if (UiInteractor->IsVisible() && UiInteractor->IsOverHitTestVisibleWidget())
 			OnUiHover(UiInteractor->GetHoveredWidgetComponent(), nullptr);
-		if (State == ControllerState::NONE && LaserVisibleFlag)
-			UVRControllerBase::SetLaserActive(true);
 	}
 }
 

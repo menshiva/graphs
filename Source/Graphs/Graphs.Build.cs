@@ -13,5 +13,6 @@ public class Graphs : ModuleRules {
 		});
 		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay", "Slate", "SlateCore" });
 		CppStandard = CppStandardVersion.Cpp17;
+		bUseRTTI = true;
 	}
 }
