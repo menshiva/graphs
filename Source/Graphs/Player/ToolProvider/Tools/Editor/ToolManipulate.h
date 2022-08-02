@@ -1,13 +1,13 @@
 ﻿#pragma once
 
 #include "Graphs/Player/ToolProvider/Tools/Tool.h"
-#include "EditorTool.generated.h"
+#include "ToolManipulate.generated.h"
 
 UCLASS()
-class GRAPHS_API UEditorTool final : public UTool {
+class GRAPHS_API UToolManipulate final : public UTool {
 	GENERATED_BODY()
 public:
-	UEditorTool() = default;
+	UToolManipulate() = default;
 
 	static FName GetToolName() {
 		return "Editor";

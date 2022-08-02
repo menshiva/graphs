@@ -3,12 +3,12 @@
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Kismet/GameplayStatics.h"
-#include "Tools/Editor/EditorTool.h"
+#include "Tools/Editor/ToolManipulate.h"
 
 UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UActorComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	RegisterTool<UEditorTool>(ObjectInitializer);
+	RegisterTool<UToolManipulate>(ObjectInitializer);
 }
 
 void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
@@ -54,7 +54,7 @@ bool UToolProvider::OnRightThumbstickY(const float Value) {
 void UToolProvider::TickComponent(
 	const float DeltaTime,
 	const ELevelTick TickType,
-	FActorComponentTickFunction* ThisTickFunction
+	FActorComponentTickFunction *ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (ActiveTool.IsValid())

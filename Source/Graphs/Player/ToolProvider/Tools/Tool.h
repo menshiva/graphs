@@ -20,16 +20,11 @@ public:
 	FORCEINLINE EntityId GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
 	FORCEINLINE const FHitResult &GetHitEntityResult() const { return ToolProvider->GetHitResult(); }
 
-	FORCEINLINE const FName &GetToolName() const { return ToolName; }
-
 	virtual void OnAttach() {}
 
-	virtual void OnDetach() {
-		GetVrRightController()->SetToolStateEnabled(false);
-	}
+	virtual void OnDetach() {}
 
 	virtual void TickTool() {}
 private:
 	TWeakObjectPtr<UToolProvider> ToolProvider;
-	FName ToolName;
 };

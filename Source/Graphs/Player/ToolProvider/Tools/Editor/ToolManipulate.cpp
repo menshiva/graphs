@@ -1,18 +1,19 @@
-﻿#include "EditorTool.h"
+﻿#include "ToolManipulate.h"
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 
-void UEditorTool::OnAttach() {
+void UToolManipulate::OnAttach() {
 	Super::OnAttach();
 	GetVrRightController()->SetLaserActive(true);
 }
 
-void UEditorTool::OnDetach() {
+void UToolManipulate::OnDetach() {
 	Super::OnDetach();
+	GetVrRightController()->SetToolStateEnabled(false);
 	GetVrRightController()->SetLaserActive(false);
 }
 
-void UEditorTool::TickTool() {
+void UToolManipulate::TickTool() {
 	Super::TickTool();
 	if (GetVrRightController()->IsInToolState()) {
 		const auto NewLaserPosition = GetVrRightController()->GetLaserEndPosition();
@@ -33,7 +34,7 @@ void UEditorTool::TickTool() {
 	}
 }
 
-bool UEditorTool::OnRightTriggerAction(const bool IsPressed) {
+bool UToolManipulate::OnRightTriggerAction(const bool IsPressed) {
 	if (IsPressed) {
 		if (GetHitEntityId() != ENTITY_NONE) {
 			MovePosition = GetVrRightController()->GetLaserEndPosition();
@@ -49,7 +50,7 @@ bool UEditorTool::OnRightTriggerAction(const bool IsPressed) {
 	return Super::OnRightTriggerAction(IsPressed);
 }
 
-bool UEditorTool::OnRightThumbstickY(const float Value) {
+bool UToolManipulate::OnRightThumbstickY(const float Value) {
 	const auto RController = GetVrRightController();
 	if (RController->IsInToolState())
 		RController->SetLaserLengthDelta(Value);
