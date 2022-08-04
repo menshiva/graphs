@@ -57,7 +57,7 @@ void AVRPawn::Rotate(const float Value) {
 }
 
 void AVRPawn::Teleport(const FVector &Location) {
-	CameraTeleportAnimation([&] {
+	CameraTeleportAnimation([&, Location] {
 		SetActorLocation(Location);
 		LeftVrController->ForceUpdateLaserTransform();
 		RightVrController->ForceUpdateLaserTransform();
