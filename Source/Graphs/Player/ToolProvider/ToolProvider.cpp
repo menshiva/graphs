@@ -43,14 +43,20 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 
 bool UToolProvider::OnRightTriggerAction(const bool IsPressed) {
 	if (ActiveTool.IsValid())
-		ActiveTool->OnRightTriggerAction(IsPressed);
+		return ActiveTool->OnRightTriggerAction(IsPressed);
 	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
 }
 
 bool UToolProvider::OnRightThumbstickY(const float Value) {
 	if (ActiveTool.IsValid())
-		ActiveTool->OnRightThumbstickY(Value);
+		return ActiveTool->OnRightThumbstickY(Value);
 	return RightControllerInputInterface::OnRightThumbstickY(Value);
+}
+
+bool UToolProvider::OnRightThumbstickXAction(const float Value) {
+	if (ActiveTool.IsValid())
+		return ActiveTool->OnRightThumbstickXAction(Value);
+	return RightControllerInputInterface::OnRightThumbstickXAction(Value);
 }
 
 void UToolProvider::TickComponent(

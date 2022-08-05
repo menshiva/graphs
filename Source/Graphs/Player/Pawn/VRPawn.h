@@ -32,6 +32,7 @@ public:
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 	virtual bool OnRightThumbstickY(float Value) override;
+	virtual bool OnRightThumbstickXAction(float Value) override;
 protected:
 	virtual void BeginPlay() override;
 private:

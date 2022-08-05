@@ -6,9 +6,10 @@
 UToolManipulator::UToolManipulator() : UTool(
 	"Manipulate",
 	TEXT("/Game/Graphs/UI/Icons/Move"),
-	TEXT("/Game/Graphs/UI/Blueprints/Tools/ToolManipulatorPanel"),
-	{EntityType::GRAPH, EntityType::EDGE, EntityType::VERTEX}
-) {}
+	TEXT("/Game/Graphs/UI/Blueprints/Tools/ToolManipulatorPanel")
+) {
+	SetSupportedEntityTypes({EntityType::GRAPH, EntityType::EDGE, EntityType::VERTEX});
+}
 
 void UToolManipulator::OnAttach() {
 	Super::OnAttach();
@@ -57,8 +58,8 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 		}
 	}
 	else {
-		GetVrRightController()->SetToolStateEnabled(false);
 		GetVrRightController()->SetLaserActive(true);
+		GetVrRightController()->SetToolStateEnabled(false);
 		GetToolPanel<UToolManipulatorPanelWidget>()->SetTextSelectEntity();
 	}
 	return Super::OnRightTriggerAction(IsPressed);

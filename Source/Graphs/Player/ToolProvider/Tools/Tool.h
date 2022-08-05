@@ -15,8 +15,7 @@ public:
 	UTool(
 		const FName &ToolName,
 		const TCHAR *ToolImageAssetPath,
-		const TCHAR *ToolPanelAssetPath,
-		const std::initializer_list<EntityType> SupportedEntityTypes
+		const TCHAR *ToolPanelAssetPath
 	) : ToolName(ToolName) {
 		PrimaryComponentTick.bCanEverTick = false;
 
@@ -25,9 +24,6 @@ public:
 
 		const ConstructorHelpers::FClassFinder<UUserWidget> ToolPanelAsset(ToolPanelAssetPath);
 		ToolPanelClass = ToolPanelAsset.Class;
-
-		for (const auto SupportedType : SupportedEntityTypes)
-			SupportedEntityTypesMask |= static_cast<std::underlying_type_t<EntityType>>(SupportedType);
 	}
 
 	FORCEINLINE void SetupToolProvider(UToolProvider *Provider) { ToolProvider = Provider; }
@@ -54,6 +50,12 @@ protected:
 
 	template <class WidgetClass>
 	WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
+
+	void SetSupportedEntityTypes(const std::initializer_list<EntityType> Types) {
+		SupportedEntityTypesMask = 0;
+		for (const auto SupportedType : Types)
+			SupportedEntityTypesMask |= static_cast<std::underlying_type_t<EntityType>>(SupportedType);
+	}
 private:
 	TWeakObjectPtr<UToolProvider> ToolProvider;
 

@@ -48,14 +48,23 @@ void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
 		OnRightThumbstickY(Value);
 	});
 	BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
-		// TODO
+		static bool isClicked = false;
+		if (fabsf(Value) >= 0.7f) {
+			if (!isClicked) {
+				isClicked = true;
+				if (Value > 0.0f ? OnRightThumbstickXAction(1.0f) : OnRightThumbstickXAction(-1.0f))
+					PlayActionHapticEffect();
+			}
+		}
+		else if (isClicked)
+			isClicked = false;
 	});
 }
 
 void UVRControllerRight::TickComponent(
 	const float DeltaTime,
 	const ELevelTick TickType,
-	FActorComponentTickFunction* ThisTickFunction
+	FActorComponentTickFunction *ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (State == ControllerState::UI) {
@@ -109,6 +118,10 @@ bool UVRControllerRight::OnRightThumbstickY(const float Value) {
 	return GetVrPawn()->OnRightThumbstickY(Value);
 }
 
+bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
+	return GetVrPawn()->OnRightThumbstickXAction(Value);
+}
+
 void UVRControllerRight::SetLaserActive(const bool IsActive) {
 	LaserVisibleFlag = IsActive;
 	if (State != ControllerState::UI)
@@ -134,11 +147,17 @@ void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
 }
 
 void UVRControllerRight::SetToolStateEnabled(const bool Enabled) {
+	static bool IsUiInteractorWasVisible = false;
 	if (Enabled) {
 		State = ControllerState::TOOL;
+		IsUiInteractorWasVisible = UiInteractor->IsVisible();
+		if (IsUiInteractorWasVisible)
+			SetUiInteractionEnabled(false);
 	}
 	else {
 		State = ControllerState::NONE;
+		if (IsUiInteractorWasVisible)
+			SetUiInteractionEnabled(true);
 		if (UiInteractor->IsVisible() && UiInteractor->IsOverHitTestVisibleWidget())
 			OnUiHover(UiInteractor->GetHoveredWidgetComponent(), nullptr);
 	}

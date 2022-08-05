@@ -15,7 +15,11 @@ public:
 	virtual ~RightControllerInputInterface() = default;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) { return false; }
+
 	virtual bool OnRightThumbstickY(float Value) { return false; }
+
+	// Value is +1.0f on right action and -1.0f on left action
+	virtual bool OnRightThumbstickXAction(float Value) { return false; }
 };
 
 UCLASS()
@@ -26,10 +30,11 @@ public:
 
 	virtual void SetupInputBindings(UInputComponent *Pic) override;
 
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 	virtual bool OnRightThumbstickY(float Value) override;
+	virtual bool OnRightThumbstickXAction(float Value) override;
 
 	virtual void SetLaserActive(bool IsActive) override;
 
