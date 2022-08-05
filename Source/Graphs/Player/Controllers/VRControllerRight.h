@@ -3,18 +3,19 @@
 #include "VRControllerBase.h"
 #include "VRControllerRight.generated.h"
 
+enum class ControllerState : uint8_t {
+	NONE,
+	UI,
+	TOOL
+};
+
 class RightControllerInputInterface {
 public:
 	RightControllerInputInterface() = default;
 	virtual ~RightControllerInputInterface() = default;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) { return false; }
-
-	virtual bool OnRightThumbstickYAction(float Value) { return false; }
-	virtual bool OnRightThumbstickXAction(float Value) { return false; }
-
-	virtual bool OnRightThumbstickYAxis(float Value) { return false; }
-	virtual bool OnRightThumbstickXAxis(float Value) { return false; }
+	virtual bool OnRightThumbstickY(float Value) { return false; }
 };
 
 UCLASS()
@@ -25,24 +26,32 @@ public:
 
 	virtual void SetupInputBindings(UInputComponent *Pic) override;
 
-	virtual void SetState(ControllerState NewState) override;
-
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void SetUiInteractionEnabled(bool Enabled);
-	void SetUiInteractorPointerKeyPressed(bool IsPressed, const FKey &Key) const;
-
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
+	virtual bool OnRightThumbstickY(float Value) override;
 
-	virtual bool OnRightThumbstickYAction(float Value) override;
-	virtual bool OnRightThumbstickXAction(float Value) override;
+	virtual void SetLaserActive(bool IsActive) override;
 
-	virtual bool OnRightThumbstickYAxis(float Value) override;
-	virtual bool OnRightThumbstickXAxis(float Value) override;
+	void SetUiInteractionEnabled(bool Enabled);
+
+	FORCEINLINE bool IsInToolState() const { return State == ControllerState::TOOL; }
+	void SetToolStateEnabled(bool Enabled);
+
+	FORCEINLINE bool IsGripPressed() const { return GripPressed; }
 private:
 	UFUNCTION()
 	void OnUiHover(class UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);
 
 	UPROPERTY()
 	class UWidgetInteractionComponent *UiInteractor;
+
+	ControllerState State = ControllerState::NONE;
+
+	bool TriggerPressed = false;
+	bool GripPressed = false;
+
+	bool LaserVisibleFlag = false;
+
+	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
 };
