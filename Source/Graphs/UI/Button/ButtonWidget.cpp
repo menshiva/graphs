@@ -24,6 +24,10 @@ void UButtonWidget::NativeConstruct() {
 		BButton->OnClicked.AddDynamic(this, &UButtonWidget::HandleClicked);
 }
 
+void UButtonWidget::SetOnClickEvent(TFunction<void()> &&ClickEvent) {
+	OnClick = ClickEvent;
+}
+
 void UButtonWidget::SetBackgroundColor(const FLinearColor &NewColor) {
 	BackgroundColor = NewColor;
 	if (BButton) {

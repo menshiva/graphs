@@ -3,12 +3,12 @@
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Kismet/GameplayStatics.h"
-#include "Tools/Editor/ToolManipulate.h"
+#include "Tools/Manipulator/ToolManipulator.h"
 
 UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UActorComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	RegisterTool<UToolManipulate>(ObjectInitializer);
+	RegisterTool<UToolManipulator>(ObjectInitializer, "Tool Manipulator");
 }
 
 void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
@@ -88,8 +88,6 @@ void UToolProvider::BeginPlay() {
 		GraphProvider->ExecuteCommand<GraphCommands::Create>(&GraphId);
 		for (const auto &Pos : Positions)
 			GraphProvider->ExecuteCommand<VertexCommands::Create>(GraphId, nullptr, Pos);
-
-		SetActiveTool(Tools[0]);
 	}
 }
 

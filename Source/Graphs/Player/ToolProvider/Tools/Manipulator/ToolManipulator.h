@@ -1,17 +1,13 @@
 ﻿#pragma once
 
 #include "Graphs/Player/ToolProvider/Tools/Tool.h"
-#include "ToolManipulate.generated.h"
+#include "ToolManipulator.generated.h"
 
 UCLASS()
-class GRAPHS_API UToolManipulate final : public UTool {
+class GRAPHS_API UToolManipulator final : public UTool {
 	GENERATED_BODY()
 public:
-	UToolManipulate() = default;
-
-	static FName GetToolName() {
-		return "Editor";
-	}
+	UToolManipulator();
 
 	virtual void OnAttach() override;
 	virtual void OnDetach() override;

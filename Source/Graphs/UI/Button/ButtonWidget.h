@@ -11,9 +11,8 @@ public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
+	void SetOnClickEvent(TFunction<void()> &&ClickEvent);
 	void SetBackgroundColor(const FLinearColor &NewColor);
-
-	TFunction<void()> OnClick;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(editcondition="bOverride_WidthOverride", DesignerRebuild))
 	float WidthOverride;
@@ -50,4 +49,6 @@ protected:
 private:
 	UFUNCTION()
 	void HandleClicked();
+
+	TFunction<void()> OnClick;
 };

@@ -9,9 +9,9 @@ void UMenuWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	for (size_t i = 0; i < MenuButtonHolder->GetChildrenCount(); ++i) {
 		const auto MenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(i));
-		MenuButton->OnClick = [&, i] {
+		MenuButton->SetOnClickEvent([&, i] {
 			SetActivePanel(i);
-		};
+		});
 	}
 }
 

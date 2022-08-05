@@ -26,14 +26,16 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 
 	void SetActiveTool(class UTool *NewTool);
+
+	FORCEINLINE const TArray<UTool*> &GetTools() const { return Tools; }
 protected:
 	virtual void BeginPlay() override;
 private:
 	void SetEntitySelectionType(SelectionType Selection) const;
 
 	template <class T>
-	void RegisterTool(const FObjectInitializer &ObjectInitializer) {
-		const auto Tool = ObjectInitializer.CreateDefaultSubobject<T>(this, T::GetToolName());
+	void RegisterTool(const FObjectInitializer &ObjectInitializer, const FName &ToolObjectName) {
+		const auto Tool = ObjectInitializer.CreateDefaultSubobject<T>(this, ToolObjectName);
 		Tool->SetupToolProvider(this);
 		Tools.Push(Tool);
 	}

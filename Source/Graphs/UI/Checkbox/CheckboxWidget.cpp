@@ -5,12 +5,6 @@
 void UCheckboxWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	SetTicked(Ticked);
-	if (CBButton) {
-		CBButton->OnClick = [&] {
-			SetTicked(!Ticked);
-			OnClick();
-		};
-	}
 	if (CBText)
 		CBText->SetText(Text);
 }
@@ -23,4 +17,13 @@ void UCheckboxWidget::SetTicked(const bool IsTicked) {
 	Ticked = IsTicked;
 	if (CBButton)
 		CBButton->SetImageVisibility(Ticked);
+}
+
+void UCheckboxWidget::SetOnClickEvent(TFunction<void()> &&ClickEvent) {
+	if (CBButton) {
+		CBButton->SetOnClickEvent([&, ClickEvent] {
+			SetTicked(!Ticked);
+			ClickEvent();
+		});
+	}
 }

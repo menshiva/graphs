@@ -9,6 +9,11 @@ void UImageButtonWidget::NativePreConstruct() {
 	}
 }
 
+void UImageButtonWidget::SetImage(UTexture2D *NewImage) const {
+	if (IBImage)
+		IBImage->SetBrushFromTexture(NewImage, true);
+}
+
 void UImageButtonWidget::SetImageVisibility(const bool Visible) const {
 	if (IBImage)
 		IBImage->SetVisibility(Visible ? ESlateVisibility::Visible : ESlateVisibility::Hidden);

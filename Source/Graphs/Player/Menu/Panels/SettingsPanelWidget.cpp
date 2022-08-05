@@ -7,19 +7,19 @@
 void USettingsPanelWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	if (CameraFadeAnimationTick) {
-		CameraFadeAnimationTick->OnClick = [&] {
+		CameraFadeAnimationTick->SetOnClickEvent([&] {
 			Pawn->ToggleCameraFadeAnimation();
-		};
+		});
 	}
 	if (FpsStatsTick) {
-		FpsStatsTick->OnClick = [&] {
+		FpsStatsTick->SetOnClickEvent([&] {
 			Gamemode->ToggleFPS();
-		};
+		});
 	}
 	if (UnitStatsTick) {
-		UnitStatsTick->OnClick = [&] {
+		UnitStatsTick->SetOnClickEvent([&] {
 			Gamemode->ToggleUnit();
-		};
+		});
 	}
 }
 

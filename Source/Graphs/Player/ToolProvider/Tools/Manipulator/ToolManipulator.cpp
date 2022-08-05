@@ -1,19 +1,25 @@
-﻿#include "ToolManipulate.h"
+﻿#include "ToolManipulator.h"
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 
-void UToolManipulate::OnAttach() {
+UToolManipulator::UToolManipulator() : UTool(
+	TEXT("/Game/Graphs/UI/Icons/Move"),
+	TEXT("/Game/Graphs/UI/Blueprints/Tools/ToolManipulatorPanel"),
+	"Manipulate"
+) {}
+
+void UToolManipulator::OnAttach() {
 	Super::OnAttach();
 	GetVrRightController()->SetLaserActive(true);
 }
 
-void UToolManipulate::OnDetach() {
+void UToolManipulator::OnDetach() {
 	Super::OnDetach();
 	GetVrRightController()->SetToolStateEnabled(false);
 	GetVrRightController()->SetLaserActive(false);
 }
 
-void UToolManipulate::TickTool() {
+void UToolManipulator::TickTool() {
 	Super::TickTool();
 	if (GetVrRightController()->IsInToolState()) {
 		const auto NewLaserPosition = GetVrRightController()->GetLaserEndPosition();
@@ -34,7 +40,7 @@ void UToolManipulate::TickTool() {
 	}
 }
 
-bool UToolManipulate::OnRightTriggerAction(const bool IsPressed) {
+bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 	if (IsPressed) {
 		if (GetHitEntityId() != ENTITY_NONE) {
 			MovePosition = GetVrRightController()->GetLaserEndPosition();
@@ -50,9 +56,8 @@ bool UToolManipulate::OnRightTriggerAction(const bool IsPressed) {
 	return Super::OnRightTriggerAction(IsPressed);
 }
 
-bool UToolManipulate::OnRightThumbstickY(const float Value) {
-	const auto RController = GetVrRightController();
-	if (RController->IsInToolState())
-		RController->SetLaserLengthDelta(Value);
+bool UToolManipulator::OnRightThumbstickY(const float Value) {
+	if (GetVrRightController()->IsInToolState())
+		GetVrRightController()->SetLaserLengthDelta(Value);
 	return Super::OnRightThumbstickY(Value);
 }
