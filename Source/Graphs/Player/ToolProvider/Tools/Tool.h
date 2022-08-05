@@ -19,7 +19,7 @@ public:
 		ToolImage = ToolImageAsset.Object;
 
 		const ConstructorHelpers::FClassFinder<UUserWidget> ToolPanelAsset(ToolPanelAssetPath);
-		ToolPanel = ToolPanelAsset.Class;
+		ToolPanelClass = ToolPanelAsset.Class;
 	}
 
 	FORCEINLINE void SetupToolProvider(UToolProvider *Provider) { ToolProvider = Provider; }
@@ -32,8 +32,12 @@ public:
 	FORCEINLINE const FHitResult &GetHitEntityResult() const { return ToolProvider->GetHitResult(); }
 
 	FORCEINLINE UTexture2D *GetToolImage() const { return ToolImage; }
-	FORCEINLINE const TSubclassOf<UUserWidget> &GetToolPanel() const { return ToolPanel; }
+	FORCEINLINE const TSubclassOf<UUserWidget> &GetToolPanelClass() const { return ToolPanelClass; }
 	FORCEINLINE const FName &GetToolName() const { return ToolName; }
+
+	template <class WidgetClass>
+	WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
+	FORCEINLINE void SetToolPanel(UUserWidget *Panel) { ToolPanel = Panel; }
 
 	virtual void OnAttach() {}
 	virtual void OnDetach() {}
@@ -44,7 +48,9 @@ private:
 	UPROPERTY()
 	UTexture2D *ToolImage;
 
-	TSubclassOf<UUserWidget> ToolPanel;
+	TSubclassOf<UUserWidget> ToolPanelClass;
 
 	FName ToolName;
+
+	TWeakObjectPtr<UUserWidget> ToolPanel;
 };

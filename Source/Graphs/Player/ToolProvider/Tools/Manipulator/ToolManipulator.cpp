@@ -1,4 +1,6 @@
 ﻿#include "ToolManipulator.h"
+
+#include "ToolManipulatorPanelWidget.h"
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 
@@ -11,11 +13,11 @@ UToolManipulator::UToolManipulator() : UTool(
 void UToolManipulator::OnAttach() {
 	Super::OnAttach();
 	GetVrRightController()->SetLaserActive(true);
+	GetToolPanel<UToolManipulatorPanelWidget>()->SetTextSelectEntity();
 }
 
 void UToolManipulator::OnDetach() {
 	Super::OnDetach();
-	GetVrRightController()->SetToolStateEnabled(false);
 	GetVrRightController()->SetLaserActive(false);
 }
 
@@ -46,12 +48,14 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 			MovePosition = GetVrRightController()->GetLaserEndPosition();
 			GetVrRightController()->SetToolStateEnabled(true);
 			GetVrRightController()->SetLaserActive(false);
+			GetToolPanel<UToolManipulatorPanelWidget>()->SetTextMoveEntity();
 			return true;
 		}
 	}
 	else {
 		GetVrRightController()->SetToolStateEnabled(false);
 		GetVrRightController()->SetLaserActive(true);
+		GetToolPanel<UToolManipulatorPanelWidget>()->SetTextSelectEntity();
 	}
 	return Super::OnRightTriggerAction(IsPressed);
 }

@@ -53,9 +53,10 @@ void UToolsPanelWidget::NativeConstruct() {
 
 		const auto ToolPanel = CreateWidget(
 			this,
-			Tool->GetToolPanel(),
+			Tool->GetToolPanelClass(),
 			FName(Tool->GetToolName().ToString() + "ToolPanel")
 		);
+		Tool->SetToolPanel(ToolPanel);
 		const auto ToolPanelSlot = Cast<UWidgetSwitcherSlot>(ToolPanelSwitcher->AddChild(ToolPanel));
 		ToolPanelSlot->SetHorizontalAlignment(HAlign_Fill);
 		ToolPanelSlot->SetVerticalAlignment(VAlign_Fill);
