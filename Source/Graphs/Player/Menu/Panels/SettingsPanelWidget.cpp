@@ -4,20 +4,33 @@
 #include "Graphs/UI/Checkbox/CheckboxWidget.h"
 #include "Kismet/GameplayStatics.h"
 
-void USettingsPanelWidget::NativeConstruct() {
-	Super::NativeConstruct();
-	const auto Pawn = Cast<AVRPawn>(GetOwningPlayerPawn());
-	const auto Gamemode = Cast<AVRGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+void USettingsPanelWidget::NativePreConstruct() {
+	Super::NativePreConstruct();
 	if (CameraFadeAnimationTick) {
-		CameraFadeAnimationTick->SetTicked(Pawn->IsCameraFadeAnimationEnabled());
-		CameraFadeAnimationTick->OnClicked.AddDynamic(Pawn, &AVRPawn::ToggleCameraFadeAnimation);
+		CameraFadeAnimationTick->OnClick = [&] {
+			Pawn->ToggleCameraFadeAnimation();
+		};
 	}
 	if (FpsStatsTick) {
-		FpsStatsTick->SetTicked(Gamemode->FpsEnabled);
-		FpsStatsTick->OnClicked.AddDynamic(Gamemode, &AVRGameMode::ToggleFPS);
+		FpsStatsTick->OnClick = [&] {
+			Gamemode->ToggleFPS();
+		};
 	}
 	if (UnitStatsTick) {
-		UnitStatsTick->SetTicked(Gamemode->UnitEnabled);
-		UnitStatsTick->OnClicked.AddDynamic(Gamemode, &AVRGameMode::ToggleUnit);
+		UnitStatsTick->OnClick = [&] {
+			Gamemode->ToggleUnit();
+		};
 	}
+}
+
+void USettingsPanelWidget::NativeConstruct() {
+	Super::NativePreConstruct();
+	Pawn = Cast<AVRPawn>(GetOwningPlayerPawn());
+	Gamemode = Cast<AVRGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+	if (CameraFadeAnimationTick)
+		CameraFadeAnimationTick->SetTicked(Pawn->IsCameraFadeAnimationEnabled());
+	if (FpsStatsTick)
+		FpsStatsTick->SetTicked(Gamemode->FpsEnabled);
+	if (UnitStatsTick)
+		UnitStatsTick->SetTicked(Gamemode->UnitEnabled);
 }

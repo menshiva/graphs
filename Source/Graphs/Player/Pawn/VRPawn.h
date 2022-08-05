@@ -18,7 +18,6 @@ public:
 	// https://docs.unrealengine.com/4.27/en-US/SharingAndReleasing/XRDevelopment/VR/VRPlatforms/SteamVR/HowTo/SeatedCamera/#:~:text=Z%20value%20to-,121,-.
 	FORCEINLINE static float GetHeight() { return 121.0f; }
 
-	UFUNCTION()
 	void ToggleCameraFadeAnimation();
 	FORCEINLINE bool IsCameraFadeAnimationEnabled() const { return CameraFadeAnimationEnabled; }
 
@@ -29,8 +28,7 @@ public:
 
 	void Teleport(const FVector &Location);
 
-	UFUNCTION()
-	void QuitGame();
+	void QuitGame() const;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 	virtual bool OnRightThumbstickY(float Value) override;

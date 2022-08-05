@@ -64,8 +64,7 @@ void AVRPawn::Teleport(const FVector &Location) {
 	});
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-void AVRPawn::QuitGame() {
+void AVRPawn::QuitGame() const {
 	FTimerHandle FadeInHandle;
 	FadeCamera(1.0f);
 	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&] {

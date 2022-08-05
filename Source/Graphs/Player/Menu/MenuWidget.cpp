@@ -1,24 +1,27 @@
 #include "MenuWidget.h"
 #include "Animation/UMGSequencePlayer.h"
 #include "Components/Border.h"
+#include "Components/VerticalBox.h"
 #include "Components/WidgetSwitcher.h"
 #include "Graphs/UI/Button/ImageButtonWidget.h"
 
 void UMenuWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
-	MenuButtons[0] = MenuHomeButton;
-	MenuButtons[1] = MenuSettingsButton;
-	MenuButtons[2] = MenuExitButton;
+	for (size_t i = 0; i < MenuButtonHolder->GetChildrenCount(); ++i) {
+		const auto MenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(i));
+		MenuButton->OnClick = [&, i] {
+			SetActivePanel(i);
+		};
+	}
 }
 
 void UMenuWidget::NativeConstruct() {
 	Super::NativeConstruct();
-	if (MenuHomeButton)
-		MenuHomeButton->OnClicked.AddDynamic(this, &UMenuWidget::OnMenuHomeClick);
-	if (MenuSettingsButton)
-		MenuSettingsButton->OnClicked.AddDynamic(this, &UMenuWidget::OnMenuSettingsClick);
-	if (MenuExitButton)
-		MenuExitButton->OnClicked.AddDynamic(this, &UMenuWidget::OnMenuExitClick);
+	for (size_t i = 0; i < MenuButtonHolder->GetChildrenCount(); ++i) {
+		const auto MenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(i));
+		MenuButton->SetBackgroundColor(MenuButtonUnselectedColor);
+	}
+	SetActivePanel(0);
 }
 
 void UMenuWidget::PlayShowHideAnimation(const EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd) {
@@ -32,26 +35,13 @@ void UMenuWidget::PlayShowHideAnimation(const EUMGSequencePlayMode::Type Mode, T
 	);
 }
 
-// ReSharper disable once CppMemberFunctionMayBeConst
-void UMenuWidget::OnMenuHomeClick() {
-	SetActivePanel(0);
-}
-
-// ReSharper disable once CppMemberFunctionMayBeConst
-void UMenuWidget::OnMenuSettingsClick() {
-	SetActivePanel(1);
-}
-
-// ReSharper disable once CppMemberFunctionMayBeConst
-void UMenuWidget::OnMenuExitClick() {
-	SetActivePanel(2);
-}
-
-void UMenuWidget::SetActivePanel(const size_t Index) {
+void UMenuWidget::SetActivePanel(const size_t Index) const {
 	if (ActivePanelSwitcher) {
 		const size_t CurrentIndex = ActivePanelSwitcher->GetActiveWidgetIndex();
-		MenuButtons[CurrentIndex]->SetBackgroundColor(MenuButtonUnselectedColor);
-		MenuButtons[Index]->SetBackgroundColor(Background->BrushColor);
+		const auto CurrentActiveMenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(CurrentIndex));
+		CurrentActiveMenuButton->SetBackgroundColor(MenuButtonUnselectedColor);
+		const auto NewActiveMenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(Index));
+		NewActiveMenuButton->SetBackgroundColor(Background->BrushColor);
 		ActivePanelSwitcher->SetActiveWidgetIndex(Index);
 	}
 }

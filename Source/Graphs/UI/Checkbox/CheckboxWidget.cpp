@@ -5,14 +5,14 @@
 void UCheckboxWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	SetTicked(Ticked);
+	if (CBButton) {
+		CBButton->OnClick = [&] {
+			SetTicked(!Ticked);
+			OnClick();
+		};
+	}
 	if (CBText)
 		CBText->SetText(Text);
-}
-
-void UCheckboxWidget::NativeConstruct() {
-	Super::NativeConstruct();
-	if (CBButton)
-		CBButton->OnClicked.AddDynamic(this, &UCheckboxWidget::HandleClicked);
 }
 
 bool UCheckboxWidget::IsTicked() const {
@@ -23,10 +23,4 @@ void UCheckboxWidget::SetTicked(const bool IsTicked) {
 	Ticked = IsTicked;
 	if (CBButton)
 		CBButton->SetImageVisibility(Ticked);
-}
-
-// ReSharper disable once CppMemberFunctionMayBeConst
-void UCheckboxWidget::HandleClicked() {
-	SetTicked(!Ticked);
-	OnClicked.Broadcast();
 }

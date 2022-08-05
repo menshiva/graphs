@@ -38,5 +38,6 @@ void UButtonWidget::SetBackgroundColor(const FLinearColor &NewColor) {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void UButtonWidget::HandleClicked() {
-	OnClicked.Broadcast();
+	if (OnClick)
+		OnClick();
 }

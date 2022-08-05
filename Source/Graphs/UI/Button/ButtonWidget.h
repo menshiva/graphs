@@ -13,8 +13,7 @@ public:
 
 	void SetBackgroundColor(const FLinearColor &NewColor);
 
-	UPROPERTY(BlueprintAssignable, Category="Event")
-	FOnButtonClickedEvent OnClicked;
+	TFunction<void()> OnClick;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(editcondition="bOverride_WidthOverride", DesignerRebuild))
 	float WidthOverride;

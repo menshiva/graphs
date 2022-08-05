@@ -23,25 +23,9 @@ protected:
 	class UWidgetSwitcher *ActivePanelSwitcher;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UImageButtonWidget *MenuHomeButton;
-
-	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	UImageButtonWidget *MenuSettingsButton;
-
-	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	UImageButtonWidget *MenuExitButton;
+	class UVerticalBox *MenuButtonHolder;
 private:
-	UFUNCTION()
-	void OnMenuHomeClick();
+	void SetActivePanel(size_t Index) const;
 
-	UFUNCTION()
-	void OnMenuSettingsClick();
-
-	UFUNCTION()
-	void OnMenuExitClick();
-
-	void SetActivePanel(size_t Index);
-
-	TStaticArray<UImageButtonWidget*, 3> MenuButtons;
 	constexpr static FLinearColor MenuButtonUnselectedColor = FLinearColor(0.03125f, 0.03125f, 0.03125f, 1.0f);
 };
