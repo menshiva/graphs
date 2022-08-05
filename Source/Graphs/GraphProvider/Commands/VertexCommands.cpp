@@ -34,7 +34,7 @@ VertexCommands::SetSelectionType::SetSelectionType(
 	switch (NewType) {
 		case SelectionType::HIT:
 		case SelectionType::SELECTED: {
-			Vertex->SetActorColor(ColorUtils::SelectionColor);
+			Vertex->SetActorColor(ColorUtils::BlueColor);
 			break;
 		}
 		default: {
@@ -43,7 +43,10 @@ VertexCommands::SetSelectionType::SetSelectionType(
 	}
 }) {}
 
-VertexCommands::Move::Move(EntityId Id, const FVector &Delta) : Command([Id, &Delta] (const AGraphProvider &Provider) {
+VertexCommands::Move::Move(
+	EntityId Id,
+	const FVector &Delta
+) : Command([Id, &Delta] (const AGraphProvider &Provider) {
 	const auto Vertex = dynamic_cast<VertexEntity*>(GetMutEntity(Provider, Id));
 	Vertex->GetActor()->SetActorLocation(Vertex->GetActor()->GetActorLocation() + Delta);
 }) {}

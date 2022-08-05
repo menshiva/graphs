@@ -6,7 +6,7 @@
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
-	SetLaserNiagaraColor(ColorUtils::TeleportColor);
+	SetLaserNiagaraColor(ColorUtils::GreenColor);
 	SetLaserLength(TeleportLaserDefaultLength);
 	UVRControllerBase::SetLaserActive(false);
 
@@ -26,14 +26,14 @@ UVRControllerLeft::UVRControllerLeft(
 		0,
 		TeleportPreviewMaterialAsset.Object
 	);
-	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", ColorUtils::TeleportColor);
+	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", ColorUtils::GreenColor);
 	TeleportPreviewMesh->SetMaterial(0, TeleportPreviewMaterialInst);
 	TeleportPreviewMesh->SetupAttachment(this);
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> TeleportRingAsset(TEXT("/Game/Graphs/VFX/TeleportRing"));
 	TeleportRing = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "TeleportRing");
 	TeleportRing->SetAsset(TeleportRingAsset.Object);
-	TeleportRing->SetColorParameter("User.CustomColor", ColorUtils::TeleportColor);
+	TeleportRing->SetColorParameter("User.CustomColor", ColorUtils::GreenColor);
 	TeleportRing->Deactivate();
 	TeleportRing->SetVisibility(false);
 	TeleportRing->SetupAttachment(this);

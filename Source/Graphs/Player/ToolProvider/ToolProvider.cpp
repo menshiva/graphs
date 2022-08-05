@@ -31,10 +31,12 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 				}
 			}
 
-			HitResult = NewHitResult;
-			HitEntityId = Id;
-			SetEntitySelectionType(SelectionType::HIT);
-			RightController->PlayActionHapticEffect();
+			if (!ActiveTool.IsValid() || ActiveTool->SupportsType(GraphProvider->GetConstEntity(Id)->GetType())) {
+				HitResult = NewHitResult;
+				HitEntityId = Id;
+				SetEntitySelectionType(SelectionType::HIT);
+				RightController->PlayActionHapticEffect();
+			}
 		}
 	}
 }

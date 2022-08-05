@@ -1,9 +1,9 @@
 ﻿#pragma once
 
 enum class EntityType : uint8_t {
-	GRAPH = 0,
-	VERTEX,
-	EDGE
+	GRAPH = 1,
+	VERTEX = 2,
+	EDGE = 4
 };
 
 enum class SelectionType : uint8_t {
