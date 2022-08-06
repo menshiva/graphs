@@ -127,7 +127,7 @@ bool UVRControllerRight::OnRightThumbstickX(const float Value) {
 
 bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
 	if (SelectionWidgetComponent->IsVisible()) {
-		check(State != ControllerState::UI);
+		check(State != ControllerState::TOOL);
 		SetSelectionMode(Selection == SelectionMode::VERTEX_EDGE ? SelectionMode::GRAPH : SelectionMode::VERTEX_EDGE);
 		const auto ToolProvider = GetVrPawn()->GetToolProvider();
 		const auto &HitResult = ToolProvider->GetHitResult();
@@ -169,6 +169,8 @@ void UVRControllerRight::SetToolStateEnabled(const bool Enabled) {
 		IsUiInteractorWasVisible = UiInteractor->IsVisible();
 		if (IsUiInteractorWasVisible)
 			SetUiInteractionEnabled(false);
+		if (SelectionWidgetComponent->IsVisible())
+			SelectionWidgetComponent->SetVisibility(false);
 	}
 	else {
 		State = ControllerState::NONE;

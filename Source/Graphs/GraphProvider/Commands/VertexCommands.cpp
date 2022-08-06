@@ -10,7 +10,7 @@ VertexCommands::Create::Create(
 ) : Command([GraphId, NewVertexId, &Position] (AGraphProvider &Provider) {
 	const auto NewVertex = CreateEntity<VertexEntity>(Provider);
 
-	const auto Graph = dynamic_cast<GraphEntity*>(GetMutEntity(Provider, GraphId));
+	const auto Graph = dynamic_cast<GraphEntity*>(GetEntity(Provider, GraphId));
 	NewVertex->GetActor()->AttachToActor(Graph->GetActor(), FAttachmentTransformRules::KeepWorldTransform);
 	Graph->VerticesIds.Push(NewVertex->GetId());
 
@@ -25,11 +25,19 @@ VertexCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Prov
 	RemoveEntity(Provider, Id);
 }) {}
 
+VertexCommands::GetGraphId::GetGraphId(
+	EntityId Id,
+	EntityId &GraphId
+) : Command([Id, &GraphId] (const AGraphProvider &Provider) {
+	const auto Vertex = dynamic_cast<VertexEntity*>(GetEntity(Provider, Id));
+	GraphId = Vertex->GraphId;
+}) {}
+
 VertexCommands::SetSelectionType::SetSelectionType(
 	EntityId Id,
 	SelectionType NewType
 ) : Command([Id, NewType] (const AGraphProvider &Provider) {
-	const auto Vertex = dynamic_cast<VertexEntity*>(GetMutEntity(Provider, Id));
+	const auto Vertex = dynamic_cast<VertexEntity*>(GetEntity(Provider, Id));
 	Vertex->Selection = NewType;
 	switch (NewType) {
 		case SelectionType::HIT:
@@ -47,6 +55,6 @@ VertexCommands::Move::Move(
 	EntityId Id,
 	const FVector &Delta
 ) : Command([Id, &Delta] (const AGraphProvider &Provider) {
-	const auto Vertex = dynamic_cast<VertexEntity*>(GetMutEntity(Provider, Id));
+	const auto Vertex = dynamic_cast<VertexEntity*>(GetEntity(Provider, Id));
 	Vertex->GetActor()->SetActorLocation(Vertex->GetActor()->GetActorLocation() + Delta);
 }) {}

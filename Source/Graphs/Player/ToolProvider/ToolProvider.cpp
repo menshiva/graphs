@@ -20,18 +20,21 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 		EntityId Id = NewHitResult.GetActor()->GetUniqueID();
 		if (GraphProvider->IsEntityValid(Id)) {
 			const auto RightController = VrPawn->GetRightVrController();
+
 			if (RightController->GetSelectionMode() == SelectionMode::GRAPH) {
-				const auto Entity = GraphProvider->GetConstEntity(Id);
-				if (Entity->GetType() == EntityType::VERTEX) {
-					const auto Vertex = dynamic_cast<const VertexEntity*>(Entity);
-					Id = Vertex->GraphId;
+				const auto EntityType = GraphProvider->GetEntityType(Id);
+				if (EntityType == EntityType::VERTEX) {
+					EntityId GraphId = ENTITY_NONE;
+					GetGraphProvider()->ExecuteCommand<VertexCommands::GetGraphId>(Id, GraphId);
+					check(GetGraphProvider()->IsEntityValid(GraphId));
+					Id = GraphId;
 				}
-				else if (Entity->GetType() == EntityType::EDGE) {
+				else if (EntityType == EntityType::EDGE) {
 					// TODO
 				}
 			}
 
-			if (!ActiveTool.IsValid() || ActiveTool->SupportsType(GraphProvider->GetConstEntity(Id)->GetType())) {
+			if (!ActiveTool.IsValid() || ActiveTool->SupportsType(GraphProvider->GetEntityType(Id))) {
 				HitResult = NewHitResult;
 				HitEntityId = Id;
 				SetEntitySelectionType(SelectionType::HIT);
@@ -106,21 +109,18 @@ void UToolProvider::BeginPlay() {
 }
 
 void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const {
-	const auto Entity = GraphProvider->GetConstEntity(HitEntityId);
-	if (Entity->Selection != Selection) {
-		switch (Entity->GetType()) {
-			case EntityType::VERTEX: {
-				GraphProvider->ExecuteCommand<VertexCommands::SetSelectionType>(HitEntityId, Selection);
-				break;
-			}
-			case EntityType::EDGE: {
-				// TODO
-				break;
-			}
-			case EntityType::GRAPH: {
-				GraphProvider->ExecuteCommand<GraphCommands::SetSelectionType>(HitEntityId, Selection);
-				break;
-			}
+	switch (GraphProvider->GetEntityType(HitEntityId)) {
+		case EntityType::VERTEX: {
+			GraphProvider->ExecuteCommand<VertexCommands::SetSelectionType>(HitEntityId, Selection);
+			break;
+		}
+		case EntityType::EDGE: {
+			// TODO
+			break;
+		}
+		case EntityType::GRAPH: {
+			GraphProvider->ExecuteCommand<GraphCommands::SetSelectionType>(HitEntityId, Selection);
+			break;
 		}
 	}
 }

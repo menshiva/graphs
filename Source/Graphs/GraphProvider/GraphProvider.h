@@ -18,7 +18,7 @@ public:
 	FORCEINLINE UMaterial *GetVertexMaterial() const { return VertexMaterial; }
 
 	FORCEINLINE bool IsEntityValid(const EntityId Id) const { return Entities.Contains(Id); }
-	FORCEINLINE const Entity *GetConstEntity(const EntityId Id) const { return Entities.Find(Id)->Get(); }
+	FORCEINLINE EntityType GetEntityType(const EntityId Id) const { return Entities.Find(Id)->Get()->GetType(); }
 
 	class Command {
 	public:
@@ -35,16 +35,12 @@ public:
 			return NewEntity;
 		}
 
-		FORCEINLINE static const Entity *GetConstEntity(const AGraphProvider &Provider, const EntityId Id) {
-			return Provider.GetConstEntity(Id);
-		}
-
-		static Entity *GetMutEntity(const AGraphProvider &Provider, const EntityId Id) {
+		FORCEINLINE static Entity *GetEntity(const AGraphProvider &Provider, const EntityId Id) {
 			return Provider.Entities.Find(Id)->Get();
 		}
 
 		static void RemoveEntity(AGraphProvider &Provider, const EntityId Id) {
-			const auto FoundEntity = GetMutEntity(Provider, Id);
+			const auto FoundEntity = GetEntity(Provider, Id);
 			const auto EntityActor = FoundEntity->GetActor();
 			Provider.Actors.Remove(EntityActor);
 			Provider.Entities.Remove(Id);

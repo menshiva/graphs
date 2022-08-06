@@ -11,6 +11,10 @@ namespace VertexCommands {
 		explicit Remove(EntityId Id);
 	};
 
+	struct GetGraphId final : AGraphProvider::Command {
+		explicit GetGraphId(EntityId Id, EntityId &GraphId);
+	};
+
 	struct SetSelectionType final : AGraphProvider::Command {
 		SetSelectionType(EntityId Id, SelectionType NewType);
 	};
