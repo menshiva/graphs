@@ -14,4 +14,12 @@ namespace GraphCommands {
 	struct Move final : AGraphProvider::Command {
 		Move(EntityId Id, const FVector &Delta);
 	};
+
+	struct ComputeCenterPosition final : AGraphProvider::Command {
+		ComputeCenterPosition(EntityId Id, FVector &Center);
+	};
+
+	struct Rotate final : AGraphProvider::Command {
+		Rotate(EntityId Id, const FVector &Center, float Angle);
+	};
 }

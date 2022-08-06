@@ -53,6 +53,12 @@ bool UToolProvider::OnRightThumbstickY(const float Value) {
 	return RightControllerInputInterface::OnRightThumbstickY(Value);
 }
 
+bool UToolProvider::OnRightThumbstickX(const float Value) {
+	if (ActiveTool.IsValid())
+		return ActiveTool->OnRightThumbstickX(Value);
+	return RightControllerInputInterface::OnRightThumbstickX(Value);
+}
+
 bool UToolProvider::OnRightThumbstickXAction(const float Value) {
 	if (ActiveTool.IsValid())
 		return ActiveTool->OnRightThumbstickXAction(Value);

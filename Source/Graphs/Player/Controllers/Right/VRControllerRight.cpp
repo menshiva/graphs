@@ -37,7 +37,8 @@ UVRControllerRight::UVRControllerRight(
 
 void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
 	BindAction(Pic, "RightTrigger", IE_Pressed, [this] {
-		OnRightTriggerAction(true);
+		if (OnRightTriggerAction(true))
+			PlayActionHapticEffect();
 	});
 	BindAction(Pic, "RightTrigger", IE_Released, [this] {
 		OnRightTriggerAction(false);
@@ -57,16 +58,7 @@ void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
 		OnRightThumbstickY(Value);
 	});
 	BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
-		static bool isClicked = false;
-		if (fabsf(Value) >= 0.7f) {
-			if (!isClicked) {
-				isClicked = true;
-				if (Value > 0.0f ? OnRightThumbstickXAction(1.0f) : OnRightThumbstickXAction(-1.0f))
-					PlayActionHapticEffect();
-			}
-		}
-		else if (isClicked)
-			isClicked = false;
+		OnRightThumbstickX(Value);
 	});
 }
 
@@ -106,25 +98,31 @@ bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 		return true;
 	}
 	if (State == ControllerState::UI) {
-		if (IsPressed) {
-			UiInteractor->PressPointerKey(EKeys::LeftMouseButton);
-			PlayActionHapticEffect();
-		}
-		else {
-			UiInteractor->ReleasePointerKey(EKeys::LeftMouseButton);
-		}
-		return true;
-	}
-	if (GetVrPawn()->OnRightTriggerAction(IsPressed)) {
 		if (IsPressed)
-			PlayActionHapticEffect();
+			UiInteractor->PressPointerKey(EKeys::LeftMouseButton);
+		else
+			UiInteractor->ReleasePointerKey(EKeys::LeftMouseButton);
 		return true;
 	}
-	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
+	return GetVrPawn()->OnRightTriggerAction(IsPressed);
 }
 
 bool UVRControllerRight::OnRightThumbstickY(const float Value) {
 	return GetVrPawn()->OnRightThumbstickY(Value);
+}
+
+bool UVRControllerRight::OnRightThumbstickX(const float Value) {
+	static bool isClicked = false;
+	if (fabsf(Value) >= 0.7f) {
+		if (!isClicked) {
+			isClicked = true;
+			if (Value > 0.0f ? OnRightThumbstickXAction(1.0f) : OnRightThumbstickXAction(-1.0f))
+				PlayActionHapticEffect();
+		}
+	}
+	else if (isClicked)
+		isClicked = false;
+	return GetVrPawn()->OnRightThumbstickX(Value);
 }
 
 bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {

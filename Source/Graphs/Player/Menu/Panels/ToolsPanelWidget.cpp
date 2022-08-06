@@ -6,6 +6,7 @@
 #include "Graphs/Player/Pawn/VRPawn.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
 #include "Graphs/Player/ToolProvider/Tools/Tool.h"
+#include "Graphs/Player/ToolProvider/Tools/ToolWidget.h"
 #include "Graphs/UI/Button/ImageButtonWidget.h"
 #include "Graphs/UI/Button/ToolButtonWidget.h"
 
@@ -51,11 +52,11 @@ void UToolsPanelWidget::NativeConstruct() {
 			CloseToolButton->SetVisibility(ESlateVisibility::Visible);
 		});
 
-		const auto ToolPanel = CreateWidget(
+		const auto ToolPanel = Cast<UToolWidget>(CreateWidget(
 			this,
 			Tool->GetToolPanelClass(),
 			FName(Tool->GetToolName().ToString() + "ToolPanel")
-		);
+		));
 		Tool->SetToolPanel(ToolPanel);
 		const auto ToolPanelSlot = Cast<UWidgetSwitcherSlot>(ToolPanelSwitcher->AddChild(ToolPanel));
 		ToolPanelSlot->SetHorizontalAlignment(HAlign_Fill);

@@ -1,38 +1,22 @@
 ﻿#pragma once
 
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
-#include "Blueprint/UserWidget.h"
 #include "Tool.generated.h"
 
 UCLASS(Abstract)
 class GRAPHS_API UTool : public UActorComponent, public RightControllerInputInterface {
 	GENERATED_BODY()
 public:
-	UTool() {
-		PrimaryComponentTick.bCanEverTick = false;
-	}
-
-	UTool(
-		const FName &ToolName,
-		const TCHAR *ToolImageAssetPath,
-		const TCHAR *ToolPanelAssetPath
-	) : ToolName(ToolName) {
-		PrimaryComponentTick.bCanEverTick = false;
-
-		const ConstructorHelpers::FObjectFinder<UTexture2D> ToolImageAsset(ToolImageAssetPath);
-		ToolImage = ToolImageAsset.Object;
-
-		const ConstructorHelpers::FClassFinder<UUserWidget> ToolPanelAsset(ToolPanelAssetPath);
-		ToolPanelClass = ToolPanelAsset.Class;
-	}
+	UTool();
+	UTool(const FName &ToolName, const TCHAR *ToolImageAssetPath, const TCHAR *ToolPanelAssetPath);
 
 	FORCEINLINE void SetupToolProvider(UToolProvider *Provider) { ToolProvider = Provider; }
 
 	FORCEINLINE const FName &GetToolName() const { return ToolName; }
 	FORCEINLINE UTexture2D *GetToolImage() const { return ToolImage; }
-	FORCEINLINE const TSubclassOf<UUserWidget> &GetToolPanelClass() const { return ToolPanelClass; }
+	FORCEINLINE const TSubclassOf<class UToolWidget> &GetToolPanelClass() const { return ToolPanelClass; }
 
-	FORCEINLINE void SetToolPanel(UUserWidget *Panel) { ToolPanel = Panel; }
+	void SetToolPanel(UToolWidget *Panel);
 
 	FORCEINLINE bool SupportsType(const EntityType Type) const {
 		return SupportedEntityTypesMask & static_cast<std::underlying_type_t<EntityType>>(Type);
@@ -51,11 +35,7 @@ protected:
 	template <class WidgetClass>
 	WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
 
-	void SetSupportedEntityTypes(const std::initializer_list<EntityType> Types) {
-		SupportedEntityTypesMask = 0;
-		for (const auto SupportedType : Types)
-			SupportedEntityTypesMask |= static_cast<std::underlying_type_t<EntityType>>(SupportedType);
-	}
+	void SetSupportedEntityTypes(const std::initializer_list<EntityType> Types);
 private:
 	TWeakObjectPtr<UToolProvider> ToolProvider;
 
@@ -64,9 +44,9 @@ private:
 	UPROPERTY()
 	UTexture2D *ToolImage;
 
-	TSubclassOf<UUserWidget> ToolPanelClass;
+	TSubclassOf<UToolWidget> ToolPanelClass;
 
-	TWeakObjectPtr<UUserWidget> ToolPanel;
+	TWeakObjectPtr<UToolWidget> ToolPanel;
 
 	std::underlying_type_t<EntityType> SupportedEntityTypesMask = 0;
 };
