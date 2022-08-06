@@ -20,7 +20,7 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 		EntityId Id = NewHitResult.GetActor()->GetUniqueID();
 		if (GraphProvider->IsEntityValid(Id)) {
 			const auto RightController = VrPawn->GetRightVrController();
-			if (RightController->IsGripPressed()) {
+			if (RightController->GetSelectionMode() == SelectionMode::GRAPH) {
 				const auto Entity = GraphProvider->GetConstEntity(Id);
 				if (Entity->GetType() == EntityType::VERTEX) {
 					const auto Vertex = dynamic_cast<const VertexEntity*>(Entity);

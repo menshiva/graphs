@@ -1,4 +1,5 @@
 #include "VRControllerRight.h"
+#include "SelectionModeSelectorWidget.h"
 #include "Components/WidgetInteractionComponent.h"
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
@@ -16,6 +17,22 @@ UVRControllerRight::UVRControllerRight(
 	UiInteractor->TraceChannel = ECC_GameTraceChannel1; // VRUI trace channel
 	UiInteractor->OnHoveredWidgetChanged.AddDynamic(this, &UVRControllerRight::OnUiHover);
 	UiInteractor->SetupAttachment(GetMotionControllerAim());
+
+	SelectionWidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, "SelectionMode");
+	const ConstructorHelpers::FClassFinder<UUserWidget> MenuAsset(TEXT("/Game/Graphs/UI/Widgets/SelectionModeSelector"));
+	SelectionWidgetComponent->SetWidgetClass(MenuAsset.Class);
+	SelectionWidgetComponent->SetDrawAtDesiredSize(true);
+	SelectionWidgetComponent->SetPivot({0.5f, 0.5f});
+	SelectionWidgetComponent->SetRelativeLocationAndRotation(
+		FVector(0.0f, 0.0f, 5.0f),
+		FRotator(30.0f, 180.0f, 0.0f)
+	);
+	SelectionWidgetComponent->SetRelativeScale3D(FVector(0.04f));
+	SelectionWidgetComponent->SetGenerateOverlapEvents(false);
+	SelectionWidgetComponent->CanCharacterStepUpOn = ECB_No;
+	SelectionWidgetComponent->SetCollisionProfileName("NoCollision");
+	SelectionWidgetComponent->SetVisibility(false);
+	SelectionWidgetComponent->SetupAttachment(GetMotionControllerAim());
 }
 
 void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
@@ -26,22 +43,14 @@ void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
 		OnRightTriggerAction(false);
 	});
 	BindAction(Pic, "RightGrip", IE_Pressed, [this] {
-		GripPressed = true;
 		if (State != ControllerState::TOOL) {
-			const auto ToolProvider = GetVrPawn()->GetToolProvider();
-			const auto &HitResult = ToolProvider->GetHitResult();
-			if (HitResult.bBlockingHit)
-				ToolProvider->SetHitResult(HitResult);
+			SelectionWidgetComponent->SetVisibility(true);
+			PlayActionHapticEffect();
 		}
 	});
 	BindAction(Pic, "RightGrip", IE_Released, [this] {
-		GripPressed = false;
-		if (State != ControllerState::TOOL) {
-			const auto ToolProvider = GetVrPawn()->GetToolProvider();
-			const auto &HitResult = ToolProvider->GetHitResult();
-			if (HitResult.bBlockingHit)
-				ToolProvider->SetHitResult(HitResult);
-		}
+		if (SelectionWidgetComponent->IsVisible())
+			SelectionWidgetComponent->SetVisibility(false);
 	});
 
 	BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
@@ -119,6 +128,15 @@ bool UVRControllerRight::OnRightThumbstickY(const float Value) {
 }
 
 bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
+	if (SelectionWidgetComponent->IsVisible()) {
+		check(State != ControllerState::UI);
+		SetSelectionMode(Selection == SelectionMode::VERTEX_EDGE ? SelectionMode::GRAPH : SelectionMode::VERTEX_EDGE);
+		const auto ToolProvider = GetVrPawn()->GetToolProvider();
+		const auto &HitResult = ToolProvider->GetHitResult();
+		if (HitResult.bBlockingHit)
+			ToolProvider->SetHitResult(HitResult);
+		return true;
+	}
 	return GetVrPawn()->OnRightThumbstickXAction(Value);
 }
 
@@ -184,4 +202,13 @@ void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetCom
 		if (const auto PrevMenu = Cast<UMenuWidgetComponent>(PreviousWidgetComponent))
 			PrevMenu->SetCursorVisibility(false);
 	}
+}
+
+void UVRControllerRight::SetSelectionMode(const SelectionMode NewMode) {
+	Selection = NewMode;
+	const auto SelectionModeWidget = Cast<USelectionModeSelectorWidget>(SelectionWidgetComponent->GetWidget());
+	if (Selection == SelectionMode::VERTEX_EDGE)
+		SelectionModeWidget->SetText("Selection Mode: Vertex / Edge");
+	else
+		SelectionModeWidget->SetText("Selection Mode: Graph");
 }

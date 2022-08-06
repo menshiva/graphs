@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Graphs/Player/Controllers/VRControllerLeft.h"
-#include "Graphs/Player/Controllers/VRControllerRight.h"
+#include "Graphs/Player/Controllers/Left/VRControllerLeft.h"
+#include "Graphs/Player/Controllers/Right/VRControllerRight.h"
 #include "VRPawn.generated.h"
 
 UCLASS(Config = UserPreferences)

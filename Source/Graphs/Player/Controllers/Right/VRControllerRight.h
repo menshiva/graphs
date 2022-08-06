@@ -1,12 +1,17 @@
 #pragma once
 
-#include "VRControllerBase.h"
+#include "../VRControllerBase.h"
 #include "VRControllerRight.generated.h"
 
 enum class ControllerState : uint8_t {
 	NONE,
 	UI,
 	TOOL
+};
+
+enum class SelectionMode : uint8_t {
+	VERTEX_EDGE,
+	GRAPH
 };
 
 class RightControllerInputInterface {
@@ -43,20 +48,26 @@ public:
 	FORCEINLINE bool IsInToolState() const { return State == ControllerState::TOOL; }
 	void SetToolStateEnabled(bool Enabled);
 
-	FORCEINLINE bool IsGripPressed() const { return GripPressed; }
+	FORCEINLINE SelectionMode GetSelectionMode() const { return Selection; }
 private:
 	UFUNCTION()
 	void OnUiHover(class UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);
 
+	void SetSelectionMode(SelectionMode NewMode);
+
 	UPROPERTY()
 	class UWidgetInteractionComponent *UiInteractor;
+
+	UPROPERTY()
+	UWidgetComponent *SelectionWidgetComponent;
 
 	ControllerState State = ControllerState::NONE;
 
 	bool TriggerPressed = false;
-	bool GripPressed = false;
 
 	bool LaserVisibleFlag = false;
+
+	SelectionMode Selection = SelectionMode::VERTEX_EDGE;
 
 	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
 };
