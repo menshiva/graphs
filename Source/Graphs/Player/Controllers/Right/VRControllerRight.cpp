@@ -1,4 +1,5 @@
 #include "VRControllerRight.h"
+#include "SelectionModeSelectorWidget.h"
 #include "Components/WidgetInteractionComponent.h"
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
@@ -7,7 +8,7 @@
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Right) {
-	SetLaserNiagaraColor(ColorUtils::SelectionColor);
+	SetLaserNiagaraColor(ColorUtils::BlueColor);
 	SetLaserLength(MeshInteractionLaserMaxDistance);
 	UVRControllerBase::SetLaserActive(LaserVisibleFlag);
 
@@ -16,46 +17,55 @@ UVRControllerRight::UVRControllerRight(
 	UiInteractor->TraceChannel = ECC_GameTraceChannel1; // VRUI trace channel
 	UiInteractor->OnHoveredWidgetChanged.AddDynamic(this, &UVRControllerRight::OnUiHover);
 	UiInteractor->SetupAttachment(GetMotionControllerAim());
+
+	SelectionWidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, "SelectionMode");
+	const ConstructorHelpers::FClassFinder<UUserWidget> MenuAsset(TEXT("/Game/Graphs/UI/Widgets/SelectionModeSelector"));
+	SelectionWidgetComponent->SetWidgetClass(MenuAsset.Class);
+	SelectionWidgetComponent->SetDrawAtDesiredSize(true);
+	SelectionWidgetComponent->SetPivot({0.5f, 0.5f});
+	SelectionWidgetComponent->SetRelativeLocationAndRotation(
+		FVector(0.0f, 0.0f, 5.0f),
+		FRotator(30.0f, 180.0f, 0.0f)
+	);
+	SelectionWidgetComponent->SetRelativeScale3D(FVector(0.04f));
+	SelectionWidgetComponent->SetGenerateOverlapEvents(false);
+	SelectionWidgetComponent->CanCharacterStepUpOn = ECB_No;
+	SelectionWidgetComponent->SetCollisionProfileName("NoCollision");
+	SelectionWidgetComponent->SetVisibility(false);
+	SelectionWidgetComponent->SetupAttachment(GetMotionControllerAim());
 }
 
 void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
 	BindAction(Pic, "RightTrigger", IE_Pressed, [this] {
-		OnRightTriggerAction(true);
+		if (OnRightTriggerAction(true))
+			PlayActionHapticEffect();
 	});
 	BindAction(Pic, "RightTrigger", IE_Released, [this] {
 		OnRightTriggerAction(false);
 	});
 	BindAction(Pic, "RightGrip", IE_Pressed, [this] {
-		GripPressed = true;
 		if (State != ControllerState::TOOL) {
-			const auto ToolProvider = GetVrPawn()->GetToolProvider();
-			const auto &HitResult = ToolProvider->GetHitResult();
-			if (HitResult.bBlockingHit)
-				ToolProvider->SetHitResult(HitResult);
+			SelectionWidgetComponent->SetVisibility(true);
+			PlayActionHapticEffect();
 		}
 	});
 	BindAction(Pic, "RightGrip", IE_Released, [this] {
-		GripPressed = false;
-		if (State != ControllerState::TOOL) {
-			const auto ToolProvider = GetVrPawn()->GetToolProvider();
-			const auto &HitResult = ToolProvider->GetHitResult();
-			if (HitResult.bBlockingHit)
-				ToolProvider->SetHitResult(HitResult);
-		}
+		if (SelectionWidgetComponent->IsVisible())
+			SelectionWidgetComponent->SetVisibility(false);
 	});
 
 	BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
 		OnRightThumbstickY(Value);
 	});
 	BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
-		// TODO
+		OnRightThumbstickX(Value);
 	});
 }
 
 void UVRControllerRight::TickComponent(
 	const float DeltaTime,
 	const ELevelTick TickType,
-	FActorComponentTickFunction* ThisTickFunction
+	FActorComponentTickFunction *ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (State == ControllerState::UI) {
@@ -88,25 +98,44 @@ bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 		return true;
 	}
 	if (State == ControllerState::UI) {
-		if (IsPressed) {
-			UiInteractor->PressPointerKey(EKeys::LeftMouseButton);
-			PlayActionHapticEffect();
-		}
-		else {
-			UiInteractor->ReleasePointerKey(EKeys::LeftMouseButton);
-		}
-		return true;
-	}
-	if (GetVrPawn()->OnRightTriggerAction(IsPressed)) {
 		if (IsPressed)
-			PlayActionHapticEffect();
+			UiInteractor->PressPointerKey(EKeys::LeftMouseButton);
+		else
+			UiInteractor->ReleasePointerKey(EKeys::LeftMouseButton);
 		return true;
 	}
-	return RightControllerInputInterface::OnRightTriggerAction(IsPressed);
+	return GetVrPawn()->OnRightTriggerAction(IsPressed);
 }
 
 bool UVRControllerRight::OnRightThumbstickY(const float Value) {
 	return GetVrPawn()->OnRightThumbstickY(Value);
+}
+
+bool UVRControllerRight::OnRightThumbstickX(const float Value) {
+	static bool isClicked = false;
+	if (fabsf(Value) >= 0.7f) {
+		if (!isClicked) {
+			isClicked = true;
+			if (Value > 0.0f ? OnRightThumbstickXAction(1.0f) : OnRightThumbstickXAction(-1.0f))
+				PlayActionHapticEffect();
+		}
+	}
+	else if (isClicked)
+		isClicked = false;
+	return GetVrPawn()->OnRightThumbstickX(Value);
+}
+
+bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
+	if (SelectionWidgetComponent->IsVisible()) {
+		check(State != ControllerState::UI);
+		SetSelectionMode(Selection == SelectionMode::VERTEX_EDGE ? SelectionMode::GRAPH : SelectionMode::VERTEX_EDGE);
+		const auto ToolProvider = GetVrPawn()->GetToolProvider();
+		const auto &HitResult = ToolProvider->GetHitResult();
+		if (HitResult.bBlockingHit)
+			ToolProvider->SetHitResult(HitResult);
+		return true;
+	}
+	return GetVrPawn()->OnRightThumbstickXAction(Value);
 }
 
 void UVRControllerRight::SetLaserActive(const bool IsActive) {
@@ -134,11 +163,17 @@ void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
 }
 
 void UVRControllerRight::SetToolStateEnabled(const bool Enabled) {
+	static bool IsUiInteractorWasVisible = false;
 	if (Enabled) {
 		State = ControllerState::TOOL;
+		IsUiInteractorWasVisible = UiInteractor->IsVisible();
+		if (IsUiInteractorWasVisible)
+			SetUiInteractionEnabled(false);
 	}
 	else {
 		State = ControllerState::NONE;
+		if (IsUiInteractorWasVisible)
+			SetUiInteractionEnabled(true);
 		if (UiInteractor->IsVisible() && UiInteractor->IsOverHitTestVisibleWidget())
 			OnUiHover(UiInteractor->GetHoveredWidgetComponent(), nullptr);
 	}
@@ -165,4 +200,13 @@ void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetCom
 		if (const auto PrevMenu = Cast<UMenuWidgetComponent>(PreviousWidgetComponent))
 			PrevMenu->SetCursorVisibility(false);
 	}
+}
+
+void UVRControllerRight::SetSelectionMode(const SelectionMode NewMode) {
+	Selection = NewMode;
+	const auto SelectionModeWidget = Cast<USelectionModeSelectorWidget>(SelectionWidgetComponent->GetWidget());
+	if (Selection == SelectionMode::VERTEX_EDGE)
+		SelectionModeWidget->SetText("Selection Mode: Vertex / Edge");
+	else
+		SelectionModeWidget->SetText("Selection Mode: Graph");
 }

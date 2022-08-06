@@ -35,6 +35,10 @@ public:
 			return NewEntity;
 		}
 
+		FORCEINLINE static const Entity *GetConstEntity(const AGraphProvider &Provider, const EntityId Id) {
+			return Provider.GetConstEntity(Id);
+		}
+
 		static Entity *GetMutEntity(const AGraphProvider &Provider, const EntityId Id) {
 			return Provider.Entities.Find(Id)->Get();
 		}

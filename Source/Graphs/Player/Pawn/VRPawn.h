@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Graphs/Player/Controllers/VRControllerLeft.h"
-#include "Graphs/Player/Controllers/VRControllerRight.h"
+#include "Graphs/Player/Controllers/Left/VRControllerLeft.h"
+#include "Graphs/Player/Controllers/Right/VRControllerRight.h"
 #include "VRPawn.generated.h"
 
 UCLASS(Config = UserPreferences)
@@ -32,6 +32,8 @@ public:
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 	virtual bool OnRightThumbstickY(float Value) override;
+	virtual bool OnRightThumbstickX(float Value) override;
+	virtual bool OnRightThumbstickXAction(float Value) override;
 protected:
 	virtual void BeginPlay() override;
 private:

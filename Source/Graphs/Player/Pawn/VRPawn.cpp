@@ -80,6 +80,14 @@ bool AVRPawn::OnRightThumbstickY(const float Value) {
 	return ToolProvider->OnRightThumbstickY(Value);
 }
 
+bool AVRPawn::OnRightThumbstickX(const float Value) {
+	return ToolProvider->OnRightThumbstickX(Value);
+}
+
+bool AVRPawn::OnRightThumbstickXAction(const float Value) {
+	return ToolProvider->OnRightThumbstickXAction(Value);
+}
+
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
 	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);

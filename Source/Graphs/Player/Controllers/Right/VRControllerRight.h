@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VRControllerBase.h"
+#include "../VRControllerBase.h"
 #include "VRControllerRight.generated.h"
 
 enum class ControllerState : uint8_t {
@@ -9,13 +9,24 @@ enum class ControllerState : uint8_t {
 	TOOL
 };
 
+enum class SelectionMode : uint8_t {
+	VERTEX_EDGE,
+	GRAPH
+};
+
 class RightControllerInputInterface {
 public:
 	RightControllerInputInterface() = default;
 	virtual ~RightControllerInputInterface() = default;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) { return false; }
+
 	virtual bool OnRightThumbstickY(float Value) { return false; }
+
+	virtual bool OnRightThumbstickX(float Value) { return false; }
+
+	// Value is +1.0f on right action and -1.0f on left action
+	virtual bool OnRightThumbstickXAction(float Value) { return false; }
 };
 
 UCLASS()
@@ -26,10 +37,12 @@ public:
 
 	virtual void SetupInputBindings(UInputComponent *Pic) override;
 
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction *ThisTickFunction) override;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 	virtual bool OnRightThumbstickY(float Value) override;
+	virtual bool OnRightThumbstickX(float Value) override;
+	virtual bool OnRightThumbstickXAction(float Value) override;
 
 	virtual void SetLaserActive(bool IsActive) override;
 
@@ -38,20 +51,26 @@ public:
 	FORCEINLINE bool IsInToolState() const { return State == ControllerState::TOOL; }
 	void SetToolStateEnabled(bool Enabled);
 
-	FORCEINLINE bool IsGripPressed() const { return GripPressed; }
+	FORCEINLINE SelectionMode GetSelectionMode() const { return Selection; }
 private:
 	UFUNCTION()
 	void OnUiHover(class UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);
 
+	void SetSelectionMode(SelectionMode NewMode);
+
 	UPROPERTY()
 	class UWidgetInteractionComponent *UiInteractor;
+
+	UPROPERTY()
+	UWidgetComponent *SelectionWidgetComponent;
 
 	ControllerState State = ControllerState::NONE;
 
 	bool TriggerPressed = false;
-	bool GripPressed = false;
 
 	bool LaserVisibleFlag = false;
+
+	SelectionMode Selection = SelectionMode::VERTEX_EDGE;
 
 	constexpr static float MeshInteractionLaserMaxDistance = 5000.0f;
 };
