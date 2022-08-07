@@ -10,12 +10,14 @@ public:
 	AGraphProvider() {
 		PrimaryActorTick.bCanEverTick = false;
 
+		EntityMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("/Game/Graphs/Materials/GraphMaterial")).Object;
 		VertexMesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("/Engine/BasicShapes/Sphere")).Object;
-		VertexMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("/Game/Graphs/Materials/GraphMaterial")).Object;
+		EdgeMesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("/Engine/BasicShapes/Cylinder")).Object;
 	}
 
+	FORCEINLINE UMaterial *GetEntityActorMaterial() const { return EntityMaterial; }
 	FORCEINLINE UStaticMesh *GetVertexMesh() const { return VertexMesh; }
-	FORCEINLINE UMaterial *GetVertexMaterial() const { return VertexMaterial; }
+	FORCEINLINE UStaticMesh *GetEdgeMesh() const { return EdgeMesh; }
 
 	FORCEINLINE bool IsEntityValid(const EntityId Id) const { return Entities.Contains(Id); }
 	FORCEINLINE EntityType GetEntityType(const EntityId Id) const { return Entities.Find(Id)->Get()->Type; }
@@ -50,17 +52,18 @@ public:
 		friend AGraphProvider;
 	};
 
-	template <class T, typename... ArgsType>
-	void ExecuteCommand(ArgsType&&... Args) {
-		T Cmd(Forward<ArgsType>(Args)...);
+	void ExecuteCommand(Command &&Cmd) {
 		Cmd.Implementation(*this);
 	}
 private:
 	UPROPERTY()
+	UMaterial *EntityMaterial;
+
+	UPROPERTY()
 	UStaticMesh *VertexMesh;
 
 	UPROPERTY()
-	UMaterial *VertexMaterial;
+	UStaticMesh *EdgeMesh;
 
 	UPROPERTY()
 	TSet<AActor*> Actors;

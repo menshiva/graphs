@@ -1,4 +1,5 @@
 ﻿#include "GraphCommands.h"
+#include "EdgeCommands.h"
 #include "VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
@@ -16,7 +17,9 @@ GraphCommands::SetSelectionType::SetSelectionType(
 	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
 	Graph->Selection = NewType;
 	for (const auto VertexId : Graph->VerticesIds)
-		Provider.ExecuteCommand<VertexCommands::SetSelectionType>(VertexId, NewType);
+		Provider.ExecuteCommand(VertexCommands::SetSelectionType(VertexId, NewType));
+	for (const auto EdgeId : Graph->EdgesIds)
+		Provider.ExecuteCommand(EdgeCommands::SetSelectionType(EdgeId, NewType));
 }) {}
 
 GraphCommands::Move::Move(
@@ -25,7 +28,9 @@ GraphCommands::Move::Move(
 ) : Command([Id, &Delta] (AGraphProvider &Provider) {
 	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
 	for (const auto VertexId : Graph->VerticesIds)
-		Provider.ExecuteCommand<VertexCommands::Move>(VertexId, Delta);
+		Provider.ExecuteCommand(VertexCommands::Move(VertexId, Delta, false));
+	for (const auto EdgeId : Graph->EdgesIds)
+		Provider.ExecuteCommand(EdgeCommands::Move(EdgeId, Delta, false));
 }) {}
 
 GraphCommands::ComputeCenterPosition::ComputeCenterPosition(
@@ -51,6 +56,8 @@ GraphCommands::Rotate::Rotate(
 		const auto VertexPos = Vertex->Actor->GetActorLocation();
 		const auto PosDirection = VertexPos - Center;
 		const auto RotatedPos = PosDirection.RotateAngleAxis(Angle, FVector::DownVector) + Center;
-		Provider.ExecuteCommand<VertexCommands::Move>(VertexId, RotatedPos - VertexPos);
+		Provider.ExecuteCommand(VertexCommands::Move(VertexId, RotatedPos - VertexPos, false));
 	}
+	for (const auto EdgeId : Graph->EdgesIds)
+		Provider.ExecuteCommand(EdgeCommands::UpdateTransform(EdgeId));
 }) {}

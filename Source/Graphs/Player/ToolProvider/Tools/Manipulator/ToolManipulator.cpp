@@ -1,5 +1,6 @@
 ﻿#include "ToolManipulator.h"
 #include "ToolManipulatorPanelWidget.h"
+#include "Graphs/GraphProvider/Commands/EdgeCommands.h"
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
@@ -39,15 +40,15 @@ void UToolManipulator::TickTool() {
 
 		switch (GetGraphProvider()->GetEntityType(GetHitEntityId())) {
 			case EntityType::VERTEX: {
-				GetGraphProvider()->ExecuteCommand<VertexCommands::Move>(GetHitEntityId(), Delta);
+				GetGraphProvider()->ExecuteCommand(VertexCommands::Move(GetHitEntityId(), Delta, true));
 				break;
 			}
 			case EntityType::EDGE: {
-				// TODO
+				GetGraphProvider()->ExecuteCommand(EdgeCommands::Move(GetHitEntityId(), Delta, true));
 				break;
 			}
 			case EntityType::GRAPH: {
-				GetGraphProvider()->ExecuteCommand<GraphCommands::Move>(GetHitEntityId(), Delta);
+				GetGraphProvider()->ExecuteCommand(GraphCommands::Move(GetHitEntityId(), Delta));
 				break;
 			}
 		}
@@ -64,10 +65,10 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 			}
 			else {
 				check(GetGraphProvider()->GetEntityType(GetHitEntityId()) == EntityType::GRAPH);
-				GetGraphProvider()->ExecuteCommand<GraphCommands::ComputeCenterPosition>(
+				GetGraphProvider()->ExecuteCommand(GraphCommands::ComputeCenterPosition(
 					GetHitEntityId(),
 					GraphCenterPosition
-				);
+				));
 			}
 
 			GetToolPanel<UToolManipulatorPanelWidget>()->SetTextActionEntity();
@@ -95,11 +96,11 @@ bool UToolManipulator::OnRightThumbstickY(const float Value) {
 bool UToolManipulator::OnRightThumbstickX(const float Value) {
 	if (Mode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
 		check(GetGraphProvider()->GetEntityType(GetHitEntityId()) == EntityType::GRAPH);
-		GetGraphProvider()->ExecuteCommand<GraphCommands::Rotate>(
+		GetGraphProvider()->ExecuteCommand(GraphCommands::Rotate(
 			GetHitEntityId(),
 			GraphCenterPosition,
 			Value * DefaultRotationSpeed
-		);
+		));
 		return true;
 	}
 	return Super::OnRightThumbstickX(Value);
