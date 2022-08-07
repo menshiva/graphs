@@ -1,4 +1,5 @@
 #include "ToolProvider.h"
+#include "Graphs/GraphProvider/Commands/EdgeCommands.h"
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
@@ -20,22 +21,23 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 		EntityId Id = NewHitResult.GetActor()->GetUniqueID();
 		if (GraphProvider->IsEntityValid(Id)) {
 			const auto RightController = VrPawn->GetRightVrController();
+
 			if (RightController->GetSelectionMode() == SelectionMode::GRAPH) {
-				const auto Entity = GraphProvider->GetConstEntity(Id);
-				if (Entity->GetType() == EntityType::VERTEX) {
-					const auto Vertex = dynamic_cast<const VertexEntity*>(Entity);
-					Id = Vertex->GraphId;
-				}
-				else if (Entity->GetType() == EntityType::EDGE) {
-					// TODO
-				}
+				const auto EntityType = GraphProvider->GetEntityType(Id);
+				check(EntityType == EntityType::VERTEX || EntityType == EntityType::EDGE);
+				EntityId GraphId = ENTITY_NONE;
+				if (EntityType == EntityType::VERTEX)
+					GetGraphProvider()->ExecuteCommand(VertexCommands::GetGraphId(Id, GraphId));
+				else
+					GetGraphProvider()->ExecuteCommand(EdgeCommands::GetGraphId(Id, GraphId));
+				check(GetGraphProvider()->IsEntityValid(GraphId));
+				Id = GraphId;
 			}
 
-			if (!ActiveTool.IsValid() || ActiveTool->SupportsType(GraphProvider->GetConstEntity(Id)->GetType())) {
+			if (!ActiveTool.IsValid() || ActiveTool->SupportsType(GraphProvider->GetEntityType(Id))) {
 				HitResult = NewHitResult;
 				HitEntityId = Id;
 				SetEntitySelectionType(SelectionType::HIT);
-				RightController->PlayActionHapticEffect();
 			}
 		}
 	}
@@ -88,7 +90,7 @@ void UToolProvider::BeginPlay() {
 	GraphProvider = Cast<AGraphProvider>(UGameplayStatics::GetActorOfClass(GetWorld(), AGraphProvider::StaticClass()));
 	// TODO: only for test
 	{
-		const FVector Positions[] = {
+		const TArray<FVector> Positions = {
 			{437.109619f, 225.096985f, 50.0f},
 			{748.974915f, 345.263428f, 260.0f},
 			{504.859009f, -437.556763f, 460.0f},
@@ -98,29 +100,51 @@ void UToolProvider::BeginPlay() {
 			{1213.039551f, 60.030151f, 850.0f},
 			{1560.0f, -250.0f, 650.0f},
 		};
+		const TArray<std::pair<uint32_t, uint32_t>> Connections = {
+			{0, 1},
+			{0, 2},
+			{0, 3},
+			{1, 2},
+			{1, 4},
+			{4, 5},
+			{5, 6},
+			{6, 4},
+		};
+		TMap<uint32_t, EntityId> VertexDisplayIdToEntityId;
+
 		EntityId GraphId = ENTITY_NONE;
-		GraphProvider->ExecuteCommand<GraphCommands::Create>(&GraphId);
-		for (const auto &Pos : Positions)
-			GraphProvider->ExecuteCommand<VertexCommands::Create>(GraphId, nullptr, Pos);
+		GraphProvider->ExecuteCommand(GraphCommands::Create(&GraphId));
+		for (size_t i = 0; i < Positions.Num(); ++i) {
+			EntityId NewVertexId = ENTITY_NONE;
+			GraphProvider->ExecuteCommand(VertexCommands::Create(GraphId, &NewVertexId, i, Positions[i]));
+			VertexDisplayIdToEntityId.Add(i, NewVertexId);
+		}
+		for (size_t i = 0; i < Connections.Num(); ++i) {
+			const EntityId FirstVertexId = VertexDisplayIdToEntityId.FindChecked(Connections[i].first);
+			const EntityId SecondVertexId = VertexDisplayIdToEntityId.FindChecked(Connections[i].second);
+			GraphProvider->ExecuteCommand(EdgeCommands::Create(
+				GraphId,
+				FirstVertexId, SecondVertexId,
+				nullptr,
+				i
+			));
+		}
 	}
 }
 
 void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const {
-	const auto Entity = GraphProvider->GetConstEntity(HitEntityId);
-	if (Entity->Selection != Selection) {
-		switch (Entity->GetType()) {
-			case EntityType::VERTEX: {
-				GraphProvider->ExecuteCommand<VertexCommands::SetSelectionType>(HitEntityId, Selection);
-				break;
-			}
-			case EntityType::EDGE: {
-				// TODO
-				break;
-			}
-			case EntityType::GRAPH: {
-				GraphProvider->ExecuteCommand<GraphCommands::SetSelectionType>(HitEntityId, Selection);
-				break;
-			}
+	switch (GraphProvider->GetEntityType(HitEntityId)) {
+		case EntityType::VERTEX: {
+			GraphProvider->ExecuteCommand(VertexCommands::SetSelectionType(HitEntityId, Selection));
+			break;
+		}
+		case EntityType::EDGE: {
+			GraphProvider->ExecuteCommand(EdgeCommands::SetSelectionType(HitEntityId, Selection));
+			break;
+		}
+		case EntityType::GRAPH: {
+			GraphProvider->ExecuteCommand(GraphCommands::SetSelectionType(HitEntityId, Selection));
+			break;
 		}
 	}
 }

@@ -10,15 +10,17 @@ public:
 	AGraphProvider() {
 		PrimaryActorTick.bCanEverTick = false;
 
+		EntityMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("/Game/Graphs/Materials/GraphMaterial")).Object;
 		VertexMesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("/Engine/BasicShapes/Sphere")).Object;
-		VertexMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("/Game/Graphs/Materials/GraphMaterial")).Object;
+		EdgeMesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("/Engine/BasicShapes/Cylinder")).Object;
 	}
 
+	FORCEINLINE UMaterial *GetEntityActorMaterial() const { return EntityMaterial; }
 	FORCEINLINE UStaticMesh *GetVertexMesh() const { return VertexMesh; }
-	FORCEINLINE UMaterial *GetVertexMaterial() const { return VertexMaterial; }
+	FORCEINLINE UStaticMesh *GetEdgeMesh() const { return EdgeMesh; }
 
 	FORCEINLINE bool IsEntityValid(const EntityId Id) const { return Entities.Contains(Id); }
-	FORCEINLINE const Entity *GetConstEntity(const EntityId Id) const { return Entities.Find(Id)->Get(); }
+	FORCEINLINE EntityType GetEntityType(const EntityId Id) const { return Entities.Find(Id)->Get()->Type; }
 
 	class Command {
 	public:
@@ -28,26 +30,21 @@ public:
 		template <class Ent>
 		static Ent *CreateEntity(AGraphProvider &Provider) {
 			const auto NewEntity = new Ent(Provider);
-			const auto ElementId = Provider.Entities.Emplace(NewEntity);
-			const auto Actor = NewEntity->GetActor();
-			Actor->AttachToActor(&Provider, FAttachmentTransformRules::KeepRelativeTransform);
-			Provider.Actors.Add(Actor);
+			Provider.Entities.Emplace(NewEntity);
+			NewEntity->Actor->AttachToActor(&Provider, FAttachmentTransformRules::KeepRelativeTransform);
+			Provider.Actors.Add(NewEntity->Actor.Get());
 			return NewEntity;
 		}
 
-		FORCEINLINE static const Entity *GetConstEntity(const AGraphProvider &Provider, const EntityId Id) {
-			return Provider.GetConstEntity(Id);
-		}
-
-		static Entity *GetMutEntity(const AGraphProvider &Provider, const EntityId Id) {
-			return Provider.Entities.Find(Id)->Get();
+		template <class Ent>
+		FORCEINLINE static Ent *GetEntity(const AGraphProvider &Provider, const EntityId Id) {
+			return dynamic_cast<Ent*>(Provider.Entities.Find(Id)->Get());
 		}
 
 		static void RemoveEntity(AGraphProvider &Provider, const EntityId Id) {
-			const auto FoundEntity = GetMutEntity(Provider, Id);
-			const auto EntityActor = FoundEntity->GetActor();
-			Provider.Actors.Remove(EntityActor);
+			const auto EntityActor = GetEntity<Entity>(Provider, Id)->Actor.Get();
 			Provider.Entities.Remove(Id);
+			Provider.Actors.Remove(EntityActor);
 			Provider.GetWorld()->DestroyActor(EntityActor);
 		}
 	private:
@@ -55,17 +52,18 @@ public:
 		friend AGraphProvider;
 	};
 
-	template <class T, typename... ArgsType>
-	void ExecuteCommand(ArgsType&&... Args) {
-		T Cmd(Forward<ArgsType>(Args)...);
+	void ExecuteCommand(Command &&Cmd) {
 		Cmd.Implementation(*this);
 	}
 private:
 	UPROPERTY()
+	UMaterial *EntityMaterial;
+
+	UPROPERTY()
 	UStaticMesh *VertexMesh;
 
 	UPROPERTY()
-	UMaterial *VertexMaterial;
+	UStaticMesh *EdgeMesh;
 
 	UPROPERTY()
 	TSet<AActor*> Actors;

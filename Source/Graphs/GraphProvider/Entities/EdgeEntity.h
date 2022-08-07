@@ -2,13 +2,13 @@
 
 #include "Entity.h"
 
-struct VertexEntity final : Entity {
-	explicit VertexEntity(const class AGraphProvider &Provider);
+struct EdgeEntity final : Entity {
+	explicit EdgeEntity(const class AGraphProvider &Provider);
 
 	void SetActorColor(const FLinearColor &NewColor) const;
 
 	EntityId GraphId = ENTITY_NONE;
-	TArray<EntityId> EdgesIds;
+	TStaticArray<EntityId, 2> VerticesIds;
 
 	uint32_t DisplayId = 0;
 };

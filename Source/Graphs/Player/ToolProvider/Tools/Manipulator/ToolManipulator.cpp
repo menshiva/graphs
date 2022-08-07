@@ -1,5 +1,6 @@
 ﻿#include "ToolManipulator.h"
 #include "ToolManipulatorPanelWidget.h"
+#include "Graphs/GraphProvider/Commands/EdgeCommands.h"
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
@@ -37,17 +38,17 @@ void UToolManipulator::TickTool() {
 		const auto NewLaserPosition = GetVrRightController()->GetLaserEndPosition();
 		const auto Delta = NewLaserPosition - PreviousLaserEndPosition;
 
-		switch (GetGraphProvider()->GetConstEntity(GetHitEntityId())->GetType()) {
+		switch (GetGraphProvider()->GetEntityType(GetHitEntityId())) {
 			case EntityType::VERTEX: {
-				GetGraphProvider()->ExecuteCommand<VertexCommands::Move>(GetHitEntityId(), Delta);
+				GetGraphProvider()->ExecuteCommand(VertexCommands::Move(GetHitEntityId(), Delta, true));
 				break;
 			}
 			case EntityType::EDGE: {
-				// TODO
+				GetGraphProvider()->ExecuteCommand(EdgeCommands::Move(GetHitEntityId(), Delta, true));
 				break;
 			}
 			case EntityType::GRAPH: {
-				GetGraphProvider()->ExecuteCommand<GraphCommands::Move>(GetHitEntityId(), Delta);
+				GetGraphProvider()->ExecuteCommand(GraphCommands::Move(GetHitEntityId(), Delta));
 				break;
 			}
 		}
@@ -63,16 +64,17 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 				PreviousLaserEndPosition = GetVrRightController()->GetLaserEndPosition();
 			}
 			else {
-				check(GetGraphProvider()->GetConstEntity(GetHitEntityId())->GetType() == EntityType::GRAPH);
-				GetGraphProvider()->ExecuteCommand<GraphCommands::ComputeCenterPosition>(
+				check(GetGraphProvider()->GetEntityType(GetHitEntityId()) == EntityType::GRAPH);
+				GetGraphProvider()->ExecuteCommand(GraphCommands::ComputeCenterPosition(
 					GetHitEntityId(),
 					GraphCenterPosition
-				);
+				));
 			}
 
 			GetToolPanel<UToolManipulatorPanelWidget>()->SetTextActionEntity();
 			GetVrRightController()->SetToolStateEnabled(true);
 			GetVrRightController()->SetLaserActive(false);
+			return true;
 		}
 	}
 	else {
@@ -80,7 +82,7 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 		GetVrRightController()->SetToolStateEnabled(false);
 		GetToolPanel<UToolManipulatorPanelWidget>()->SetTextSelectEntity();
 	}
-	return true;
+	return Super::OnRightTriggerAction(IsPressed);
 }
 
 bool UToolManipulator::OnRightThumbstickY(const float Value) {
@@ -93,12 +95,12 @@ bool UToolManipulator::OnRightThumbstickY(const float Value) {
 
 bool UToolManipulator::OnRightThumbstickX(const float Value) {
 	if (Mode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
-		check(GetGraphProvider()->GetConstEntity(GetHitEntityId())->GetType() == EntityType::GRAPH);
-		GetGraphProvider()->ExecuteCommand<GraphCommands::Rotate>(
+		check(GetGraphProvider()->GetEntityType(GetHitEntityId()) == EntityType::GRAPH);
+		GetGraphProvider()->ExecuteCommand(GraphCommands::Rotate(
 			GetHitEntityId(),
 			GraphCenterPosition,
 			Value * DefaultRotationSpeed
-		);
+		));
 		return true;
 	}
 	return Super::OnRightThumbstickX(Value);

@@ -2,9 +2,18 @@
 
 #include "Graphs/GraphProvider/GraphProvider.h"
 
-namespace VertexCommands {
+namespace EdgeCommands {
 	struct Create final : AGraphProvider::Command {
-		Create(EntityId GraphId, EntityId *NewVertexId, uint32_t VertexDisplayId, const FVector &Position);
+		Create(
+			EntityId GraphId,
+			EntityId FirstVertexId, EntityId SecondVertexId,
+			EntityId *NewEdgeId,
+			uint32_t EdgeDisplayId
+		);
+	};
+
+	struct UpdateTransform final : AGraphProvider::Command {
+		explicit UpdateTransform(EntityId Id);
 	};
 
 	struct GetGraphId final : AGraphProvider::Command {
@@ -16,6 +25,6 @@ namespace VertexCommands {
 	};
 
 	struct Move final : AGraphProvider::Command {
-		Move(EntityId Id, const FVector &Delta, bool UpdateConnectedEdges);
+		Move(EntityId Id, const FVector &Delta, bool UpdateConnectedVertices);
 	};
 }
