@@ -10,34 +10,29 @@ VertexCommands::Create::Create(
 ) : Command([GraphId, NewVertexId, &Position] (AGraphProvider &Provider) {
 	const auto NewVertex = CreateEntity<VertexEntity>(Provider);
 
-	const auto Graph = dynamic_cast<GraphEntity*>(GetEntity(Provider, GraphId));
-	NewVertex->GetActor()->AttachToActor(Graph->GetActor(), FAttachmentTransformRules::KeepWorldTransform);
-	Graph->VerticesIds.Push(NewVertex->GetId());
+	const auto Graph = GetEntity<GraphEntity>(Provider, GraphId);
+	NewVertex->Actor->AttachToActor(Graph->Actor.Get(), FAttachmentTransformRules::KeepWorldTransform);
+	Graph->VerticesIds.Push(NewVertex->GetEntityId());
 
 	NewVertex->GraphId = GraphId;
-	NewVertex->GetActor()->SetActorLocation(Position);
+	NewVertex->Actor->SetActorLocation(Position);
 
 	if (NewVertexId)
-		*NewVertexId = NewVertex->GetId();
-}) {}
-
-VertexCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provider) {
-	RemoveEntity(Provider, Id);
+		*NewVertexId = NewVertex->GetEntityId();
 }) {}
 
 VertexCommands::GetGraphId::GetGraphId(
 	EntityId Id,
 	EntityId &GraphId
 ) : Command([Id, &GraphId] (const AGraphProvider &Provider) {
-	const auto Vertex = dynamic_cast<VertexEntity*>(GetEntity(Provider, Id));
-	GraphId = Vertex->GraphId;
+	GraphId = GetEntity<const VertexEntity>(Provider, Id)->GraphId;
 }) {}
 
 VertexCommands::SetSelectionType::SetSelectionType(
 	EntityId Id,
 	SelectionType NewType
 ) : Command([Id, NewType] (const AGraphProvider &Provider) {
-	const auto Vertex = dynamic_cast<VertexEntity*>(GetEntity(Provider, Id));
+	const auto Vertex = GetEntity<VertexEntity>(Provider, Id);
 	Vertex->Selection = NewType;
 	switch (NewType) {
 		case SelectionType::HIT:
@@ -55,6 +50,6 @@ VertexCommands::Move::Move(
 	EntityId Id,
 	const FVector &Delta
 ) : Command([Id, &Delta] (const AGraphProvider &Provider) {
-	const auto Vertex = dynamic_cast<VertexEntity*>(GetEntity(Provider, Id));
-	Vertex->GetActor()->SetActorLocation(Vertex->GetActor()->GetActorLocation() + Delta);
+	const auto Vertex = GetEntity<const VertexEntity>(Provider, Id);
+	Vertex->Actor->SetActorLocation(Vertex->Actor->GetActorLocation() + Delta);
 }) {}

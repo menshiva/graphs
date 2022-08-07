@@ -2,8 +2,7 @@
 
 #include "Entity.h"
 
-class GraphEntity final : public Entity {
-public:
+struct GraphEntity final : Entity {
 	explicit GraphEntity(const class AGraphProvider &Provider);
 
 	TArray<EntityId> VerticesIds;

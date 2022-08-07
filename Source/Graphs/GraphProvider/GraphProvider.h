@@ -18,7 +18,7 @@ public:
 	FORCEINLINE UMaterial *GetVertexMaterial() const { return VertexMaterial; }
 
 	FORCEINLINE bool IsEntityValid(const EntityId Id) const { return Entities.Contains(Id); }
-	FORCEINLINE EntityType GetEntityType(const EntityId Id) const { return Entities.Find(Id)->Get()->GetType(); }
+	FORCEINLINE EntityType GetEntityType(const EntityId Id) const { return Entities.Find(Id)->Get()->Type; }
 
 	class Command {
 	public:
@@ -28,22 +28,21 @@ public:
 		template <class Ent>
 		static Ent *CreateEntity(AGraphProvider &Provider) {
 			const auto NewEntity = new Ent(Provider);
-			const auto ElementId = Provider.Entities.Emplace(NewEntity);
-			const auto Actor = NewEntity->GetActor();
-			Actor->AttachToActor(&Provider, FAttachmentTransformRules::KeepRelativeTransform);
-			Provider.Actors.Add(Actor);
+			Provider.Entities.Emplace(NewEntity);
+			NewEntity->Actor->AttachToActor(&Provider, FAttachmentTransformRules::KeepRelativeTransform);
+			Provider.Actors.Add(NewEntity->Actor.Get());
 			return NewEntity;
 		}
 
-		FORCEINLINE static Entity *GetEntity(const AGraphProvider &Provider, const EntityId Id) {
-			return Provider.Entities.Find(Id)->Get();
+		template <class Ent>
+		FORCEINLINE static Ent *GetEntity(const AGraphProvider &Provider, const EntityId Id) {
+			return dynamic_cast<Ent*>(Provider.Entities.Find(Id)->Get());
 		}
 
 		static void RemoveEntity(AGraphProvider &Provider, const EntityId Id) {
-			const auto FoundEntity = GetEntity(Provider, Id);
-			const auto EntityActor = FoundEntity->GetActor();
-			Provider.Actors.Remove(EntityActor);
+			const auto EntityActor = GetEntity<Entity>(Provider, Id)->Actor.Get();
 			Provider.Entities.Remove(Id);
+			Provider.Actors.Remove(EntityActor);
 			Provider.GetWorld()->DestroyActor(EntityActor);
 		}
 	private:

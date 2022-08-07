@@ -15,19 +15,16 @@ enum class SelectionType : uint8_t {
 using EntityId = uint32_t;
 constexpr static EntityId ENTITY_NONE = static_cast<EntityId>(-1);
 
-class Entity {
-public:
-	explicit Entity(AActor *Actor, const EntityType Type) : Actor(Actor), Type(Type) {}
+struct Entity {
+	Entity(AActor *Actor, const EntityType Type) : Actor(Actor), Type(Type) {}
 	virtual ~Entity() = default;
 
-	virtual AActor *GetActor() { return Actor.Get(); }
-	FORCEINLINE EntityId GetId() const { return Actor->GetUniqueID(); }
-	FORCEINLINE EntityType GetType() const { return Type; }
+	FORCEINLINE EntityId GetEntityId() const { return Actor->GetUniqueID(); }
+
+	const TWeakObjectPtr<AActor> Actor;
+	const EntityType Type;
 
 	SelectionType Selection = SelectionType::NONE;
-private:
-	TWeakObjectPtr<AActor> Actor;
-	EntityType Type;
 };
 
 struct EntityKeyFuncs : BaseKeyFuncs<TUniquePtr<Entity>, EntityId, false> {
@@ -35,7 +32,7 @@ struct EntityKeyFuncs : BaseKeyFuncs<TUniquePtr<Entity>, EntityId, false> {
 	using ElementInitType = TCallTraits<TUniquePtr<Entity>>::ParamType;
 
 	static FORCEINLINE KeyInitType GetSetKey(const ElementInitType Element) {
-		return Element->GetId();
+		return Element->GetEntityId();
 	}
 
 	static FORCEINLINE bool Matches(KeyInitType A, KeyInitType B) {

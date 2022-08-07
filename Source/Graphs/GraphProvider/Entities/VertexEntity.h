@@ -1,14 +1,11 @@
 ﻿#pragma once
 
 #include "Entity.h"
-#include "Engine/StaticMeshActor.h"
 
-class VertexEntity final : public Entity {
-public:
+struct VertexEntity final : Entity {
 	explicit VertexEntity(const class AGraphProvider &Provider);
 
-	virtual AStaticMeshActor *GetActor() override;
-	void SetActorColor(const FLinearColor &NewColor);
+	void SetActorColor(const FLinearColor &NewColor) const;
 
 	EntityId GraphId = ENTITY_NONE;
 };
