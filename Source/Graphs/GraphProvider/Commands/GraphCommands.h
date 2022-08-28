@@ -7,6 +7,14 @@ namespace GraphCommands {
 		explicit Create(EntityId *NewId);
 	};
 
+	struct Remove final : AGraphProvider::Command {
+		explicit Remove(EntityId Id);
+	};
+
+	struct SetColor final : AGraphProvider::Command {
+		SetColor(EntityId Id, const FLinearColor &Color);
+	};
+
 	struct SetSelectionType final : AGraphProvider::Command {
 		SetSelectionType(EntityId Id, SelectionType NewType);
 	};

@@ -46,9 +46,9 @@ void UToolsPanelWidget::NativeConstruct() {
 
 		ToolBtn->SetToolImage(Tool->GetToolImage());
 		ToolBtn->SetToolNameText(FText::FromName(Tool->GetToolName()));
-		ToolBtn->SetOnClickEvent([&, Tool] {
+		ToolBtn->SetOnClickEvent([&, Tool, CurrentColumn] {
 			ToolProvider->SetActiveTool(Tool);
-			ToolPanelSwitcher->SetActiveWidgetIndex(1); // TODO
+			ToolPanelSwitcher->SetActiveWidgetIndex(CurrentColumn); // TODO
 			CloseToolButton->SetVisibility(ESlateVisibility::Visible);
 		});
 

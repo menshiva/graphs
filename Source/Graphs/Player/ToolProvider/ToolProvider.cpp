@@ -5,11 +5,13 @@
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Kismet/GameplayStatics.h"
 #include "Tools/Manipulator/ToolManipulator.h"
+#include "Tools/Remover/ToolRemover.h"
 
 UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UActorComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
 
 	RegisterTool<UToolManipulator>(ObjectInitializer, "Tool Manipulator");
+	RegisterTool<UToolRemover>(ObjectInitializer, "Tool Remover");
 }
 
 void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
@@ -132,18 +134,14 @@ void UToolProvider::BeginPlay() {
 }
 
 void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const {
-	switch (GraphProvider->GetEntityType(HitEntityId)) {
-		case EntityType::VERTEX: {
-			GraphProvider->ExecuteCommand(VertexCommands::SetSelectionType(HitEntityId, Selection));
-			break;
-		}
-		case EntityType::EDGE: {
-			GraphProvider->ExecuteCommand(EdgeCommands::SetSelectionType(HitEntityId, Selection));
-			break;
-		}
-		case EntityType::GRAPH: {
-			GraphProvider->ExecuteCommand(GraphCommands::SetSelectionType(HitEntityId, Selection));
-			break;
-		}
+	const auto HitEntityType = GraphProvider->GetEntityType(HitEntityId);
+
+	if (HitEntityType == EntityType::VERTEX)
+		GraphProvider->ExecuteCommand(VertexCommands::SetSelectionType(HitEntityId, Selection));
+	else if (HitEntityType == EntityType::EDGE)
+		GraphProvider->ExecuteCommand(EdgeCommands::SetSelectionType(HitEntityId, Selection));
+	else {
+		check(HitEntityType == EntityType::GRAPH);
+		GraphProvider->ExecuteCommand(GraphCommands::SetSelectionType(HitEntityId, Selection));
 	}
 }

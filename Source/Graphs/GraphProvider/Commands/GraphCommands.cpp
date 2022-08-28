@@ -10,6 +10,26 @@ GraphCommands::Create::Create(EntityId *NewId) : Command([NewId] (AGraphProvider
 		*NewId = NewNode->GetEntityId();
 }) {}
 
+GraphCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provider) {
+	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
+	for (const auto VertexId : Graph->VerticesIds)
+		RemoveEntity(Provider, VertexId);
+	for (const auto EdgeId : Graph->EdgesIds)
+		RemoveEntity(Provider, EdgeId);
+	RemoveEntity(Provider, Id);
+}) {}
+
+GraphCommands::SetColor::SetColor(
+	EntityId Id,
+	const FLinearColor &Color
+) : Command([Id, &Color] (AGraphProvider &Provider) {
+	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
+	for (const auto VertexId : Graph->VerticesIds)
+		Provider.ExecuteCommand(VertexCommands::SetColor(VertexId, Color));
+	for (const auto EdgeId : Graph->EdgesIds)
+		Provider.ExecuteCommand(EdgeCommands::SetColor(EdgeId, Color));
+}) {}
+
 GraphCommands::SetSelectionType::SetSelectionType(
 	EntityId Id,
 	SelectionType NewType

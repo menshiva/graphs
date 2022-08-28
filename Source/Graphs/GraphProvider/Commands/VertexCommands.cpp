@@ -25,6 +25,22 @@ VertexCommands::Create::Create(
 		*NewVertexId = NewVertex->GetEntityId();
 }) {}
 
+VertexCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provider) {
+	const auto Vertex = GetEntity<VertexEntity>(Provider, Id);
+
+	// EdgeCommands::Remove command will remove entities from Vertex->EdgesIds TArray.
+	// This will cause a problem while we iterating this TArray here, so we move all TArray data.
+	const TArray EdgeIds(MoveTemp(Vertex->EdgesIds));
+	for (const auto EdgeId : EdgeIds)
+		Provider.ExecuteCommand(EdgeCommands::Remove(EdgeId));
+
+	const auto Graph = GetEntity<GraphEntity>(Provider, Vertex->GraphId);
+	Graph->VerticesIds.RemoveSingle(Id);
+	check(!Graph->VerticesIds.Contains(Id));
+
+	RemoveEntity(Provider, Id);
+}) {}
+
 VertexCommands::GetGraphId::GetGraphId(
 	EntityId Id,
 	EntityId &GraphId
@@ -32,20 +48,28 @@ VertexCommands::GetGraphId::GetGraphId(
 	GraphId = GetEntity<const VertexEntity>(Provider, Id)->GraphId;
 }) {}
 
+VertexCommands::SetColor::SetColor(
+	EntityId Id,
+	const FLinearColor &Color
+) : Command([Id, &Color] (const AGraphProvider &Provider) {
+	const auto Vertex = GetEntity<VertexEntity>(Provider, Id);
+	Vertex->SetActorColor(Color);
+}) {}
+
 VertexCommands::SetSelectionType::SetSelectionType(
 	EntityId Id,
 	SelectionType NewType
-) : Command([Id, NewType] (const AGraphProvider &Provider) {
+) : Command([Id, NewType] (AGraphProvider &Provider) {
 	const auto Vertex = GetEntity<VertexEntity>(Provider, Id);
 	Vertex->Selection = NewType;
 	switch (NewType) {
 		case SelectionType::HIT:
 		case SelectionType::SELECTED: {
-			Vertex->SetActorColor(ColorUtils::BlueColor);
+			Provider.ExecuteCommand(SetColor(Id, ColorUtils::BlueColor));
 			break;
 		}
 		default: {
-			Vertex->SetActorColor(ColorUtils::GraphDefaultColor);
+			Provider.ExecuteCommand(SetColor(Id, ColorUtils::GraphDefaultColor));
 		}
 	}
 }) {}

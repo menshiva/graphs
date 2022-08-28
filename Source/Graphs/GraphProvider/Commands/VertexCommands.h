@@ -7,8 +7,16 @@ namespace VertexCommands {
 		Create(EntityId GraphId, EntityId *NewVertexId, uint32_t VertexDisplayId, const FVector &Position);
 	};
 
+	struct Remove final : AGraphProvider::Command {
+		explicit Remove(EntityId Id);
+	};
+
 	struct GetGraphId final : AGraphProvider::Command {
 		GetGraphId(EntityId Id, EntityId &GraphId);
+	};
+
+	struct SetColor final : AGraphProvider::Command {
+		SetColor(EntityId Id, const FLinearColor &Color);
 	};
 
 	struct SetSelectionType final : AGraphProvider::Command {

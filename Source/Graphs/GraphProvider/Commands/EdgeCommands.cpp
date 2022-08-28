@@ -33,6 +33,29 @@ EdgeCommands::Create::Create(
 		*NewEdgeId = NewEdge->GetEntityId();
 }) {}
 
+EdgeCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provider) {
+	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
+
+	for (const auto VertexId : Edge->VerticesIds) {
+		const auto Vertex = GetEntity<VertexEntity>(Provider, VertexId);
+		Vertex->EdgesIds.RemoveSingle(Id);
+		check(!Vertex->EdgesIds.Contains(Id));
+	}
+
+	const auto Graph = GetEntity<GraphEntity>(Provider, Edge->GraphId);
+	Graph->EdgesIds.RemoveSingle(Id);
+	check(!Graph->EdgesIds.Contains(Id));
+
+	RemoveEntity(Provider, Id);
+}) {}
+
+EdgeCommands::GetGraphId::GetGraphId(
+	EntityId Id,
+	EntityId &GraphId
+) : Command([Id, &GraphId] (const AGraphProvider &Provider) {
+	GraphId = GetEntity<const EdgeEntity>(Provider, Id)->GraphId;
+}) {}
+
 EdgeCommands::UpdateTransform::UpdateTransform(EntityId Id) : Command([Id] (const AGraphProvider &Provider) {
 	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
 	const auto FirstVertexPos = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[0])->Actor->GetActorLocation();
@@ -49,27 +72,28 @@ EdgeCommands::UpdateTransform::UpdateTransform(EntityId Id) : Command([Id] (cons
 	Edge->Actor->SetActorScale3D(Scale);
 }) {}
 
-EdgeCommands::GetGraphId::GetGraphId(
+EdgeCommands::SetColor::SetColor(
 	EntityId Id,
-	EntityId &GraphId
-) : Command([Id, &GraphId] (const AGraphProvider &Provider) {
-	GraphId = GetEntity<const EdgeEntity>(Provider, Id)->GraphId;
+	const FLinearColor &Color
+) : Command([Id, &Color] (const AGraphProvider &Provider) {
+	const auto Edge = GetEntity<EdgeEntity>(Provider, Id);
+	Edge->SetActorColor(Color);
 }) {}
 
 EdgeCommands::SetSelectionType::SetSelectionType(
 	EntityId Id,
 	SelectionType NewType
-) : Command([Id, NewType] (const AGraphProvider &Provider) {
+) : Command([Id, NewType] (AGraphProvider &Provider) {
 	const auto Edge = GetEntity<EdgeEntity>(Provider, Id);
 	Edge->Selection = NewType;
 	switch (NewType) {
 		case SelectionType::HIT:
 		case SelectionType::SELECTED: {
-			Edge->SetActorColor(ColorUtils::BlueColor);
+			Provider.ExecuteCommand(SetColor(Id, ColorUtils::BlueColor));
 			break;
 		}
 		default: {
-			Edge->SetActorColor(ColorUtils::GraphDefaultColor);
+			Provider.ExecuteCommand(SetColor(Id, ColorUtils::GraphDefaultColor));
 		}
 	}
 }) {}

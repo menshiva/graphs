@@ -11,12 +11,20 @@ namespace EdgeCommands {
 		);
 	};
 
-	struct UpdateTransform final : AGraphProvider::Command {
-		explicit UpdateTransform(EntityId Id);
+	struct Remove final : AGraphProvider::Command {
+		explicit Remove(EntityId Id);
 	};
 
 	struct GetGraphId final : AGraphProvider::Command {
 		GetGraphId(EntityId Id, EntityId &GraphId);
+	};
+
+	struct UpdateTransform final : AGraphProvider::Command {
+		explicit UpdateTransform(EntityId Id);
+	};
+
+	struct SetColor final : AGraphProvider::Command {
+		SetColor(EntityId Id, const FLinearColor &Color);
 	};
 
 	struct SetSelectionType final : AGraphProvider::Command {
