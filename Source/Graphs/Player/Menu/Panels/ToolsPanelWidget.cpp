@@ -32,7 +32,7 @@ void UToolsPanelWidget::NativeConstruct() {
 	ToolProvider = Pawn->GetToolProvider();
 
 	// TODO: set both to 0
-	size_t CurrentRow = 1, CurrentColumn = 1;
+	size_t CurrentRow = 1, CurrentColumn = 0;
 	for (const auto Tool : ToolProvider->GetTools()) {
 		const auto ToolBtn = CreateWidget<UToolButtonWidget>(
 			this,
