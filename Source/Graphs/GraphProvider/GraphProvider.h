@@ -7,21 +7,6 @@ UCLASS()
 class GRAPHS_API AGraphProvider final : public AActor {
 	GENERATED_BODY()
 public:
-	AGraphProvider() {
-		PrimaryActorTick.bCanEverTick = false;
-
-		EntityMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("/Game/Graphs/Materials/GraphMaterial")).Object;
-		VertexMesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("/Engine/BasicShapes/Sphere")).Object;
-		EdgeMesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("/Engine/BasicShapes/Cylinder")).Object;
-	}
-
-	FORCEINLINE UMaterial *GetEntityActorMaterial() const { return EntityMaterial; }
-	FORCEINLINE UStaticMesh *GetVertexMesh() const { return VertexMesh; }
-	FORCEINLINE UStaticMesh *GetEdgeMesh() const { return EdgeMesh; }
-
-	FORCEINLINE bool IsEntityValid(const EntityId Id) const { return Entities.Contains(Id); }
-	FORCEINLINE EntityType GetEntityType(const EntityId Id) const { return Entities.Find(Id)->Get()->Type; }
-
 	class Command {
 	public:
 		explicit Command(TFunction<void(AGraphProvider &Provider)> &&Impl) : Implementation(MoveTemp(Impl)) {}
@@ -52,9 +37,21 @@ public:
 		friend AGraphProvider;
 	};
 
-	void ExecuteCommand(Command &&Cmd) {
-		Cmd.Implementation(*this);
+	AGraphProvider() {
+		PrimaryActorTick.bCanEverTick = false;
+
+		EntityMaterial = ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("/Game/Graphs/Materials/GraphMaterial")).Object;
+		VertexMesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("/Engine/BasicShapes/Sphere")).Object;
+		EdgeMesh = ConstructorHelpers::FObjectFinder<UStaticMesh>(TEXT("/Engine/BasicShapes/Cylinder")).Object;
 	}
+
+	FORCEINLINE UMaterial *GetEntityActorMaterial() const { return EntityMaterial; }
+	FORCEINLINE UStaticMesh *GetVertexMesh() const { return VertexMesh; }
+	FORCEINLINE UStaticMesh *GetEdgeMesh() const { return EdgeMesh; }
+
+	FORCEINLINE bool IsEntityValid(const EntityId Id) const { return Entities.Contains(Id); }
+	FORCEINLINE EntityType GetEntityType(const EntityId Id) const { return Entities.Find(Id)->Get()->Type; }
+	FORCEINLINE void ExecuteCommand(Command &&Cmd) { Cmd.Implementation(*this); }
 private:
 	UPROPERTY()
 	UMaterial *EntityMaterial;

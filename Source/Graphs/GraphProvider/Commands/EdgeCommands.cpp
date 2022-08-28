@@ -8,9 +8,8 @@
 EdgeCommands::Create::Create(
 	EntityId GraphId,
 	EntityId FirstVertexId, EntityId SecondVertexId,
-	EntityId *NewEdgeId,
-	uint32_t EdgeDisplayId
-) : Command([GraphId, FirstVertexId, SecondVertexId, NewEdgeId, EdgeDisplayId] (AGraphProvider &Provider) {
+	EntityId *NewEdgeId
+) : Command([GraphId, FirstVertexId, SecondVertexId, NewEdgeId] (AGraphProvider &Provider) {
 	const auto NewEdge = CreateEntity<EdgeEntity>(Provider);
 
 	const auto Graph = GetEntity<GraphEntity>(Provider, GraphId);
@@ -21,7 +20,6 @@ EdgeCommands::Create::Create(
 	NewEdge->GraphId = GraphId;
 	NewEdge->VerticesIds[0] = FirstVertexId;
 	NewEdge->VerticesIds[1] = SecondVertexId;
-	NewEdge->DisplayId = EdgeDisplayId;
 
 	for (const auto VertexId : NewEdge->VerticesIds) {
 		const auto Vertex = GetEntity<VertexEntity>(Provider, VertexId);

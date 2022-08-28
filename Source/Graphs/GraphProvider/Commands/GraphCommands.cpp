@@ -15,7 +15,6 @@ GraphCommands::SetSelectionType::SetSelectionType(
 	SelectionType NewType
 ) : Command([Id, NewType] (AGraphProvider &Provider) {
 	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
-	Graph->Selection = NewType;
 	for (const auto VertexId : Graph->VerticesIds)
 		Provider.ExecuteCommand(VertexCommands::SetSelectionType(VertexId, NewType));
 	for (const auto EdgeId : Graph->EdgesIds)

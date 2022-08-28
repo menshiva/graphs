@@ -10,5 +10,7 @@ struct VertexEntity final : Entity {
 	EntityId GraphId = ENTITY_NONE;
 	TArray<EntityId> EdgesIds;
 
+	SelectionType Selection = SelectionType::NONE;
+
 	uint32_t DisplayId = 0;
 };

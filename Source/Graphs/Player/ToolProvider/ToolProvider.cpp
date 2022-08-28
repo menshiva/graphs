@@ -125,8 +125,7 @@ void UToolProvider::BeginPlay() {
 			GraphProvider->ExecuteCommand(EdgeCommands::Create(
 				GraphId,
 				FirstVertexId, SecondVertexId,
-				nullptr,
-				i
+				nullptr
 			));
 		}
 	}

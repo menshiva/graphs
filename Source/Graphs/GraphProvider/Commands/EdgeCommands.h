@@ -7,8 +7,7 @@ namespace EdgeCommands {
 		Create(
 			EntityId GraphId,
 			EntityId FirstVertexId, EntityId SecondVertexId,
-			EntityId *NewEdgeId,
-			uint32_t EdgeDisplayId
+			EntityId *NewEdgeId
 		);
 	};
 

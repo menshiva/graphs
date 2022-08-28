@@ -10,5 +10,5 @@ struct EdgeEntity final : Entity {
 	EntityId GraphId = ENTITY_NONE;
 	TStaticArray<EntityId, 2> VerticesIds;
 
-	uint32_t DisplayId = 0;
+	SelectionType Selection = SelectionType::NONE;
 };
