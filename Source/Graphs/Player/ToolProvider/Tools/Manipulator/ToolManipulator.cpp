@@ -24,7 +24,6 @@ void UToolManipulator::SetMode(const ManipulationMode NewMode) {
 void UToolManipulator::OnAttach() {
 	Super::OnAttach();
 	GetVrRightController()->SetLaserActive(true);
-	GetToolPanel<UToolManipulatorPanelWidget>()->SetTextSelectEntity();
 }
 
 void UToolManipulator::OnDetach() {

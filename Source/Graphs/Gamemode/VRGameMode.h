@@ -12,15 +12,17 @@ public:
 	virtual void InitGame(const FString &MapName, const FString &Options, FString &ErrorMessage) override;
 	virtual void Logout(AController *Exiting) override;
 
-	void ToggleFPS();
+	FORCEINLINE bool IsFpsEnabled() const { return FpsEnabled; }
+	FORCEINLINE bool IsUnitEnabled() const { return UnitEnabled; }
 
+	void ToggleFPS();
 	void ToggleUnit();
+private:
+	void UpdateStats() const;
 
 	UPROPERTY(Config)
 	bool FpsEnabled = true;
 
 	UPROPERTY(Config)
 	bool UnitEnabled = false;
-private:
-	void UpdateStats() const;
 };

@@ -14,11 +14,8 @@ public:
 	void SetTextActionEntity() const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class USlider *ModeSlider;
+	class USelectorWidget *ModeSelector;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextBlock *ManipulatorText;
-private:
-	UFUNCTION()
-	void OnSliderValueChanged(float Value);
 };

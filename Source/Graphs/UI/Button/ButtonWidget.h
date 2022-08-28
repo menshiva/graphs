@@ -11,8 +11,12 @@ public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
-	void SetOnClickEvent(TFunction<void()> &&ClickEvent);
 	void SetBackgroundColor(const FLinearColor &NewColor);
+	void SetHoveredPressedCoefficients(float HoveredCoeff, float PressedCoeff);
+
+	void SetOnClickEvent(TFunction<void()> &&ClickEvent);
+
+	constexpr static FLinearColor DefaultBackgroundColor = FLinearColor(0.036458f, 0.036458f, 0.036458f);
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(editcondition="bOverride_WidthOverride", DesignerRebuild))
 	float WidthOverride;
@@ -27,7 +31,7 @@ protected:
 	uint8 bOverride_HeightOverride : 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild, sRGB="true"))
-	FLinearColor BackgroundColor = FLinearColor::White;
+	FLinearColor BackgroundColor = DefaultBackgroundColor;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild))
 	FMargin ContentPadding;

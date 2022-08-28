@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../VRControllerBase.h"
+#include "VRControllerBase.h"
 #include "VRControllerRight.generated.h"
 
 enum class ControllerState : uint8_t {
@@ -52,11 +52,11 @@ public:
 	void SetToolStateEnabled(bool Enabled);
 
 	FORCEINLINE SelectionMode GetSelectionMode() const { return Selection; }
+protected:
+	virtual void BeginPlay() override;
 private:
 	UFUNCTION()
 	void OnUiHover(class UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);
-
-	void SetSelectionMode(SelectionMode NewMode);
 
 	UPROPERTY()
 	class UWidgetInteractionComponent *UiInteractor;

@@ -1,8 +1,8 @@
 #include "VRControllerRight.h"
-#include "SelectionModeSelectorWidget.h"
 #include "Components/WidgetInteractionComponent.h"
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
+#include "Graphs/UI/Selector/SelectorWidget.h"
 #include "Graphs/Utils/Colors.h"
 
 UVRControllerRight::UVRControllerRight(
@@ -19,8 +19,8 @@ UVRControllerRight::UVRControllerRight(
 	UiInteractor->SetupAttachment(GetMotionControllerAim());
 
 	SelectionWidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, "SelectionMode");
-	const ConstructorHelpers::FClassFinder<UUserWidget> MenuAsset(TEXT("/Game/Graphs/UI/Widgets/SelectionModeSelector"));
-	SelectionWidgetComponent->SetWidgetClass(MenuAsset.Class);
+	const ConstructorHelpers::FClassFinder<USelectorWidget> SelectorAsset(TEXT("/Game/Graphs/UI/Widgets/Selector"));
+	SelectionWidgetComponent->SetWidgetClass(SelectorAsset.Class);
 	SelectionWidgetComponent->SetDrawAtDesiredSize(true);
 	SelectionWidgetComponent->SetPivot({0.5f, 0.5f});
 	SelectionWidgetComponent->SetRelativeLocationAndRotation(
@@ -128,11 +128,14 @@ bool UVRControllerRight::OnRightThumbstickX(const float Value) {
 bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
 	if (SelectionWidgetComponent->IsVisible()) {
 		check(State != ControllerState::TOOL);
-		SetSelectionMode(Selection == SelectionMode::VERTEX_EDGE ? SelectionMode::GRAPH : SelectionMode::VERTEX_EDGE);
-		const auto ToolProvider = GetVrPawn()->GetToolProvider();
-		const auto &HitResult = ToolProvider->GetHitResult();
-		if (HitResult.bBlockingHit)
-			ToolProvider->SetHitResult(HitResult);
+		const auto SelectorWidget = Cast<USelectorWidget>(SelectionWidgetComponent->GetWidget());
+		if (Value < 0.0f)
+			SelectorWidget->SelectPreviousItem(true);
+		else if (Value > 0.0f)
+			SelectorWidget->SelectNextItem(true);
+		else {
+			check(false);
+		}
 		return true;
 	}
 	return GetVrPawn()->OnRightThumbstickXAction(Value);
@@ -181,6 +184,35 @@ void UVRControllerRight::SetToolStateEnabled(const bool Enabled) {
 	}
 }
 
+void UVRControllerRight::BeginPlay() {
+	Super::BeginPlay();
+
+	if (!SelectionWidgetComponent->GetWidget())
+		SelectionWidgetComponent->InitWidget();
+
+	const auto SelectorWidget = Cast<USelectorWidget>(SelectionWidgetComponent->GetWidget());
+
+	SelectorWidget->SetOnSelectedItemChangedEvent([&] (const int32 SelectedIdx) {
+		if (SelectedIdx == 0)
+			Selection = SelectionMode::VERTEX_EDGE;
+		else if (SelectedIdx == 1)
+			Selection = SelectionMode::GRAPH;
+		else {
+			check(false);
+		}
+		const auto ToolProvider = GetVrPawn()->GetToolProvider();
+		const auto &HitResult = ToolProvider->GetHitResult();
+		if (HitResult.bBlockingHit)
+			ToolProvider->SetHitResult(HitResult);
+	});
+	SelectorWidget->SetButtonsEnabled(false);
+	SelectorWidget->SetItems({
+		"Selection Mode: Vertex / Edge",
+		"Selection Mode: Graph"
+	});
+	SelectorWidget->SetSelectedItemIndex(0, true);
+}
+
 void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent) {
 	if (const auto Menu = Cast<UMenuWidgetComponent>(WidgetComponent)) {
 		if (State != ControllerState::TOOL) {
@@ -202,13 +234,4 @@ void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetCom
 		if (const auto PrevMenu = Cast<UMenuWidgetComponent>(PreviousWidgetComponent))
 			PrevMenu->SetCursorVisibility(false);
 	}
-}
-
-void UVRControllerRight::SetSelectionMode(const SelectionMode NewMode) {
-	Selection = NewMode;
-	const auto SelectionModeWidget = Cast<USelectionModeSelectorWidget>(SelectionWidgetComponent->GetWidget());
-	if (Selection == SelectionMode::VERTEX_EDGE)
-		SelectionModeWidget->SetText("Selection Mode: Vertex / Edge");
-	else
-		SelectionModeWidget->SetText("Selection Mode: Graph");
 }
