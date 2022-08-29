@@ -23,19 +23,17 @@ void UToolRemover::OnDetach() {
 }
 
 bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
-	if (IsPressed) {
-		if (GetHitEntityId() != ENTITY_NONE) {
-			const auto HitEntityType = GetGraphProvider()->GetEntityType(GetHitEntityId());
-			if (HitEntityType == EntityType::VERTEX)
-				GetGraphProvider()->ExecuteCommand(VertexCommands::Remove(GetHitEntityId()));
-			else if (HitEntityType == EntityType::EDGE)
-				GetGraphProvider()->ExecuteCommand(EdgeCommands::Remove(GetHitEntityId()));
-			else {
-				check(HitEntityType == EntityType::GRAPH);
-				GetGraphProvider()->ExecuteCommand(GraphCommands::Remove(GetHitEntityId()));
-			}
-			return true;
+	if (IsPressed && GetHitEntityId() != ENTITY_NONE) {
+		const auto HitEntityType = GetGraphProvider()->GetEntityType(GetHitEntityId());
+		if (HitEntityType == EntityType::VERTEX)
+			GetGraphProvider()->ExecuteCommand(VertexCommands::Remove(GetHitEntityId()));
+		else if (HitEntityType == EntityType::EDGE)
+			GetGraphProvider()->ExecuteCommand(EdgeCommands::Remove(GetHitEntityId()));
+		else {
+			check(HitEntityType == EntityType::GRAPH);
+			GetGraphProvider()->ExecuteCommand(GraphCommands::Remove(GetHitEntityId()));
 		}
+		return true;
 	}
 	return Super::OnRightTriggerAction(IsPressed);
 }

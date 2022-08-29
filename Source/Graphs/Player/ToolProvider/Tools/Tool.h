@@ -33,7 +33,7 @@ protected:
 	FORCEINLINE EntityId GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
 
 	template <class WidgetClass>
-	WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
+	FORCEINLINE WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
 
 	void SetSupportedEntityTypes(const std::initializer_list<EntityType> Types);
 private:

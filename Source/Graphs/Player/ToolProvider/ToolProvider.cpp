@@ -4,12 +4,14 @@
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Kismet/GameplayStatics.h"
+#include "Tools/Exporter/ToolExporter.h"
 #include "Tools/Manipulator/ToolManipulator.h"
 #include "Tools/Remover/ToolRemover.h"
 
 UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UActorComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
 
+	RegisterTool<UToolExporter>(ObjectInitializer, "Tool Exporter");
 	RegisterTool<UToolManipulator>(ObjectInitializer, "Tool Manipulator");
 	RegisterTool<UToolRemover>(ObjectInitializer, "Tool Remover");
 }

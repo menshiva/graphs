@@ -11,7 +11,7 @@ public:
 	FORCEINLINE void SetupTool(UTool *CurrentTool) { Tool = CurrentTool; }
 protected:
 	template <class ToolClass>
-	ToolClass *GetTool() const { return Cast<ToolClass>(Tool.Get()); }
+	FORCEINLINE ToolClass *GetTool() const { return Cast<ToolClass>(Tool.Get()); }
 private:
 	TWeakObjectPtr<UTool> Tool;
 };

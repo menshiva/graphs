@@ -2,7 +2,7 @@
 #include "EdgeCommands.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
-#include "Graphs/Utils/Colors.h"
+#include "Graphs/Utils/Consts.h"
 
 VertexCommands::Create::Create(
 	EntityId GraphId,
@@ -65,11 +65,11 @@ VertexCommands::SetSelectionType::SetSelectionType(
 	switch (NewType) {
 		case SelectionType::HIT:
 		case SelectionType::SELECTED: {
-			Provider.ExecuteCommand(SetColor(Id, ColorUtils::BlueColor));
+			Provider.ExecuteCommand(SetColor(Id, ColorConsts::BlueColor));
 			break;
 		}
 		default: {
-			Provider.ExecuteCommand(SetColor(Id, ColorUtils::GraphDefaultColor));
+			Provider.ExecuteCommand(SetColor(Id, ColorConsts::GraphDefaultColor));
 		}
 	}
 }) {}

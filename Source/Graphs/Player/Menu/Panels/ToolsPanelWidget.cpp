@@ -32,7 +32,8 @@ void UToolsPanelWidget::NativeConstruct() {
 	ToolProvider = Pawn->GetToolProvider();
 
 	// TODO: set both to 0
-	size_t CurrentRow = 1, CurrentColumn = 0;
+	size_t CurrentRow = 0, CurrentColumn = 1;
+	size_t WidgetIndex = 1;
 	for (const auto Tool : ToolProvider->GetTools()) {
 		const auto ToolBtn = CreateWidget<UToolButtonWidget>(
 			this,
@@ -46,11 +47,12 @@ void UToolsPanelWidget::NativeConstruct() {
 
 		ToolBtn->SetToolImage(Tool->GetToolImage());
 		ToolBtn->SetToolNameText(FText::FromName(Tool->GetToolName()));
-		ToolBtn->SetOnClickEvent([&, Tool, CurrentColumn] {
+		ToolBtn->SetOnClickEvent([&, Tool, WidgetIndex] {
 			ToolProvider->SetActiveTool(Tool);
-			ToolPanelSwitcher->SetActiveWidgetIndex(CurrentColumn); // TODO
+			ToolPanelSwitcher->SetActiveWidgetIndex(WidgetIndex);
 			CloseToolButton->SetVisibility(ESlateVisibility::Visible);
 		});
+		++WidgetIndex;
 
 		const auto ToolPanel = Cast<UToolWidget>(CreateWidget(
 			this,

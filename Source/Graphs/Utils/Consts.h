@@ -1,6 +1,10 @@
 ﻿#pragma once
 
-namespace ColorUtils {
+namespace FileConsts {
+	const static FString ImportExportDir = "Data\\";
+}
+
+namespace ColorConsts {
 	constexpr static FLinearColor GraphDefaultColor = FLinearColor(0.4375f, 0.4375f, 0.4375f);
 
 	constexpr static FLinearColor BlueColor = FLinearColor(0.033345f, 0.066689f, 0.161458f);

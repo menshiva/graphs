@@ -3,12 +3,12 @@
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
 #include "Graphs/UI/OptionSelector/OptionSelectorWidget.h"
-#include "Graphs/Utils/Colors.h"
+#include "Graphs/Utils/Consts.h"
 
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Right) {
-	SetLaserNiagaraColor(ColorUtils::BlueColor);
+	SetLaserNiagaraColor(ColorConsts::BlueColor);
 	SetLaserLength(MeshInteractionLaserMaxDistance);
 	UVRControllerBase::SetLaserActive(LaserVisibleFlag);
 

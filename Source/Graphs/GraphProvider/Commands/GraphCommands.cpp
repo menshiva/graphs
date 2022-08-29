@@ -3,6 +3,7 @@
 #include "VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
+#include "Graphs/Utils/Consts.h"
 
 GraphCommands::Create::Create(EntityId *NewId) : Command([NewId] (AGraphProvider &Provider) {
 	const auto NewNode = CreateEntity<GraphEntity>(Provider);
@@ -79,4 +80,16 @@ GraphCommands::Rotate::Rotate(
 	}
 	for (const auto EdgeId : Graph->EdgesIds)
 		Provider.ExecuteCommand(EdgeCommands::UpdateTransform(EdgeId));
+}) {}
+
+GraphCommands::Export::Export(
+	EntityId Id,
+	bool &Result,
+	FString &ResultMessage
+) : Command([Id, &Result, &ResultMessage] (const AGraphProvider &Provider) {
+	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
+
+	// TODO
+	Result = true;
+	ResultMessage = FileConsts::ImportExportDir + "Test.json";
 }) {}

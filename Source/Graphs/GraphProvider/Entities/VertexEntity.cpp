@@ -1,7 +1,7 @@
 ﻿#include "VertexEntity.h"
 #include "Graphs/GraphProvider/GraphProvider.h"
 #include "Engine/StaticMeshActor.h"
-#include "Graphs/Utils/Colors.h"
+#include "Graphs/Utils/Consts.h"
 
 VertexEntity::VertexEntity(const AGraphProvider &Provider): Entity(
 	Provider.GetWorld()->SpawnActor<AStaticMeshActor>(),
@@ -19,7 +19,7 @@ VertexEntity::VertexEntity(const AGraphProvider &Provider): Entity(
 	Smc->SetCastShadow(false);
 
 	const auto MaterialInstance = Smc->CreateAndSetMaterialInstanceDynamicFromMaterial(0, Provider.GetEntityActorMaterial());
-	MaterialInstance->SetVectorParameterValue("Color", ColorUtils::GraphDefaultColor);
+	MaterialInstance->SetVectorParameterValue("Color", ColorConsts::GraphDefaultColor);
 	Smc->SetMaterial(0, MaterialInstance);
 }
 

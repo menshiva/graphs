@@ -30,4 +30,8 @@ namespace GraphCommands {
 	struct Rotate final : AGraphProvider::Command {
 		Rotate(EntityId Id, const FVector &Center, float Angle);
 	};
+
+	struct Export final : AGraphProvider::Command {
+		Export(EntityId Id, bool &Result, FString &ResultMessage);
+	};
 }
