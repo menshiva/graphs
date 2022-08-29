@@ -87,9 +87,49 @@ GraphCommands::Export::Export(
 	bool &Result,
 	FString &ResultMessage
 ) : Command([Id, &Result, &ResultMessage] (const AGraphProvider &Provider) {
-	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
+	IPlatformFile &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
+	// Create export directory if it does not exist.
+	const auto OutputDir = FPaths::LaunchDir() + FileConsts::ImportExportDir;
+	if (!FileManager.CreateDirectory(*OutputDir)) {
+		auto OutputFloderName = FileConsts::ImportExportDir;
+		OutputFloderName.RemoveAt(OutputFloderName.Len() - 1);
+
+		Result = false;
+		ResultMessage = "Failed to create a new folder:\n" + OutputFloderName;
+		return;
+	}
+
+	// Generate unique filename for exporting graph.
+	const auto DisplayDirFileBase = FileConsts::ImportExportDir + FileConsts::ExportFilePrefix;
+	FString DisplayDirFile, OutputDirFile;
+	// using do while here just to be sure that FGuid returns id of file that does not exist in output folder
+	do {
+		// generate new guid and remain only 8 characters for more readable file name
+		auto GuidText = FGuid::NewGuid().ToString(EGuidFormats::Base36Encoded);
+		GuidText.RemoveAt(8, GuidText.Len() - 8);
+
+		DisplayDirFile = DisplayDirFileBase + GuidText + ".json";
+		OutputDirFile = FPaths::LaunchDir() + DisplayDirFile;
+	} while (FileManager.FileExists(*OutputDirFile));
+
+	// Create and open a new file.
+	const auto OutputFileHandler = FileManager.OpenWrite(*OutputDirFile);
+	if (!OutputFileHandler) {
+		Result = false;
+		ResultMessage = "Failed to create a new file:\n" + DisplayDirFile;
+		return;
+	}
+
+	// Graph serialization.
 	// TODO
+	// const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
+	const FString TestOutput = "TEST TEST TEST TEST TEST\n";
+	OutputFileHandler->Write(reinterpret_cast<const uint8*>(TCHAR_TO_ANSI(*TestOutput)), TestOutput.Len());
+
+	OutputFileHandler->Flush();
+	delete OutputFileHandler;
+
 	Result = true;
-	ResultMessage = FileConsts::ImportExportDir + "Test.json";
+	ResultMessage = DisplayDirFile;
 }) {}

@@ -2,6 +2,7 @@
 
 namespace FileConsts {
 	const static FString ImportExportDir = "Data\\";
+	const static FString ExportFilePrefix = "Exported_";
 }
 
 namespace ColorConsts {
