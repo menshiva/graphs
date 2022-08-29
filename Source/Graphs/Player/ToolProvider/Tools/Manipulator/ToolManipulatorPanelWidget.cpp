@@ -1,12 +1,12 @@
 #include "ToolManipulatorPanelWidget.h"
 #include "ToolManipulator.h"
 #include "Components/TextBlock.h"
-#include "Graphs/UI/Selector/SelectorWidget.h"
+#include "Graphs/UI/OptionSelector/OptionSelectorWidget.h"
 
 void UToolManipulatorPanelWidget::NativeConstruct() {
 	Super::NativeConstruct();
 	if (ModeSelector) {
-		ModeSelector->SetOnSelectedItemChangedEvent([&] (const int32 SelectedIdx) {
+		ModeSelector->SetOnSelectedOptionChangedEvent([&] (const int32 SelectedIdx) {
 			if (SelectedIdx == 0)
 				GetTool<UToolManipulator>()->SetMode(ManipulationMode::MOVE);
 			else if (SelectedIdx == 1)
@@ -16,11 +16,11 @@ void UToolManipulatorPanelWidget::NativeConstruct() {
 			}
 			SetTextSelectEntity();
 		});
-		ModeSelector->SetItems({
+		ModeSelector->SetOptions({
 			"Mode: Move",
 			"Mode: Rotate"
 		});
-		ModeSelector->SetSelectedItemIndex(0, true);
+		ModeSelector->SetSelectedOptionIndex(0, true);
 	}
 }
 

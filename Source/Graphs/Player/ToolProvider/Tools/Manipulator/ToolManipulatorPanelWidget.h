@@ -14,7 +14,7 @@ public:
 	void SetTextActionEntity() const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class USelectorWidget *ModeSelector;
+	class UOptionSelectorWidget *ModeSelector;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextBlock *ManipulatorText;

@@ -2,7 +2,7 @@
 #include "Components/WidgetInteractionComponent.h"
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
-#include "Graphs/UI/Selector/SelectorWidget.h"
+#include "Graphs/UI/OptionSelector/OptionSelectorWidget.h"
 #include "Graphs/Utils/Colors.h"
 
 UVRControllerRight::UVRControllerRight(
@@ -19,7 +19,7 @@ UVRControllerRight::UVRControllerRight(
 	UiInteractor->SetupAttachment(GetMotionControllerAim());
 
 	SelectionWidgetComponent = ObjectInitializer.CreateDefaultSubobject<UWidgetComponent>(this, "SelectionMode");
-	const ConstructorHelpers::FClassFinder<USelectorWidget> SelectorAsset(TEXT("/Game/Graphs/UI/Widgets/Selector"));
+	const ConstructorHelpers::FClassFinder<UOptionSelectorWidget> SelectorAsset(TEXT("/Game/Graphs/UI/Widgets/OptionSelector"));
 	SelectionWidgetComponent->SetWidgetClass(SelectorAsset.Class);
 	SelectionWidgetComponent->SetDrawAtDesiredSize(true);
 	SelectionWidgetComponent->SetPivot({0.5f, 0.5f});
@@ -128,11 +128,11 @@ bool UVRControllerRight::OnRightThumbstickX(const float Value) {
 bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
 	if (SelectionWidgetComponent->IsVisible()) {
 		check(State != ControllerState::TOOL);
-		const auto SelectorWidget = Cast<USelectorWidget>(SelectionWidgetComponent->GetWidget());
+		const auto SelectorWidget = Cast<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
 		if (Value < 0.0f)
-			SelectorWidget->SelectPreviousItem(true);
+			SelectorWidget->SelectPreviousOption(true);
 		else if (Value > 0.0f)
-			SelectorWidget->SelectNextItem(true);
+			SelectorWidget->SelectNextOption(true);
 		else {
 			check(false);
 		}
@@ -190,9 +190,8 @@ void UVRControllerRight::BeginPlay() {
 	if (!SelectionWidgetComponent->GetWidget())
 		SelectionWidgetComponent->InitWidget();
 
-	const auto SelectorWidget = Cast<USelectorWidget>(SelectionWidgetComponent->GetWidget());
-
-	SelectorWidget->SetOnSelectedItemChangedEvent([&] (const int32 SelectedIdx) {
+	const auto SelectorWidget = Cast<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
+	SelectorWidget->SetOnSelectedOptionChangedEvent([&] (const int32 SelectedIdx) {
 		if (SelectedIdx == 0)
 			Selection = SelectionMode::VERTEX_EDGE;
 		else if (SelectedIdx == 1)
@@ -206,11 +205,11 @@ void UVRControllerRight::BeginPlay() {
 			ToolProvider->SetHitResult(HitResult);
 	});
 	SelectorWidget->SetButtonsEnabled(false);
-	SelectorWidget->SetItems({
+	SelectorWidget->SetOptions({
 		"Selection Mode: Vertex / Edge",
 		"Selection Mode: Graph"
 	});
-	SelectorWidget->SetSelectedItemIndex(0, true);
+	SelectorWidget->SetSelectedOptionIndex(0, true);
 }
 
 void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent) {

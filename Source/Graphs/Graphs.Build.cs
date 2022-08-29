@@ -1,7 +1,7 @@
 using UnrealBuildTool;
 
 public class Graphs : ModuleRules {
-	public Graphs(ReadOnlyTargetRules target) : base(target) {
+	public Graphs(ReadOnlyTargetRules Target) : base(Target) {
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 		PublicDependencyModuleNames.AddRange(new[] {
 			"Core",
