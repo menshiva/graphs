@@ -7,29 +7,29 @@
 
 void UToolExporterPanelWidget::NativeConstruct() {
 	Super::NativeConstruct();
-	if (ExporterButton)
-		ExporterButton->SetOnClickEvent([&] { GetTool<UToolExporter>()->OnAttach(); });
+	if (ExporterConfirmButton)
+		ExporterConfirmButton->SetOnClickEvent([&] { GetTool<UToolExporter>()->OnAttach(); });
 }
 
-void UToolExporterPanelWidget::SetTutorialStatus() const {
-	if (ExporterStatusSwitcher)
-		ExporterStatusSwitcher->SetActiveWidgetIndex(0);
+void UToolExporterPanelWidget::ShowExportPanel() const {
+	if (ExporterPanelSwitcher)
+		ExporterPanelSwitcher->SetActiveWidgetIndex(0);
 }
 
-void UToolExporterPanelWidget::SetSuccessStatus(const FString &ExportedFileDir) const {
+void UToolExporterPanelWidget::ShowSuccessPanel(const FString &ExportedFileDir) const {
 	if (ExporterText)
-		ExporterText->SetText(FText::FromString("Selected graph has been\nsuccessfuly exported to:\n\n" + ExportedFileDir));
-	if (ExporterButton)
-		ExporterButton->SetBackgroundColor(ColorConsts::GreenColor);
-	if (ExporterStatusSwitcher)
-		ExporterStatusSwitcher->SetActiveWidgetIndex(1);
+		ExporterText->SetText(FText::FromString("Selected graph has been successfuly\nexported to:\n\n" + ExportedFileDir));
+	if (ExporterConfirmButton)
+		ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor);
+	if (ExporterPanelSwitcher)
+		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
 }
 
-void UToolExporterPanelWidget::SetErrorStatus(const FString &ErrorDescription) const {
+void UToolExporterPanelWidget::ShowErrorPanel(const FString &ErrorMessage) const {
 	if (ExporterText)
-		ExporterText->SetText(FText::FromString("Error while exporting selected graph:\n\n" + ErrorDescription));
-	if (ExporterButton)
-		ExporterButton->SetBackgroundColor(ColorConsts::RedColor);
-	if (ExporterStatusSwitcher)
-		ExporterStatusSwitcher->SetActiveWidgetIndex(1);
+		ExporterText->SetText(FText::FromString("Error while exporting selected graph:\n\n" + ErrorMessage));
+	if (ExporterConfirmButton)
+		ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor);
+	if (ExporterPanelSwitcher)
+		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
 }

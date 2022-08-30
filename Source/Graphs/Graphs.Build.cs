@@ -18,7 +18,9 @@ public class Graphs : ModuleRules {
 			"Engine",
 			"InputCore",
 			"Niagara",
-			"UMG"
+			"UMG",
+			"HeadMountedDisplay",
+			"SlateCore"
 		});
 		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay", "Slate", "SlateCore" });
 		CppStandard = CppStandardVersion.Cpp17;

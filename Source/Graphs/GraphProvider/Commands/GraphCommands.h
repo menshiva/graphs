@@ -31,6 +31,16 @@ namespace GraphCommands {
 		Rotate(EntityId Id, const FVector &Center, float Angle);
 	};
 
+	struct Import final : AGraphProvider::Command {
+		enum class ResultType : uint8_t {
+			ERROR,
+			IGNORED,
+			SUCCESS
+		};
+
+		Import(EntityId *NewId, ResultType &Result, FString &ErrorMessage);
+	};
+
 	struct Export final : AGraphProvider::Command {
 		Export(EntityId Id, bool &Result, FString &ResultMessage);
 	};

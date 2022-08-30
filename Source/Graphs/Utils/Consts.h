@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 namespace FileConsts {
-	const static FString ImportExportDir = "Data\\";
-	const static FString ExportFilePrefix = "Exported_";
+	const static FString ExportDir = "Export\\";
+	const static FString ExportFilePrefix = "Graph_";
 }
 
 namespace ColorConsts {

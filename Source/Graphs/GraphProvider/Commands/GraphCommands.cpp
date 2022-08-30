@@ -1,5 +1,7 @@
 ﻿#include "GraphCommands.h"
+#include "DesktopPlatformModule.h"
 #include "EdgeCommands.h"
+#include "IDesktopPlatform.h"
 #include "VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/EdgeEntity.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
@@ -84,26 +86,77 @@ GraphCommands::Rotate::Rotate(
 		Provider.ExecuteCommand(EdgeCommands::UpdateTransform(EdgeId));
 }) {}
 
+GraphCommands::Import::Import(
+	EntityId *NewId,
+	ResultType &Result,
+	FString &ErrorMessage
+) : Command([NewId, &Result, &ErrorMessage] (const AGraphProvider &Provider) {
+	if (!GEngine) {
+		Result = ResultType::ERROR;
+		ErrorMessage = "Failed to get global UE4 engine pointer.";
+		return;
+	}
+
+	if (!GEngine->GameViewport) {
+		Result = ResultType::ERROR;
+		ErrorMessage = "Failed to get current game instance.";
+		return;
+	}
+
+	const auto DesktopPlatform = FDesktopPlatformModule::Get();
+	if (!DesktopPlatform) {
+		Result = ResultType::ERROR;
+		ErrorMessage = "Failed to get desktop platform pointer.";
+		return;
+	}
+
+	// Default path for file picker dialog: uses FileConsts::ExportDir directory if exists, FPaths::LaunchDir otherwise.
+	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
+	const auto OutputDir = FPaths::LaunchDir() + FileConsts::ExportDir;
+	const auto DefaultPath = FileManager.DirectoryExists(*OutputDir)
+		? OutputDir
+		: FPaths::LaunchDir();
+
+	TArray<FString> SelectedFilesPaths;
+	if (!DesktopPlatform->OpenFileDialog(
+		GEngine->GameViewport->GetWindow()->GetNativeWindow()->GetOSWindowHandle(),
+		"Import graph",
+		DefaultPath,
+		"",
+		"JSON file|*.json",
+		EFileDialogFlags::Type::None,
+		SelectedFilesPaths
+	)) {
+		Result = ResultType::IGNORED;
+		return;
+	}
+	check(SelectedFilesPaths.Num() == 1);
+
+	// TODO
+
+	Result = ResultType::SUCCESS;
+}) {}
+
 GraphCommands::Export::Export(
 	EntityId Id,
 	bool &Result,
 	FString &ResultMessage
 ) : Command([Id, &Result, &ResultMessage] (const AGraphProvider &Provider) {
-	IPlatformFile &FileManager = FPlatformFileManager::Get().GetPlatformFile();
+	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 	// Create export directory if it does not exist.
-	const auto OutputDir = FPaths::LaunchDir() + FileConsts::ImportExportDir;
+	const auto OutputDir = FPaths::LaunchDir() + FileConsts::ExportDir;
 	if (!FileManager.CreateDirectory(*OutputDir)) {
-		auto OutputFloderName = FileConsts::ImportExportDir;
+		auto OutputFloderName = FileConsts::ExportDir;
 		OutputFloderName.RemoveAt(OutputFloderName.Len() - 1);
 
 		Result = false;
-		ResultMessage = "Failed to create a new folder:\n" + OutputFloderName;
+		ResultMessage = "Failed to create " + OutputFloderName + " folder.";
 		return;
 	}
 
 	// Generate unique filename for exporting graph.
-	const auto DisplayDirFileBase = FileConsts::ImportExportDir + FileConsts::ExportFilePrefix;
+	const auto DisplayDirFileBase = FileConsts::ExportDir + FileConsts::ExportFilePrefix;
 	FString DisplayDirFile, OutputDirFile;
 	// using do while here just to be sure that FGuid returns id of file that does not exist in output folder
 	do {
@@ -119,7 +172,7 @@ GraphCommands::Export::Export(
 	const auto OutputFileHandler = FileManager.OpenWrite(*OutputDirFile);
 	if (!OutputFileHandler) {
 		Result = false;
-		ResultMessage = "Failed to create a new file:\n" + DisplayDirFile;
+		ResultMessage = "Failed to create " + DisplayDirFile + " file.";
 		return;
 	}
 
@@ -157,7 +210,7 @@ GraphCommands::Export::Export(
 	}
 
 	// Graph serialization.
-	const nlohmann::json GraphJson = nlohmann::json::object({
+	const auto GraphJson = nlohmann::json::object({
 		{"vertices", VerticesJson},
 		{"edges", EdgesJson}
 	});

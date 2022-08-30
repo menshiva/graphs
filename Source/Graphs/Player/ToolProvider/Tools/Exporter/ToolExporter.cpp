@@ -13,7 +13,7 @@ UToolExporter::UToolExporter() : UTool(
 void UToolExporter::OnAttach() {
 	Super::OnAttach();
 	GetVrRightController()->SetLaserActive(true);
-	GetToolPanel<UToolExporterPanelWidget>()->SetTutorialStatus();
+	GetToolPanel<UToolExporterPanelWidget>()->ShowExportPanel();
 }
 
 void UToolExporter::OnDetach() {
@@ -30,9 +30,9 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 		GetGraphProvider()->ExecuteCommand(GraphCommands::Export(GetHitEntityId(), IsOk, ResultMsg));
 
 		if (IsOk)
-			GetToolPanel<UToolExporterPanelWidget>()->SetSuccessStatus(ResultMsg);
+			GetToolPanel<UToolExporterPanelWidget>()->ShowSuccessPanel(ResultMsg);
 		else
-			GetToolPanel<UToolExporterPanelWidget>()->SetErrorStatus(ResultMsg);
+			GetToolPanel<UToolExporterPanelWidget>()->ShowErrorPanel(ResultMsg);
 
 		GetVrRightController()->SetLaserActive(false);
 		return true;
