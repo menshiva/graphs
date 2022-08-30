@@ -1,9 +1,11 @@
 ﻿#include "GraphCommands.h"
 #include "EdgeCommands.h"
 #include "VertexCommands.h"
+#include "Graphs/GraphProvider/Entities/EdgeEntity.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Graphs/Utils/Consts.h"
+#include "ThirdParty/nlohmann/json.hpp"
 
 GraphCommands::Create::Create(EntityId *NewId) : Command([NewId] (AGraphProvider &Provider) {
 	const auto NewNode = CreateEntity<GraphEntity>(Provider);
@@ -121,11 +123,46 @@ GraphCommands::Export::Export(
 		return;
 	}
 
+	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
+
+	// Graph's vertices serialization.
+	nlohmann::json VerticesJson;
+	for (const auto VertexId : Graph->VerticesIds) {
+		const auto Vertex = GetEntity<const VertexEntity>(Provider, VertexId);
+		const auto VertexPos = Vertex->Actor->GetActorLocation();
+
+		VerticesJson.push_back(nlohmann::json::object({
+			{"id", Vertex->DisplayId},
+			{"position", nlohmann::json::object({
+				{"x", VertexPos.X},
+				{"y", VertexPos.Y},
+				{"z", VertexPos.Z}
+			})},
+		}));
+	}
+
+	// Graph's edges serialization.
+	nlohmann::json EdgesJson;
+	for (const auto EdgeId : Graph->EdgesIds) {
+		const auto Edge = GetEntity<const EdgeEntity>(Provider, EdgeId);
+		const auto FromVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[0]);
+		const auto ToVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[1]);
+
+		EdgesJson.push_back(nlohmann::json::object({
+			{"vertices", nlohmann::json::object({
+				{"from_id", FromVertex->DisplayId},
+				{"to_id", ToVertex->DisplayId}
+			})},
+		}));
+	}
+
 	// Graph serialization.
-	// TODO
-	// const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
-	const FString TestOutput = "TEST TEST TEST TEST TEST\n";
-	OutputFileHandler->Write(reinterpret_cast<const uint8*>(TCHAR_TO_ANSI(*TestOutput)), TestOutput.Len());
+	const nlohmann::json GraphJson = nlohmann::json::object({
+		{"vertices", VerticesJson},
+		{"edges", EdgesJson}
+	});
+	const auto GraphJsonStr = GraphJson.dump(1, '\t');
+	OutputFileHandler->Write(reinterpret_cast<const uint8*>(GraphJsonStr.c_str()), GraphJsonStr.size());
 
 	OutputFileHandler->Flush();
 	delete OutputFileHandler;
