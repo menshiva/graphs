@@ -1,6 +1,9 @@
 ﻿#pragma once
 
 #include "Graphs/GraphProvider/GraphProvider.h"
+#include "ThirdParty/rapidjson/prettywriter.h"
+#include "ThirdParty/rapidjson/stringbuffer.h"
+#include "ThirdParty/rapidjson/document.h"
 
 namespace VertexCommands {
 	struct Create final : AGraphProvider::Command {
@@ -25,5 +28,13 @@ namespace VertexCommands {
 
 	struct Move final : AGraphProvider::Command {
 		Move(EntityId Id, const FVector &Delta, bool UpdateConnectedEdges);
+	};
+
+	struct Serialize final : AGraphProvider::Command {
+		Serialize(EntityId Id, rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer);
+	};
+
+	struct Deserialize final : AGraphProvider::Command {
+		Deserialize(EntityId GraphId, EntityId *NewVertexId, rapidjson::Value &VertexDomValue, FString &ErrorMessage);
 	};
 }

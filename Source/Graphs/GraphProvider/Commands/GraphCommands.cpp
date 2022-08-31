@@ -1,26 +1,31 @@
 ﻿#include "GraphCommands.h"
-#include "DesktopPlatformModule.h"
 #include "EdgeCommands.h"
-#include "IDesktopPlatform.h"
 #include "VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/EdgeEntity.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Graphs/Utils/Consts.h"
-#include "ThirdParty/nlohmann/json.hpp"
 
-GraphCommands::Create::Create(EntityId *NewId) : Command([NewId] (AGraphProvider &Provider) {
+GraphCommands::Create::Create(
+	EntityId *NewGraphId,
+	size_t ReserveVerticesNum,
+	size_t ReserveEdgesNum
+) : Command([NewGraphId, ReserveVerticesNum, ReserveEdgesNum] (AGraphProvider &Provider) {
 	const auto NewNode = CreateEntity<GraphEntity>(Provider);
-	if (NewId)
-		*NewId = NewNode->GetEntityId();
+	NewNode->VerticesIds.Reserve(ReserveVerticesNum);
+	NewNode->EdgesIds.Reserve(ReserveEdgesNum);
+	if (NewGraphId)
+		*NewGraphId = NewNode->GetEntityId();
 }) {}
 
 GraphCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provider) {
 	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
+
 	for (const auto VertexId : Graph->VerticesIds)
 		RemoveEntity(Provider, VertexId);
 	for (const auto EdgeId : Graph->EdgesIds)
 		RemoveEntity(Provider, EdgeId);
+
 	RemoveEntity(Provider, Id);
 }) {}
 
@@ -29,8 +34,10 @@ GraphCommands::SetColor::SetColor(
 	const FLinearColor &Color
 ) : Command([Id, &Color] (AGraphProvider &Provider) {
 	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
+
 	for (const auto VertexId : Graph->VerticesIds)
 		Provider.ExecuteCommand(VertexCommands::SetColor(VertexId, Color));
+
 	for (const auto EdgeId : Graph->EdgesIds)
 		Provider.ExecuteCommand(EdgeCommands::SetColor(EdgeId, Color));
 }) {}
@@ -40,8 +47,10 @@ GraphCommands::SetSelectionType::SetSelectionType(
 	SelectionType NewType
 ) : Command([Id, NewType] (AGraphProvider &Provider) {
 	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
+
 	for (const auto VertexId : Graph->VerticesIds)
 		Provider.ExecuteCommand(VertexCommands::SetSelectionType(VertexId, NewType));
+
 	for (const auto EdgeId : Graph->EdgesIds)
 		Provider.ExecuteCommand(EdgeCommands::SetSelectionType(EdgeId, NewType));
 }) {}
@@ -51,8 +60,10 @@ GraphCommands::Move::Move(
 	const FVector &Delta
 ) : Command([Id, &Delta] (AGraphProvider &Provider) {
 	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
+
 	for (const auto VertexId : Graph->VerticesIds)
 		Provider.ExecuteCommand(VertexCommands::Move(VertexId, Delta, false));
+
 	for (const auto EdgeId : Graph->EdgesIds)
 		Provider.ExecuteCommand(EdgeCommands::Move(EdgeId, Delta, false));
 }) {}
@@ -63,6 +74,7 @@ GraphCommands::ComputeCenterPosition::ComputeCenterPosition(
 ) : Command([Id, &Center] (const AGraphProvider &Provider) {
 	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
 	check(Graph->VerticesIds.Num() > 0);
+
 	Center = FVector::ZeroVector;
 	for (const auto VertexId : Graph->VerticesIds)
 		Center += GetEntity<const VertexEntity>(Provider, VertexId)->Actor->GetActorLocation();
@@ -75,150 +87,224 @@ GraphCommands::Rotate::Rotate(
 	const float Angle
 ) : Command([Id, &Center, Angle] (AGraphProvider &Provider) {
 	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
+
 	for (const auto VertexId : Graph->VerticesIds) {
 		const auto Vertex = GetEntity<const VertexEntity>(Provider, VertexId);
+
 		const auto VertexPos = Vertex->Actor->GetActorLocation();
 		const auto PosDirection = VertexPos - Center;
 		const auto RotatedPos = PosDirection.RotateAngleAxis(Angle, FVector::DownVector) + Center;
+
 		Provider.ExecuteCommand(VertexCommands::Move(VertexId, RotatedPos - VertexPos, false));
 	}
+
 	for (const auto EdgeId : Graph->EdgesIds)
 		Provider.ExecuteCommand(EdgeCommands::UpdateTransform(EdgeId));
 }) {}
 
-GraphCommands::Import::Import(
-	EntityId *NewId,
-	ResultType &Result,
+GraphCommands::Deserialize::Deserialize(
+	EntityId *NewGraphId,
+	rapidjson::Document &JsonDom,
 	FString &ErrorMessage
-) : Command([NewId, &Result, &ErrorMessage] (const AGraphProvider &Provider) {
-	if (!GEngine) {
-		Result = ResultType::ERROR;
-		ErrorMessage = "Failed to get global UE4 engine pointer.";
+) : Command([NewGraphId, &JsonDom, &ErrorMessage] (AGraphProvider &Provider) {
+	*NewGraphId = ENTITY_NONE;
+
+	// Checking validity of graph object.
+	if (!JsonDom.IsObject()) {
+		ErrorMessage = "Graph should be an object.";
+		return;
+	}
+	const auto &VerticesMember = JsonDom.FindMember("vertices");
+	const auto &EdgesMember = JsonDom.FindMember("edges");
+	if (VerticesMember == JsonDom.MemberEnd() || !VerticesMember->value.IsArray()) {
+		ErrorMessage = "Graph should have an array of objects\nnamed \"vertices\".";
+		return;
+	}
+	if (VerticesMember->value.Size() < 1) {
+		ErrorMessage = "\"vertices\" array field should have\nat least 1 object.";
+		return;
+	}
+	if (EdgesMember != JsonDom.MemberEnd() && !EdgesMember->value.IsArray()) {
+		ErrorMessage = "\"edges\" field should be an array.";
 		return;
 	}
 
-	if (!GEngine->GameViewport) {
-		Result = ResultType::ERROR;
-		ErrorMessage = "Failed to get current game instance.";
-		return;
+	// Create new graph entity.
+	const auto &Vertices = VerticesMember->value.GetArray();
+	Provider.ExecuteCommand(Create(
+		NewGraphId,
+		Vertices.Size(),
+		EdgesMember != JsonDom.MemberEnd() ? EdgesMember->value.GetArray().Size() : 0
+	));
+	check(*NewGraphId != ENTITY_NONE);
+
+	// TODO: better error messages
+	// TODO: check how error messages looks like on UI
+	// TODO: test errors
+
+	// Parse vertices.
+	TMap<uint32_t, EntityId> VerticesIdsMappings;
+	VerticesIdsMappings.Reserve(Vertices.Size());
+	for (auto VertexIter = Vertices.Begin(); VertexIter != Vertices.End(); ++VertexIter) {
+		EntityId NewVertexId = ENTITY_NONE;
+		Provider.ExecuteCommand(VertexCommands::Deserialize(
+			*NewGraphId,
+			&NewVertexId,
+			*VertexIter,
+			ErrorMessage
+		));
+		if (NewVertexId != ENTITY_NONE) {
+			const auto NewVertex = GetEntity<const VertexEntity>(Provider, NewVertexId);
+			if (VerticesIdsMappings.Contains(NewVertex->DisplayId)) {
+				ErrorMessage = "Vertex with " + FString::FromInt(NewVertex->DisplayId) + " is not unique.";
+				Provider.ExecuteCommand(Remove(*NewGraphId));
+				*NewGraphId = ENTITY_NONE;
+				return;
+			}
+			VerticesIdsMappings.Add(NewVertex->DisplayId, NewVertexId);
+		}
+		else {
+			Provider.ExecuteCommand(Remove(*NewGraphId));
+			*NewGraphId = ENTITY_NONE;
+			return;
+		}
 	}
 
-	const auto DesktopPlatform = FDesktopPlatformModule::Get();
-	if (!DesktopPlatform) {
-		Result = ResultType::ERROR;
-		ErrorMessage = "Failed to get desktop platform pointer.";
-		return;
+	// Parse edges if provided.
+	if (EdgesMember != JsonDom.MemberEnd()) {
+		const auto &Edges = EdgesMember->value.GetArray();
+		for (auto EdgeIter = Edges.Begin(); EdgeIter != Edges.End(); ++EdgeIter) {
+			EntityId NewEgdeId = ENTITY_NONE;
+			Provider.ExecuteCommand(EdgeCommands::Deserialize(
+				*NewGraphId,
+				&NewEgdeId,
+				*EdgeIter,
+				VerticesIdsMappings,
+				ErrorMessage
+			));
+			if (NewEgdeId == ENTITY_NONE) {
+				Provider.ExecuteCommand(Remove(*NewGraphId));
+				*NewGraphId = ENTITY_NONE;
+				return;
+			}
+		}
 	}
+}) {}
 
-	// Default path for file picker dialog: uses FileConsts::ExportDir directory if exists, FPaths::LaunchDir otherwise.
+GraphCommands::Import::Import(
+	EntityId *NewGraphId,
+	const FString &InputFilePath,
+	FString &ErrorMessage
+) : Command([NewGraphId, &InputFilePath, &ErrorMessage] (AGraphProvider &Provider) {
+	*NewGraphId = ENTITY_NONE;
 	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
-	const auto OutputDir = FPaths::LaunchDir() + FileConsts::ExportDir;
-	const auto DefaultPath = FileManager.DirectoryExists(*OutputDir)
-		? OutputDir
-		: FPaths::LaunchDir();
 
-	TArray<FString> SelectedFilesPaths;
-	if (!DesktopPlatform->OpenFileDialog(
-		GEngine->GameViewport->GetWindow()->GetNativeWindow()->GetOSWindowHandle(),
-		"Import graph",
-		DefaultPath,
-		"",
-		"JSON file|*.json",
-		EFileDialogFlags::Type::None,
-		SelectedFilesPaths
-	)) {
-		Result = ResultType::IGNORED;
+	if (!FileManager.FileExists(*InputFilePath)) {
+		ErrorMessage = "File does not exist.";
 		return;
 	}
-	check(SelectedFilesPaths.Num() == 1);
 
-	// TODO
+	// Open selected file for reading.
+	const TUniquePtr<IFileHandle> InputFileHandler(FileManager.OpenRead(*InputFilePath));
+	if (!InputFileHandler.IsValid()) {
+		ErrorMessage = "Failed to open file.";
+		return;
+	}
 
-	Result = ResultType::SUCCESS;
+	// Read all bytes from file.
+	TArray<uint8> InputBuffer;
+	InputBuffer.AddUninitialized(InputFileHandler->Size());
+	if (!InputFileHandler->Read(InputBuffer.GetData(), InputFileHandler->Size())) {
+		ErrorMessage = "Failed to read from file.";
+		return;
+	}
+
+	// Deserialize json using DOM style API and create a new graph.
+	// https://rapidjson.org/md_doc_features.html#:~:text=DOM%20(Document%20Object%20Model)%20style%20API
+	rapidjson::Document JsonDom;
+	if (JsonDom.Parse(reinterpret_cast<const char*>(InputBuffer.GetData())).HasParseError()) {
+		ErrorMessage = "JSON file is corrupted.";
+		return;
+	}
+	Provider.ExecuteCommand(Deserialize(NewGraphId, JsonDom, ErrorMessage));
+}) {}
+
+GraphCommands::Serialize::Serialize(
+	EntityId Id,
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
+) : Command([Id, &Writer] (AGraphProvider &Provider) {
+	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
+
+	Writer.StartObject();
+
+	check(Graph->VerticesIds.Num() > 0);
+	Writer.Key("vertices");
+	Writer.StartArray();
+	for (const auto VertexId : Graph->VerticesIds)
+		Provider.ExecuteCommand(VertexCommands::Serialize(VertexId, Writer));
+	Writer.EndArray();
+
+	if (Graph->EdgesIds.Num() > 0) {
+		Writer.Key("edges");
+		Writer.StartArray();
+		for (const auto EdgeId : Graph->EdgesIds)
+			Provider.ExecuteCommand(EdgeCommands::Serialize(EdgeId, Writer));
+		Writer.EndArray();
+	}
+
+	Writer.EndObject();
 }) {}
 
 GraphCommands::Export::Export(
 	EntityId Id,
+	const FString &OutputRootPath,
+	const FString &OutputDirectory,
 	bool &Result,
 	FString &ResultMessage
-) : Command([Id, &Result, &ResultMessage] (const AGraphProvider &Provider) {
+) : Command([Id, &OutputRootPath, &OutputDirectory, &Result, &ResultMessage] (AGraphProvider &Provider) {
 	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
-	// Create export directory if it does not exist.
-	const auto OutputDir = FPaths::LaunchDir() + FileConsts::ExportDir;
-	if (!FileManager.CreateDirectory(*OutputDir)) {
-		auto OutputFloderName = FileConsts::ExportDir;
-		OutputFloderName.RemoveAt(OutputFloderName.Len() - 1);
-
+	// Create export directory tree if it does not exist.
+	if (!FileManager.CreateDirectoryTree(*(OutputRootPath + OutputDirectory))) {
 		Result = false;
-		ResultMessage = "Failed to create " + OutputFloderName + " folder.";
+		ResultMessage = "Failed to create " + OutputDirectory + " directory.";
 		return;
 	}
 
-	// Generate unique filename for exporting graph.
-	const auto DisplayDirFileBase = FileConsts::ExportDir + FileConsts::ExportFilePrefix;
+	// Generate unique filename.
+	const auto DisplayDirFileBase = OutputDirectory + FileConsts::ExportFilePrefix;
 	FString DisplayDirFile, OutputDirFile;
 	// using do while here just to be sure that FGuid returns id of file that does not exist in output folder
 	do {
 		// generate new guid and remain only 8 characters for more readable file name
 		auto GuidText = FGuid::NewGuid().ToString(EGuidFormats::Base36Encoded);
+		check(GuidText.Len() > 8);
 		GuidText.RemoveAt(8, GuidText.Len() - 8);
 
 		DisplayDirFile = DisplayDirFileBase + GuidText + ".json";
-		OutputDirFile = FPaths::LaunchDir() + DisplayDirFile;
+		OutputDirFile = OutputRootPath + DisplayDirFile;
 	} while (FileManager.FileExists(*OutputDirFile));
 
 	// Create and open a new file.
-	const auto OutputFileHandler = FileManager.OpenWrite(*OutputDirFile);
-	if (!OutputFileHandler) {
+	const TUniquePtr<IFileHandle> OutputFileHandler(FileManager.OpenWrite(*OutputDirFile));
+	if (!OutputFileHandler.IsValid()) {
 		Result = false;
 		ResultMessage = "Failed to create " + DisplayDirFile + " file.";
 		return;
 	}
 
-	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
-
-	// Graph's vertices serialization.
-	nlohmann::json VerticesJson;
-	for (const auto VertexId : Graph->VerticesIds) {
-		const auto Vertex = GetEntity<const VertexEntity>(Provider, VertexId);
-		const auto VertexPos = Vertex->Actor->GetActorLocation();
-
-		VerticesJson.push_back(nlohmann::json::object({
-			{"id", Vertex->DisplayId},
-			{"position", nlohmann::json::object({
-				{"x", VertexPos.X},
-				{"y", VertexPos.Y},
-				{"z", VertexPos.Z}
-			})},
-		}));
+	// Serialize graph using SAX style API and write json to opened file.
+	// https://rapidjson.org/md_doc_features.html#:~:text=SAX%20(Simple%20API%20for%20XML)%20style%20API
+	rapidjson::StringBuffer SBuffer;
+	rapidjson::PrettyWriter Writer(SBuffer);
+	Writer.SetIndent('\t', 1);
+	Provider.ExecuteCommand(Serialize(Id, Writer));
+	if (!OutputFileHandler->Write(reinterpret_cast<const uint8*>(SBuffer.GetString()), SBuffer.GetSize())) {
+		Result = false;
+		ResultMessage = "Failed to write data into\n" + DisplayDirFile + " file.";
+		return;
 	}
-
-	// Graph's edges serialization.
-	nlohmann::json EdgesJson;
-	for (const auto EdgeId : Graph->EdgesIds) {
-		const auto Edge = GetEntity<const EdgeEntity>(Provider, EdgeId);
-		const auto FromVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[0]);
-		const auto ToVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[1]);
-
-		EdgesJson.push_back(nlohmann::json::object({
-			{"vertices", nlohmann::json::object({
-				{"from_id", FromVertex->DisplayId},
-				{"to_id", ToVertex->DisplayId}
-			})},
-		}));
-	}
-
-	// Graph serialization.
-	const auto GraphJson = nlohmann::json::object({
-		{"vertices", VerticesJson},
-		{"edges", EdgesJson}
-	});
-	const auto GraphJsonStr = GraphJson.dump(1, '\t');
-	OutputFileHandler->Write(reinterpret_cast<const uint8*>(GraphJsonStr.c_str()), GraphJsonStr.size());
-
 	OutputFileHandler->Flush();
-	delete OutputFileHandler;
 
 	Result = true;
 	ResultMessage = DisplayDirFile;

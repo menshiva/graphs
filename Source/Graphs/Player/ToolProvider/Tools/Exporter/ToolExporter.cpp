@@ -1,6 +1,7 @@
 ﻿#include "ToolExporter.h"
 #include "ToolExporterPanelWidget.h"
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
+#include "Graphs/Utils/Consts.h"
 
 UToolExporter::UToolExporter() : UTool(
 	"Export",
@@ -27,7 +28,13 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 
 		bool IsOk;
 		FString ResultMsg;
-		GetGraphProvider()->ExecuteCommand(GraphCommands::Export(GetHitEntityId(), IsOk, ResultMsg));
+		GetGraphProvider()->ExecuteCommand(GraphCommands::Export(
+			GetHitEntityId(),
+			FPaths::LaunchDir(),
+			FileConsts::ExportDir,
+			IsOk,
+			ResultMsg
+		));
 
 		if (IsOk)
 			GetToolPanel<UToolExporterPanelWidget>()->ShowSuccessPanel(ResultMsg);

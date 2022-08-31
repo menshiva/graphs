@@ -1,10 +1,13 @@
 ﻿#pragma once
 
 #include "Graphs/GraphProvider/GraphProvider.h"
+#include "ThirdParty/rapidjson/prettywriter.h"
+#include "ThirdParty/rapidjson/stringbuffer.h"
+#include "ThirdParty/rapidjson/document.h"
 
 namespace GraphCommands {
 	struct Create final : AGraphProvider::Command {
-		explicit Create(EntityId *NewId);
+		explicit Create(EntityId *NewGraphId, size_t ReserveVerticesNum = 0, size_t ReserveEdgesNum = 0);
 	};
 
 	struct Remove final : AGraphProvider::Command {
@@ -31,17 +34,25 @@ namespace GraphCommands {
 		Rotate(EntityId Id, const FVector &Center, float Angle);
 	};
 
-	struct Import final : AGraphProvider::Command {
-		enum class ResultType : uint8_t {
-			ERROR,
-			IGNORED,
-			SUCCESS
-		};
+	struct Deserialize final : AGraphProvider::Command {
+		Deserialize(EntityId *NewGraphId, rapidjson::Document &JsonDom, FString &ErrorMessage);
+	};
 
-		Import(EntityId *NewId, ResultType &Result, FString &ErrorMessage);
+	struct Import final : AGraphProvider::Command {
+		Import(EntityId *NewGraphId, const FString &InputFilePath, FString &ErrorMessage);
+	};
+
+	struct Serialize final : AGraphProvider::Command {
+		Serialize(EntityId Id, rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer);
 	};
 
 	struct Export final : AGraphProvider::Command {
-		Export(EntityId Id, bool &Result, FString &ResultMessage);
+		Export(
+			EntityId Id,
+			const FString &OutputRootPath,
+			const FString &OutputDirectory,
+			bool &Result,
+			FString &ResultMessage
+		);
 	};
 }

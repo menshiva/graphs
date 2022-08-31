@@ -7,9 +7,9 @@
 
 EdgeCommands::Create::Create(
 	EntityId GraphId,
-	EntityId FirstVertexId, EntityId SecondVertexId,
-	EntityId *NewEdgeId
-) : Command([GraphId, FirstVertexId, SecondVertexId, NewEdgeId] (AGraphProvider &Provider) {
+	EntityId *NewEdgeId,
+	EntityId FromVertexId, EntityId ToVertexId
+) : Command([GraphId, NewEdgeId, FromVertexId, ToVertexId] (AGraphProvider &Provider) {
 	const auto NewEdge = CreateEntity<EdgeEntity>(Provider);
 
 	const auto Graph = GetEntity<GraphEntity>(Provider, GraphId);
@@ -18,8 +18,8 @@ EdgeCommands::Create::Create(
 	Graph->EdgesIds.Push(NewEdge->GetEntityId());
 
 	NewEdge->GraphId = GraphId;
-	NewEdge->VerticesIds[0] = FirstVertexId;
-	NewEdge->VerticesIds[1] = SecondVertexId;
+	NewEdge->VerticesIds[0] = FromVertexId;
+	NewEdge->VerticesIds[1] = ToVertexId;
 
 	for (const auto VertexId : NewEdge->VerticesIds) {
 		const auto Vertex = GetEntity<VertexEntity>(Provider, VertexId);
@@ -86,6 +86,7 @@ EdgeCommands::SetSelectionType::SetSelectionType(
 ) : Command([Id, NewType] (AGraphProvider &Provider) {
 	const auto Edge = GetEntity<EdgeEntity>(Provider, Id);
 	Edge->Selection = NewType;
+
 	switch (NewType) {
 		case SelectionType::HIT:
 		case SelectionType::SELECTED: {
@@ -104,11 +105,77 @@ EdgeCommands::Move::Move(
 	bool UpdateConnectedVertices
 ) : Command([Id, &Delta, UpdateConnectedVertices] (AGraphProvider &Provider) {
 	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
-	if (UpdateConnectedVertices) {
+
+	if (UpdateConnectedVertices)
 		for (const auto VertexId : Edge->VerticesIds)
 			Provider.ExecuteCommand(VertexCommands::Move(VertexId, Delta, true));
-	}
-	else {
+	else
 		Edge->Actor->SetActorLocation(Edge->Actor->GetActorLocation() + Delta);
+}) {}
+
+EdgeCommands::Serialize::Serialize(
+	EntityId Id,
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
+) : Command([Id, &Writer] (const AGraphProvider &Provider) {
+	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
+	const auto FromVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[0]);
+	const auto ToVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[1]);
+
+	Writer.StartObject();
+
+	Writer.Key("vertices");
+	Writer.StartObject();
+
+	Writer.Key("from_id");
+	Writer.Uint(FromVertex->DisplayId);
+	Writer.Key("to_id");
+	Writer.Uint(ToVertex->DisplayId);
+
+	Writer.EndObject();
+
+	Writer.EndObject();
+}) {}
+
+EdgeCommands::Deserialize::Deserialize(
+	EntityId GraphId,
+	EntityId *NewEdgeId,
+	rapidjson::Value &EdgeDomValue,
+	const TMap<uint32_t, EntityId> &VerticesIdsMapping,
+	FString &ErrorMessage
+) : Command([GraphId, NewEdgeId, &EdgeDomValue, &VerticesIdsMapping, &ErrorMessage] (AGraphProvider &Provider) {
+	*NewEdgeId = ENTITY_NONE;
+
+	// TODO: better error messages
+
+	const auto &VerticesMember = EdgeDomValue.FindMember("vertices");
+	if (VerticesMember == EdgeDomValue.MemberEnd() || !VerticesMember->value.IsObject()) {
+		ErrorMessage = "Edge object should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
+		return;
 	}
+	const auto &VerticesObj = VerticesMember->value.GetObject();
+	const auto FromIdMember = VerticesObj.FindMember("from_id");
+	const auto ToIdMember = VerticesObj.FindMember("to_id");
+	if (FromIdMember == VerticesObj.MemberEnd()
+		|| ToIdMember == VerticesObj.MemberEnd()
+		|| !FromIdMember->value.IsUint()
+		|| !ToIdMember->value.IsUint())
+	{
+		ErrorMessage = "Edge object should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
+		return;
+	}
+	const uint32_t FromId = FromIdMember->value.GetUint();
+	const uint32_t ToId = ToIdMember->value.GetUint();
+
+	const auto FromIdVertexMapping = VerticesIdsMapping.Find(FromId);
+	if (!FromIdVertexMapping) {
+		ErrorMessage = "Vertex with id from \"from_id\" field is not found.";
+		return;
+	}
+	const auto ToIdVertexMapping = VerticesIdsMapping.Find(ToId);
+	if (!ToIdVertexMapping) {
+		ErrorMessage = "Vertex with id from \"to_id\" field is not found.";
+		return;
+	}
+
+	Provider.ExecuteCommand(Create(GraphId, NewEdgeId, *FromIdVertexMapping, *ToIdVertexMapping));
 }) {}

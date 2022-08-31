@@ -2,7 +2,7 @@
 #include "Graphs/GraphProvider/Commands/EdgeCommands.h"
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
-#include "Graphs/GraphProvider/Entities/VertexEntity.h"
+#include "Graphs/Utils/Consts.h"
 #include "Kismet/GameplayStatics.h"
 #include "Tools/Exporter/ToolExporter.h"
 #include "Tools/Importer/ToolImporter.h"
@@ -96,44 +96,14 @@ void UToolProvider::BeginPlay() {
 	GraphProvider = Cast<AGraphProvider>(UGameplayStatics::GetActorOfClass(GetWorld(), AGraphProvider::StaticClass()));
 	// TODO: only for test
 	{
-		const TArray<FVector> Positions = {
-			{437.109619f, 225.096985f, 50.0f},
-			{748.974915f, 345.263428f, 260.0f},
-			{504.859009f, -437.556763f, 460.0f},
-			{969.929321f, -452.031494f, 260.0f},
-			{1587.086426f, 611.200684f, 440.0f},
-			{1903.230957f, 502.790161f, 650.0f},
-			{1213.039551f, 60.030151f, 850.0f},
-			{1560.0f, -250.0f, 650.0f},
-		};
-		const TArray<std::pair<uint32_t, uint32_t>> Connections = {
-			{0, 1},
-			{0, 2},
-			{0, 3},
-			{1, 2},
-			{1, 4},
-			{4, 5},
-			{5, 6},
-			{6, 4},
-		};
-		TMap<uint32_t, EntityId> VertexDisplayIdToEntityId;
-
-		EntityId GraphId = ENTITY_NONE;
-		GraphProvider->ExecuteCommand(GraphCommands::Create(&GraphId));
-		for (size_t i = 0; i < Positions.Num(); ++i) {
-			EntityId NewVertexId = ENTITY_NONE;
-			GraphProvider->ExecuteCommand(VertexCommands::Create(GraphId, &NewVertexId, i, Positions[i]));
-			VertexDisplayIdToEntityId.Add(i, NewVertexId);
-		}
-		for (size_t i = 0; i < Connections.Num(); ++i) {
-			const EntityId FirstVertexId = VertexDisplayIdToEntityId.FindChecked(Connections[i].first);
-			const EntityId SecondVertexId = VertexDisplayIdToEntityId.FindChecked(Connections[i].second);
-			GraphProvider->ExecuteCommand(EdgeCommands::Create(
-				GraphId,
-				FirstVertexId, SecondVertexId,
-				nullptr
-			));
-		}
+		EntityId NewGraphId = ENTITY_NONE;
+		FString ErrorMsg;
+		GraphProvider->ExecuteCommand(GraphCommands::Import(
+			&NewGraphId,
+			FPaths::LaunchDir() + FileConsts::ExportDir + "Test_Input\\8_Vertices_8_Edges.json",
+			ErrorMsg
+		));
+		check(NewGraphId != ENTITY_NONE);
 	}
 }
 

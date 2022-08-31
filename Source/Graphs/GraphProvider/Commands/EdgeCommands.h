@@ -1,13 +1,16 @@
 ﻿#pragma once
 
 #include "Graphs/GraphProvider/GraphProvider.h"
+#include "ThirdParty/rapidjson/prettywriter.h"
+#include "ThirdParty/rapidjson/stringbuffer.h"
+#include "ThirdParty/rapidjson/document.h"
 
 namespace EdgeCommands {
 	struct Create final : AGraphProvider::Command {
 		Create(
 			EntityId GraphId,
-			EntityId FirstVertexId, EntityId SecondVertexId,
-			EntityId *NewEdgeId
+			EntityId *NewEdgeId,
+			EntityId FromVertexId, EntityId ToVertexId
 		);
 	};
 
@@ -33,5 +36,19 @@ namespace EdgeCommands {
 
 	struct Move final : AGraphProvider::Command {
 		Move(EntityId Id, const FVector &Delta, bool UpdateConnectedVertices);
+	};
+
+	struct Serialize final : AGraphProvider::Command {
+		Serialize(EntityId Id, rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer);
+	};
+
+	struct Deserialize final : AGraphProvider::Command {
+		Deserialize(
+			EntityId GraphId,
+			EntityId *NewEdgeId,
+			rapidjson::Value &EdgeDomValue,
+			const TMap<uint32_t, EntityId> &VerticesIdsMapping,
+			FString &ErrorMessage
+		);
 	};
 }

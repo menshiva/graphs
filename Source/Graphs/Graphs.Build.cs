@@ -12,6 +12,7 @@ public class Graphs : ModuleRules {
 
 	public Graphs(ReadOnlyTargetRules Target) : base(Target) {
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
 		PublicDependencyModuleNames.AddRange(new[] {
 			"Core",
 			"CoreUObject",
@@ -19,12 +20,12 @@ public class Graphs : ModuleRules {
 			"InputCore",
 			"Niagara",
 			"UMG",
-			"HeadMountedDisplay",
-			"SlateCore"
+			"DesktopPlatform"
 		});
 		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay", "Slate", "SlateCore" });
+		PublicIncludePaths.Add(EngineThirdPartyPath);
+
 		CppStandard = CppStandardVersion.Cpp17;
 		bUseRTTI = true;
-		PublicIncludePaths.Add(EngineThirdPartyPath);
 	}
 }

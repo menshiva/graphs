@@ -62,6 +62,7 @@ VertexCommands::SetSelectionType::SetSelectionType(
 ) : Command([Id, NewType] (AGraphProvider &Provider) {
 	const auto Vertex = GetEntity<VertexEntity>(Provider, Id);
 	Vertex->Selection = NewType;
+
 	switch (NewType) {
 		case SelectionType::HIT:
 		case SelectionType::SELECTED: {
@@ -80,8 +81,84 @@ VertexCommands::Move::Move(
 	bool UpdateConnectedEdges
 ) : Command([Id, &Delta, UpdateConnectedEdges] (AGraphProvider &Provider) {
 	const auto Vertex = GetEntity<const VertexEntity>(Provider, Id);
+
 	Vertex->Actor->SetActorLocation(Vertex->Actor->GetActorLocation() + Delta);
+
 	if (UpdateConnectedEdges)
 		for (const auto EdgeId : Vertex->EdgesIds)
 			Provider.ExecuteCommand(EdgeCommands::UpdateTransform(EdgeId));
+}) {}
+
+VertexCommands::Serialize::Serialize(
+	EntityId Id,
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
+) : Command([Id, &Writer] (const AGraphProvider &Provider) {
+	const auto Vertex = GetEntity<const VertexEntity>(Provider, Id);
+
+	Writer.StartObject();
+
+	Writer.Key("id");
+	Writer.Uint(Vertex->DisplayId);
+
+	const auto Pos = Vertex->Actor->GetActorLocation();
+	Writer.Key("position");
+	Writer.StartObject();
+	Writer.Key("x");
+	Writer.Double(Pos.X);
+	Writer.Key("y");
+	Writer.Double(Pos.Y);
+	Writer.Key("z");
+	Writer.Double(Pos.Z);
+	Writer.EndObject();
+
+	Writer.EndObject();
+}) {}
+
+VertexCommands::Deserialize::Deserialize(
+	EntityId GraphId,
+	EntityId *NewVertexId,
+	rapidjson::Value &VertexDomValue,
+	FString &ErrorMessage
+) : Command([GraphId, NewVertexId, &VertexDomValue, &ErrorMessage] (AGraphProvider &Provider) {
+	*NewVertexId = ENTITY_NONE;
+
+	// TODO: better error messages
+
+	const auto &IdMember = VertexDomValue.FindMember("id");
+	if (IdMember == VertexDomValue.MemberEnd() || !IdMember->value.IsUint()) {
+		ErrorMessage = "Vertex object should have an integer \"id\" field.";
+		return;
+	}
+	const uint32_t NewVertexDisplayId = IdMember->value.GetUint();
+
+	const auto &PositionMember = VertexDomValue.FindMember("position");
+	if (PositionMember == VertexDomValue.MemberEnd() || !PositionMember->value.IsObject()) {
+		ErrorMessage = "Vertex object with "
+			+ FString::FromInt(NewVertexDisplayId)
+			+ " id should have \"position\" object with X, Y, Z fields.";
+		return;
+	}
+	const auto &PositionObject = PositionMember->value.GetObject();
+	const auto &PositionXMember = PositionObject.FindMember("x");
+	const auto &PositionYMember = PositionObject.FindMember("y");
+	const auto &PositionZMember = PositionObject.FindMember("z");
+	if (PositionXMember == PositionObject.MemberEnd()
+		|| PositionYMember == PositionObject.MemberEnd()
+		|| PositionZMember == PositionObject.MemberEnd()
+		|| !PositionXMember->value.IsFloat()
+		|| !PositionYMember->value.IsFloat()
+		|| !PositionZMember->value.IsFloat())
+	{
+		ErrorMessage = "Vertex object with "
+			+ FString::FromInt(NewVertexDisplayId)
+			+ " id should have \"position\" object with X, Y, Z fields.";
+		return;
+	}
+	const FVector NewVertexPosition(
+		PositionXMember->value.GetFloat(),
+		PositionYMember->value.GetFloat(),
+		PositionZMember->value.GetFloat()
+	);
+
+	Provider.ExecuteCommand(Create(GraphId, NewVertexId, NewVertexDisplayId, NewVertexPosition));
 }) {}
