@@ -145,23 +145,19 @@ EdgeCommands::Deserialize::Deserialize(
 ) : Command([GraphId, NewEdgeId, &EdgeDomValue, &VerticesIdsMapping, &ErrorMessage] (AGraphProvider &Provider) {
 	*NewEdgeId = ENTITY_NONE;
 
-	// TODO: better error messages
-
 	const auto &VerticesMember = EdgeDomValue.FindMember("vertices");
 	if (VerticesMember == EdgeDomValue.MemberEnd() || !VerticesMember->value.IsObject()) {
-		ErrorMessage = "Edge object should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
+		ErrorMessage = "Edge should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
 		return;
 	}
 	const auto &VerticesObj = VerticesMember->value.GetObject();
-	const auto FromIdMember = VerticesObj.FindMember("from_id");
-	const auto ToIdMember = VerticesObj.FindMember("to_id");
-	if (FromIdMember == VerticesObj.MemberEnd()
-		|| ToIdMember == VerticesObj.MemberEnd()
-		|| !FromIdMember->value.IsUint()
-		|| !ToIdMember->value.IsUint())
-	{
-		ErrorMessage = "Edge object should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
-		return;
+	const auto &FromIdMember = VerticesObj.FindMember("from_id");
+	const auto &ToIdMember = VerticesObj.FindMember("to_id");
+	for (const auto &IdMember : {FromIdMember, ToIdMember}) {
+		if (IdMember == VerticesObj.MemberEnd() || !IdMember->value.IsUint()) {
+			ErrorMessage = "Edge should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
+			return;
+		}
 	}
 	const uint32_t FromId = FromIdMember->value.GetUint();
 	const uint32_t ToId = ToIdMember->value.GetUint();

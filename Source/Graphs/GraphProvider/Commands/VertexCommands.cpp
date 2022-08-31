@@ -122,37 +122,31 @@ VertexCommands::Deserialize::Deserialize(
 ) : Command([GraphId, NewVertexId, &VertexDomValue, &ErrorMessage] (AGraphProvider &Provider) {
 	*NewVertexId = ENTITY_NONE;
 
-	// TODO: better error messages
-
 	const auto &IdMember = VertexDomValue.FindMember("id");
 	if (IdMember == VertexDomValue.MemberEnd() || !IdMember->value.IsUint()) {
-		ErrorMessage = "Vertex object should have an integer \"id\" field.";
+		ErrorMessage = "Vertex should have an integer \"id\" field.";
 		return;
 	}
 	const uint32_t NewVertexDisplayId = IdMember->value.GetUint();
 
 	const auto &PositionMember = VertexDomValue.FindMember("position");
 	if (PositionMember == VertexDomValue.MemberEnd() || !PositionMember->value.IsObject()) {
-		ErrorMessage = "Vertex object with "
+		ErrorMessage = "Vertex with id "
 			+ FString::FromInt(NewVertexDisplayId)
-			+ " id should have \"position\" object with X, Y, Z fields.";
+			+ " should have\n\"position\" object with X, Y, Z fields.";
 		return;
 	}
 	const auto &PositionObject = PositionMember->value.GetObject();
 	const auto &PositionXMember = PositionObject.FindMember("x");
 	const auto &PositionYMember = PositionObject.FindMember("y");
 	const auto &PositionZMember = PositionObject.FindMember("z");
-	if (PositionXMember == PositionObject.MemberEnd()
-		|| PositionYMember == PositionObject.MemberEnd()
-		|| PositionZMember == PositionObject.MemberEnd()
-		|| !PositionXMember->value.IsFloat()
-		|| !PositionYMember->value.IsFloat()
-		|| !PositionZMember->value.IsFloat())
-	{
-		ErrorMessage = "Vertex object with "
-			+ FString::FromInt(NewVertexDisplayId)
-			+ " id should have \"position\" object with X, Y, Z fields.";
-		return;
+	for (const auto &PosIter : {PositionXMember, PositionYMember, PositionZMember}) {
+		if (PosIter == PositionObject.MemberEnd() || !PosIter->value.IsFloat()) {
+			ErrorMessage = "Vertex with id "
+				+ FString::FromInt(NewVertexDisplayId)
+				+ " should have\n\"position\" object with X, Y, Z fields.";
+			return;
+		}
 	}
 	const FVector NewVertexPosition(
 		PositionXMember->value.GetFloat(),

@@ -121,7 +121,7 @@ GraphCommands::Deserialize::Deserialize(
 		return;
 	}
 	if (VerticesMember->value.Size() < 1) {
-		ErrorMessage = "\"vertices\" array field should have\nat least 1 object.";
+		ErrorMessage = "\"vertices\" array should have\nat least 1 object.";
 		return;
 	}
 	if (EdgesMember != JsonDom.MemberEnd() && !EdgesMember->value.IsArray()) {
@@ -138,10 +138,6 @@ GraphCommands::Deserialize::Deserialize(
 	));
 	check(*NewGraphId != ENTITY_NONE);
 
-	// TODO: better error messages
-	// TODO: check how error messages looks like on UI
-	// TODO: test errors
-
 	// Parse vertices.
 	TMap<uint32_t, EntityId> VerticesIdsMappings;
 	VerticesIdsMappings.Reserve(Vertices.Size());
@@ -156,7 +152,7 @@ GraphCommands::Deserialize::Deserialize(
 		if (NewVertexId != ENTITY_NONE) {
 			const auto NewVertex = GetEntity<const VertexEntity>(Provider, NewVertexId);
 			if (VerticesIdsMappings.Contains(NewVertex->DisplayId)) {
-				ErrorMessage = "Vertex with " + FString::FromInt(NewVertex->DisplayId) + " is not unique.";
+				ErrorMessage = "Vertex with id " + FString::FromInt(NewVertex->DisplayId) + "\nis not unique.";
 				Provider.ExecuteCommand(Remove(*NewGraphId));
 				*NewGraphId = ENTITY_NONE;
 				return;
