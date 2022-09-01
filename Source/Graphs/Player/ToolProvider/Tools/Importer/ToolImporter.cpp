@@ -1,8 +1,5 @@
 ﻿#include "ToolImporter.h"
-#include "DesktopPlatformModule.h"
 #include "ToolImporterPanelWidget.h"
-#include "Graphs/GraphProvider/Commands/GraphCommands.h"
-#include "Graphs/Utils/Consts.h"
 
 UToolImporter::UToolImporter() : UTool(
 	"Import",
@@ -16,7 +13,9 @@ void UToolImporter::OnAttach() {
 }
 
 void UToolImporter::ImportGraph() const {
-	if (!GEngine) {
+	// TODO
+
+	/*if (!GEngine) {
 		GetToolPanel<UToolImporterPanelWidget>()->ShowErrorPanel("Failed to get global UE4 engine pointer.");
 		return;
 	}
@@ -66,5 +65,5 @@ void UToolImporter::ImportGraph() const {
 	if (NewGraphId != ENTITY_NONE)
 		GetToolPanel<UToolImporterPanelWidget>()->ShowSuccessPanel();
 	else
-		GetToolPanel<UToolImporterPanelWidget>()->ShowErrorPanel(ErrorMsg);
+		GetToolPanel<UToolImporterPanelWidget>()->ShowErrorPanel(ErrorMsg);*/
 }

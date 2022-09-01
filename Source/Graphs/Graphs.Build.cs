@@ -16,13 +16,12 @@ public class Graphs : ModuleRules {
 		PublicDependencyModuleNames.AddRange(new[] {
 			"Core",
 			"CoreUObject",
-			"Engine",
-			"InputCore",
-			"Niagara",
-			"UMG",
-			"DesktopPlatform"
+			"InputCore"
 		});
-		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay", "Slate", "SlateCore" });
+		PrivateDependencyModuleNames.AddRange(new[] {
+			"HeadMountedDisplay",
+			"SlateCore"
+		});
 		PublicIncludePaths.Add(EngineThirdPartyPath);
 
 		CppStandard = CppStandardVersion.Cpp17;
