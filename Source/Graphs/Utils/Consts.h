@@ -1,7 +1,7 @@
 ﻿#pragma once
 
 namespace FileConsts {
-	const static FString ExportDir = "Export\\";
+	const static FString ExportDirName = "Export\\";
 	const static FString ExportFilePrefix = "Graph_";
 }
 

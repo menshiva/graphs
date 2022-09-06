@@ -8,7 +8,10 @@ UCLASS(Abstract)
 class GRAPHS_API UToolImporterPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
+	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
+
+	void SetInputFiles(TArray<FString> &InputFilesPaths) const;
 
 	void ShowImportPanel() const;
 	void ShowSuccessPanel() const;
@@ -18,7 +21,10 @@ protected:
 	class UWidgetSwitcher *ImporterPanelSwitcher;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UTextButtonWidget *ImporterImportButton;
+	class UListView *ImporterList;
+
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	class UTextButtonWidget *ImporterRefreshButton;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextBlock *ImporterText;

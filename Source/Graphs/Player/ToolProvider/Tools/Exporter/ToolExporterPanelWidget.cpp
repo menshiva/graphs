@@ -5,7 +5,7 @@
 #include "Graphs/UI/Button/TextButtonWidget.h"
 #include "Graphs/Utils/Consts.h"
 
-void UToolExporterPanelWidget::NativeConstruct() {
+void UToolExporterPanelWidget::NativePreConstruct() {
 	Super::NativeConstruct();
 	if (ExporterConfirmButton)
 		ExporterConfirmButton->SetOnClickEvent([&] { GetTool<UToolExporter>()->OnAttach(); });

@@ -108,6 +108,10 @@ bool UVRControllerRight::OnRightTriggerAction(const bool IsPressed) {
 }
 
 bool UVRControllerRight::OnRightThumbstickY(const float Value) {
+	if (State == ControllerState::UI && Value != 0.0f) {
+		UiInteractor->ScrollWheel(Value * 0.25f);
+		return true;
+	}
 	return GetVrPawn()->OnRightThumbstickY(Value);
 }
 

@@ -8,7 +8,7 @@ UCLASS(Abstract)
 class GRAPHS_API UToolManipulatorPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
-	virtual void NativeConstruct() override;
+	virtual void NativePreConstruct() override;
 
 	void SetTextSelectEntity() const;
 	void SetTextActionEntity() const;

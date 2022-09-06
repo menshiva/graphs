@@ -8,7 +8,7 @@ UCLASS(Abstract)
 class GRAPHS_API UToolExporterPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
-	virtual void NativeConstruct() override;
+	virtual void NativePreConstruct() override;
 
 	void ShowExportPanel() const;
 	void ShowSuccessPanel(const FString &ExportedFileDir) const;

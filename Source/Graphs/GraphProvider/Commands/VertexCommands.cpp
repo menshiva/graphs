@@ -131,7 +131,8 @@ VertexCommands::Deserialize::Deserialize(
 
 	const auto &PositionMember = VertexDomValue.FindMember("position");
 	if (PositionMember == VertexDomValue.MemberEnd() || !PositionMember->value.IsObject()) {
-		ErrorMessage = "Vertex with id "
+		ErrorMessage =
+			"Vertex with id "
 			+ FString::FromInt(NewVertexDisplayId)
 			+ " should have\n\"position\" object with X, Y, Z fields.";
 		return;
@@ -142,7 +143,8 @@ VertexCommands::Deserialize::Deserialize(
 	const auto &PositionZMember = PositionObject.FindMember("z");
 	for (const auto &PosIter : {PositionXMember, PositionYMember, PositionZMember}) {
 		if (PosIter == PositionObject.MemberEnd() || !PosIter->value.IsFloat()) {
-			ErrorMessage = "Vertex with id "
+			ErrorMessage =
+				"Vertex with id "
 				+ FString::FromInt(NewVertexDisplayId)
 				+ " should have\n\"position\" object with X, Y, Z fields.";
 			return;

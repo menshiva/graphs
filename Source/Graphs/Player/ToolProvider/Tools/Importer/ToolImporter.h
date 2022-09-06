@@ -11,5 +11,6 @@ public:
 
 	virtual void OnAttach() override;
 
-	void ImportGraph() const;
+	void RefreshFileList() const;
+	bool ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage) const;
 };

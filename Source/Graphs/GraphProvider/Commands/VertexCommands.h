@@ -2,7 +2,6 @@
 
 #include "Graphs/GraphProvider/GraphProvider.h"
 #include "ThirdParty/rapidjson/prettywriter.h"
-#include "ThirdParty/rapidjson/stringbuffer.h"
 #include "ThirdParty/rapidjson/document.h"
 
 namespace VertexCommands {

@@ -2,7 +2,6 @@
 
 #include "Graphs/GraphProvider/GraphProvider.h"
 #include "ThirdParty/rapidjson/prettywriter.h"
-#include "ThirdParty/rapidjson/stringbuffer.h"
 #include "ThirdParty/rapidjson/document.h"
 
 namespace GraphCommands {
@@ -34,25 +33,11 @@ namespace GraphCommands {
 		Rotate(EntityId Id, const FVector &Center, float Angle);
 	};
 
-	struct Deserialize final : AGraphProvider::Command {
-		Deserialize(EntityId *NewGraphId, rapidjson::Document &JsonDom, FString &ErrorMessage);
-	};
-
-	struct Import final : AGraphProvider::Command {
-		Import(EntityId *NewGraphId, const FString &InputFilePath, FString &ErrorMessage);
-	};
-
 	struct Serialize final : AGraphProvider::Command {
 		Serialize(EntityId Id, rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer);
 	};
 
-	struct Export final : AGraphProvider::Command {
-		Export(
-			EntityId Id,
-			const FString &OutputRootPath,
-			const FString &OutputDirectory,
-			bool &Result,
-			FString &ResultMessage
-		);
+	struct Deserialize final : AGraphProvider::Command {
+		Deserialize(EntityId *NewGraphId, rapidjson::Value &GraphDomValue, FString &ErrorMessage);
 	};
 }

@@ -3,7 +3,7 @@
 #include "Components/TextBlock.h"
 #include "Graphs/UI/OptionSelector/OptionSelectorWidget.h"
 
-void UToolManipulatorPanelWidget::NativeConstruct() {
+void UToolManipulatorPanelWidget::NativePreConstruct() {
 	Super::NativeConstruct();
 	if (ModeSelector) {
 		ModeSelector->SetOnSelectedOptionChangedEvent([&] (const int32 SelectedIdx) {

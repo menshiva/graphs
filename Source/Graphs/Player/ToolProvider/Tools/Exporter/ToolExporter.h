@@ -13,4 +13,12 @@ public:
 	virtual void OnDetach() override;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
+private:
+	static FString GenerateJsonFileNameInDirectory(
+		IPlatformFile &FileManager,
+		const FString &DirPath,
+		const FString &FilePrefix
+	);
+
+	bool ExportGraph(EntityId GraphId, IPlatformFile &FileManager, const FString &OutputPath, FString &ErrorMessage) const;
 };
