@@ -90,9 +90,12 @@ bool AVRPawn::OnRightThumbstickXAction(const float Value) {
 
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
-	UHeadMountedDisplayFunctionLibrary::EnableHMD(true);
-	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
+	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()
+		&& UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
+	{
+		UHeadMountedDisplayFunctionLibrary::EnableHMD(true);
 		UHeadMountedDisplayFunctionLibrary::SetTrackingOrigin(EHMDTrackingOrigin::Eye);
+	}
 }
 
 void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {

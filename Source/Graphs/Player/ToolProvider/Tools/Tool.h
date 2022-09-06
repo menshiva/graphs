@@ -26,16 +26,15 @@ public:
 	virtual void OnDetach() {}
 	virtual void TickTool() {}
 protected:
-	FORCEINLINE UToolProvider *GetToolProvider() const { return ToolProvider.Get(); }
 	FORCEINLINE AGraphProvider *GetGraphProvider() const { return ToolProvider->GetGraphProvider(); }
 	FORCEINLINE UVRControllerRight *GetVrRightController() const { return ToolProvider->GetVrPawn()->GetRightVrController(); }
 
 	FORCEINLINE EntityId GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
 
 	template <class WidgetClass>
-	WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
+	FORCEINLINE WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
 
-	void SetSupportedEntityTypes(const std::initializer_list<EntityType> Types);
+	void SetSupportedEntityTypes(std::initializer_list<EntityType> &&Types);
 private:
 	TWeakObjectPtr<UToolProvider> ToolProvider;
 

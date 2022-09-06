@@ -1,17 +1,29 @@
+using System.IO;
 using UnrealBuildTool;
 
 public class Graphs : ModuleRules {
-	public Graphs(ReadOnlyTargetRules target) : base(target) {
+	private string EnginePath {
+		get { return Path.GetFullPath(Target.RelativeEnginePath); }
+	}
+
+	private string EngineThirdPartyPath {
+		get { return Path.GetFullPath(Path.Combine(EnginePath, "Source/ThirdParty/")); }
+	}
+
+	public Graphs(ReadOnlyTargetRules Target) : base(Target) {
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
 		PublicDependencyModuleNames.AddRange(new[] {
 			"Core",
 			"CoreUObject",
-			"Engine",
-			"InputCore",
-			"Niagara",
-			"UMG"
+			"InputCore"
 		});
-		PrivateDependencyModuleNames.AddRange(new[] { "HeadMountedDisplay", "Slate", "SlateCore" });
+		PrivateDependencyModuleNames.AddRange(new[] {
+			"HeadMountedDisplay",
+			"SlateCore"
+		});
+		PublicIncludePaths.Add(EngineThirdPartyPath);
+
 		CppStandard = CppStandardVersion.Cpp17;
 		bUseRTTI = true;
 	}

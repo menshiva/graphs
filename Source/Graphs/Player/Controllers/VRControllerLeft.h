@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../VRControllerBase.h"
+#include "VRControllerBase.h"
 #include "VRControllerLeft.generated.h"
 
 UCLASS()

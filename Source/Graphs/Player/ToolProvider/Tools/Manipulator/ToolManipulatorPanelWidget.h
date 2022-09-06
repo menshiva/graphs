@@ -8,17 +8,14 @@ UCLASS(Abstract)
 class GRAPHS_API UToolManipulatorPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
-	virtual void NativeConstruct() override;
+	virtual void NativePreConstruct() override;
 
 	void SetTextSelectEntity() const;
 	void SetTextActionEntity() const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class USlider *ModeSlider;
+	class UOptionSelectorWidget *ModeSelector;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextBlock *ManipulatorText;
-private:
-	UFUNCTION()
-	void OnSliderValueChanged(float Value);
 };

@@ -5,6 +5,7 @@
 
 void UButtonWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
+
 	if (BSizeBox) {
 		BSizeBox->bOverride_WidthOverride = bOverride_WidthOverride;
 		if (bOverride_WidthOverride)
@@ -13,7 +14,9 @@ void UButtonWidget::NativePreConstruct() {
 		if (bOverride_HeightOverride)
 			BSizeBox->SetHeightOverride(HeightOverride);
 	}
+
 	SetBackgroundColor(BackgroundColor);
+
 	if (BScaleBox)
 		Cast<UButtonSlot>(BScaleBox->Slot)->SetPadding(ContentPadding);
 }
@@ -24,12 +27,9 @@ void UButtonWidget::NativeConstruct() {
 		BButton->OnClicked.AddDynamic(this, &UButtonWidget::HandleClicked);
 }
 
-void UButtonWidget::SetOnClickEvent(TFunction<void()> &&ClickEvent) {
-	OnClick = ClickEvent;
-}
-
 void UButtonWidget::SetBackgroundColor(const FLinearColor &NewColor) {
 	BackgroundColor = NewColor;
+
 	if (BButton) {
 		FButtonStyle Style = BButton->WidgetStyle;
 		const FVector ColorVector{NewColor};
@@ -38,6 +38,16 @@ void UButtonWidget::SetBackgroundColor(const FLinearColor &NewColor) {
 		Style.Pressed.TintColor = FLinearColor(ColorVector * PressedCoefficient);
 		BButton->SetStyle(Style);
 	}
+}
+
+void UButtonWidget::SetHoveredPressedCoefficients(const float HoveredCoeff, const float PressedCoeff) {
+	HoveredCoefficient = HoveredCoeff;
+	PressedCoefficient = PressedCoeff;
+	SetBackgroundColor(BackgroundColor);
+}
+
+void UButtonWidget::SetOnClickEvent(TFunction<void()> &&ClickEvent) {
+	OnClick = ClickEvent;
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

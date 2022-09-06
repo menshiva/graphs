@@ -15,12 +15,12 @@ UTool::UTool(const FName &ToolName, const TCHAR *ToolImageAssetPath, const TCHAR
 	ToolPanelClass = ToolPanelAsset.Class;
 }
 
-void UTool::SetToolPanel(UToolWidget* Panel) {
+void UTool::SetToolPanel(UToolWidget *Panel) {
 	ToolPanel = Panel;
 	ToolPanel->SetupTool(this);
 }
 
-void UTool::SetSupportedEntityTypes(const std::initializer_list<EntityType> Types) {
+void UTool::SetSupportedEntityTypes(std::initializer_list<EntityType> &&Types) {
 	SupportedEntityTypesMask = 0;
 	for (const auto SupportedType : Types)
 		SupportedEntityTypesMask |= static_cast<std::underlying_type_t<EntityType>>(SupportedType);

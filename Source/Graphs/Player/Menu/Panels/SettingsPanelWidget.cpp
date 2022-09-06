@@ -30,7 +30,7 @@ void USettingsPanelWidget::NativeConstruct() {
 	if (CameraFadeAnimationTick)
 		CameraFadeAnimationTick->SetTicked(Pawn->IsCameraFadeAnimationEnabled());
 	if (FpsStatsTick)
-		FpsStatsTick->SetTicked(Gamemode->FpsEnabled);
+		FpsStatsTick->SetTicked(Gamemode->IsFpsEnabled());
 	if (UnitStatsTick)
-		UnitStatsTick->SetTicked(Gamemode->UnitEnabled);
+		UnitStatsTick->SetTicked(Gamemode->IsUnitEnabled());
 }

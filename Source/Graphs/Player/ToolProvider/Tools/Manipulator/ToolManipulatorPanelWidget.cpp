@@ -1,32 +1,45 @@
 #include "ToolManipulatorPanelWidget.h"
 #include "ToolManipulator.h"
-#include "Components/Slider.h"
 #include "Components/TextBlock.h"
+#include "Graphs/UI/OptionSelector/OptionSelectorWidget.h"
 
-void UToolManipulatorPanelWidget::NativeConstruct() {
+void UToolManipulatorPanelWidget::NativePreConstruct() {
 	Super::NativeConstruct();
-	if (ModeSlider)
-		ModeSlider->OnValueChanged.AddDynamic(this, &UToolManipulatorPanelWidget::OnSliderValueChanged);
+	if (ModeSelector) {
+		ModeSelector->SetOnSelectedOptionChangedEvent([&] (const int32 SelectedIdx) {
+			if (SelectedIdx == 0)
+				GetTool<UToolManipulator>()->SetMode(ManipulationMode::MOVE);
+			else if (SelectedIdx == 1)
+				GetTool<UToolManipulator>()->SetMode(ManipulationMode::ROTATE);
+			else {
+				check(false);
+			}
+			SetTextSelectEntity();
+		});
+		ModeSelector->SetOptions({
+			"Mode: Move",
+			"Mode: Rotate"
+		});
+		ModeSelector->SetSelectedOptionIndex(0, true);
+	}
 }
 
 void UToolManipulatorPanelWidget::SetTextSelectEntity() const {
-	ManipulatorText->SetText(
-		GetTool<UToolManipulator>()->GetMode() == ManipulationMode::MOVE
-			? FText::FromString("Select vertex, edge or graph")
-			: FText::FromString("Select graph")
-	);
+	if (ManipulatorText) {
+		ManipulatorText->SetText(
+			GetTool<UToolManipulator>()->GetMode() == ManipulationMode::MOVE
+				? FText::FromString("Select vertex, edge or graph")
+				: FText::FromString("Select graph")
+		);
+	}
 }
 
 void UToolManipulatorPanelWidget::SetTextActionEntity() const {
-	ManipulatorText->SetText(
-		GetTool<UToolManipulator>()->GetMode() == ManipulationMode::MOVE
-			? FText::FromString("Move controller or thumbstick up / down to move selected entity")
-			: FText::FromString("Move thumbstick left / right to rotate selected entity")
-	);
-}
-
-// ReSharper disable once CppMemberFunctionMayBeConst
-void UToolManipulatorPanelWidget::OnSliderValueChanged(const float Value) {
-	GetTool<UToolManipulator>()->SetMode(Value == 0.0f ? ManipulationMode::MOVE : ManipulationMode::ROTATE);
-	SetTextSelectEntity();
+	if (ManipulatorText) {
+		ManipulatorText->SetText(
+			GetTool<UToolManipulator>()->GetMode() == ManipulationMode::MOVE
+				? FText::FromString("Move controller or thumbstick up / down to move selected entity")
+				: FText::FromString("Move thumbstick left / right to rotate selected entity")
+		);
+	}
 }

@@ -24,7 +24,6 @@ void UToolManipulator::SetMode(const ManipulationMode NewMode) {
 void UToolManipulator::OnAttach() {
 	Super::OnAttach();
 	GetVrRightController()->SetLaserActive(true);
-	GetToolPanel<UToolManipulatorPanelWidget>()->SetTextSelectEntity();
 }
 
 void UToolManipulator::OnDetach() {
@@ -38,19 +37,14 @@ void UToolManipulator::TickTool() {
 		const auto NewLaserPosition = GetVrRightController()->GetLaserEndPosition();
 		const auto Delta = NewLaserPosition - PreviousLaserEndPosition;
 
-		switch (GetGraphProvider()->GetEntityType(GetHitEntityId())) {
-			case EntityType::VERTEX: {
-				GetGraphProvider()->ExecuteCommand(VertexCommands::Move(GetHitEntityId(), Delta, true));
-				break;
-			}
-			case EntityType::EDGE: {
-				GetGraphProvider()->ExecuteCommand(EdgeCommands::Move(GetHitEntityId(), Delta, true));
-				break;
-			}
-			case EntityType::GRAPH: {
-				GetGraphProvider()->ExecuteCommand(GraphCommands::Move(GetHitEntityId(), Delta));
-				break;
-			}
+		const auto HitEntityType = GetGraphProvider()->GetEntityType(GetHitEntityId());
+		if (HitEntityType == EntityType::VERTEX)
+			GetGraphProvider()->ExecuteCommand(VertexCommands::Move(GetHitEntityId(), Delta, true));
+		else if (HitEntityType == EntityType::EDGE)
+			GetGraphProvider()->ExecuteCommand(EdgeCommands::Move(GetHitEntityId(), Delta, true));
+		else {
+			check(HitEntityType == EntityType::GRAPH);
+			GetGraphProvider()->ExecuteCommand(GraphCommands::Move(GetHitEntityId(), Delta));
 		}
 
 		PreviousLaserEndPosition = NewLaserPosition;

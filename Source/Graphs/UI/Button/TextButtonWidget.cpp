@@ -6,8 +6,12 @@ void UTextButtonWidget::NativePreConstruct() {
 	if (TBText) {
 		TBText->SetColorAndOpacity(TextColor);
 		TBText->SetText(Text);
-		TBText->Font.Size = FontSize;
-		TBText->Font.LetterSpacing = FontSize;
+		FSlateFontInfo Font = TBText->Font;
+		Font.Size = FontSize;
+		Font.LetterSpacing = FontSize;
+		Font.OutlineSettings.OutlineColor = OutlineColor;
+		Font.OutlineSettings.OutlineSize = OutlineSize;
+		TBText->SetFont(Font);
 		TBText->SetJustification(ETextJustify::Center);
 	}
 }

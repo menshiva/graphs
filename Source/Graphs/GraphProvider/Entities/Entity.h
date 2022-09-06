@@ -23,8 +23,6 @@ struct Entity {
 
 	const TWeakObjectPtr<AActor> Actor;
 	const EntityType Type;
-
-	SelectionType Selection = SelectionType::NONE;
 };
 
 struct EntityKeyFuncs : BaseKeyFuncs<TUniquePtr<Entity>, EntityId, false> {

@@ -3,14 +3,13 @@
 #include "Graphs/GraphProvider/Entities/EdgeEntity.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
-#include "Graphs/Utils/Colors.h"
+#include "Graphs/Utils/Consts.h"
 
 EdgeCommands::Create::Create(
 	EntityId GraphId,
-	EntityId FirstVertexId, EntityId SecondVertexId,
 	EntityId *NewEdgeId,
-	uint32_t EdgeDisplayId
-) : Command([GraphId, FirstVertexId, SecondVertexId, NewEdgeId, EdgeDisplayId] (AGraphProvider &Provider) {
+	EntityId FromVertexId, EntityId ToVertexId
+) : Command([GraphId, NewEdgeId, FromVertexId, ToVertexId] (AGraphProvider &Provider) {
 	const auto NewEdge = CreateEntity<EdgeEntity>(Provider);
 
 	const auto Graph = GetEntity<GraphEntity>(Provider, GraphId);
@@ -19,9 +18,8 @@ EdgeCommands::Create::Create(
 	Graph->EdgesIds.Push(NewEdge->GetEntityId());
 
 	NewEdge->GraphId = GraphId;
-	NewEdge->VerticesIds[0] = FirstVertexId;
-	NewEdge->VerticesIds[1] = SecondVertexId;
-	NewEdge->DisplayId = EdgeDisplayId;
+	NewEdge->VerticesIds[0] = FromVertexId;
+	NewEdge->VerticesIds[1] = ToVertexId;
 
 	for (const auto VertexId : NewEdge->VerticesIds) {
 		const auto Vertex = GetEntity<VertexEntity>(Provider, VertexId);
@@ -33,6 +31,29 @@ EdgeCommands::Create::Create(
 
 	if (NewEdgeId)
 		*NewEdgeId = NewEdge->GetEntityId();
+}) {}
+
+EdgeCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provider) {
+	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
+
+	for (const auto VertexId : Edge->VerticesIds) {
+		const auto Vertex = GetEntity<VertexEntity>(Provider, VertexId);
+		Vertex->EdgesIds.RemoveSingle(Id);
+		check(!Vertex->EdgesIds.Contains(Id));
+	}
+
+	const auto Graph = GetEntity<GraphEntity>(Provider, Edge->GraphId);
+	Graph->EdgesIds.RemoveSingle(Id);
+	check(!Graph->EdgesIds.Contains(Id));
+
+	RemoveEntity(Provider, Id);
+}) {}
+
+EdgeCommands::GetGraphId::GetGraphId(
+	EntityId Id,
+	EntityId &GraphId
+) : Command([Id, &GraphId] (const AGraphProvider &Provider) {
+	GraphId = GetEntity<const EdgeEntity>(Provider, Id)->GraphId;
 }) {}
 
 EdgeCommands::UpdateTransform::UpdateTransform(EntityId Id) : Command([Id] (const AGraphProvider &Provider) {
@@ -51,27 +72,29 @@ EdgeCommands::UpdateTransform::UpdateTransform(EntityId Id) : Command([Id] (cons
 	Edge->Actor->SetActorScale3D(Scale);
 }) {}
 
-EdgeCommands::GetGraphId::GetGraphId(
+EdgeCommands::SetColor::SetColor(
 	EntityId Id,
-	EntityId &GraphId
-) : Command([Id, &GraphId] (const AGraphProvider &Provider) {
-	GraphId = GetEntity<const EdgeEntity>(Provider, Id)->GraphId;
+	const FLinearColor &Color
+) : Command([Id, &Color] (const AGraphProvider &Provider) {
+	const auto Edge = GetEntity<EdgeEntity>(Provider, Id);
+	Edge->SetActorColor(Color);
 }) {}
 
 EdgeCommands::SetSelectionType::SetSelectionType(
 	EntityId Id,
 	SelectionType NewType
-) : Command([Id, NewType] (const AGraphProvider &Provider) {
+) : Command([Id, NewType] (AGraphProvider &Provider) {
 	const auto Edge = GetEntity<EdgeEntity>(Provider, Id);
 	Edge->Selection = NewType;
+
 	switch (NewType) {
 		case SelectionType::HIT:
 		case SelectionType::SELECTED: {
-			Edge->SetActorColor(ColorUtils::BlueColor);
+			Provider.ExecuteCommand(SetColor(Id, ColorConsts::BlueColor));
 			break;
 		}
 		default: {
-			Edge->SetActorColor(ColorUtils::GraphDefaultColor);
+			Provider.ExecuteCommand(SetColor(Id, ColorConsts::GraphDefaultColor));
 		}
 	}
 }) {}
@@ -82,11 +105,73 @@ EdgeCommands::Move::Move(
 	bool UpdateConnectedVertices
 ) : Command([Id, &Delta, UpdateConnectedVertices] (AGraphProvider &Provider) {
 	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
-	if (UpdateConnectedVertices) {
+
+	if (UpdateConnectedVertices)
 		for (const auto VertexId : Edge->VerticesIds)
 			Provider.ExecuteCommand(VertexCommands::Move(VertexId, Delta, true));
-	}
-	else {
+	else
 		Edge->Actor->SetActorLocation(Edge->Actor->GetActorLocation() + Delta);
+}) {}
+
+EdgeCommands::Serialize::Serialize(
+	EntityId Id,
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
+) : Command([Id, &Writer] (const AGraphProvider &Provider) {
+	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
+	const auto FromVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[0]);
+	const auto ToVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[1]);
+
+	Writer.StartObject();
+
+	Writer.Key("vertices");
+	Writer.StartObject();
+
+	Writer.Key("from_id");
+	Writer.Uint(FromVertex->DisplayId);
+	Writer.Key("to_id");
+	Writer.Uint(ToVertex->DisplayId);
+
+	Writer.EndObject();
+
+	Writer.EndObject();
+}) {}
+
+EdgeCommands::Deserialize::Deserialize(
+	EntityId GraphId,
+	EntityId *NewEdgeId,
+	rapidjson::Value &EdgeDomValue,
+	const TMap<uint32_t, EntityId> &VerticesIdsMapping,
+	FString &ErrorMessage
+) : Command([GraphId, NewEdgeId, &EdgeDomValue, &VerticesIdsMapping, &ErrorMessage] (AGraphProvider &Provider) {
+	*NewEdgeId = ENTITY_NONE;
+
+	const auto &VerticesMember = EdgeDomValue.FindMember("vertices");
+	if (VerticesMember == EdgeDomValue.MemberEnd() || !VerticesMember->value.IsObject()) {
+		ErrorMessage = "Edge should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
+		return;
 	}
+	const auto &VerticesObj = VerticesMember->value.GetObject();
+	const auto &FromIdMember = VerticesObj.FindMember("from_id");
+	const auto &ToIdMember = VerticesObj.FindMember("to_id");
+	for (const auto &IdMember : {FromIdMember, ToIdMember}) {
+		if (IdMember == VerticesObj.MemberEnd() || !IdMember->value.IsUint()) {
+			ErrorMessage = "Edge should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
+			return;
+		}
+	}
+	const uint32_t FromId = FromIdMember->value.GetUint();
+	const uint32_t ToId = ToIdMember->value.GetUint();
+
+	const auto FromIdVertexMapping = VerticesIdsMapping.Find(FromId);
+	if (!FromIdVertexMapping) {
+		ErrorMessage = "Vertex with id from \"from_id\" field is not found.";
+		return;
+	}
+	const auto ToIdVertexMapping = VerticesIdsMapping.Find(ToId);
+	if (!ToIdVertexMapping) {
+		ErrorMessage = "Vertex with id from \"to_id\" field is not found.";
+		return;
+	}
+
+	Provider.ExecuteCommand(Create(GraphId, NewEdgeId, *FromIdVertexMapping, *ToIdVertexMapping));
 }) {}

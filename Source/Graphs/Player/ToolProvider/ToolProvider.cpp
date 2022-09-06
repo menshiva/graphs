@@ -2,14 +2,20 @@
 #include "Graphs/GraphProvider/Commands/EdgeCommands.h"
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
-#include "Graphs/GraphProvider/Entities/VertexEntity.h"
+#include "Graphs/Utils/Consts.h"
 #include "Kismet/GameplayStatics.h"
+#include "Tools/Exporter/ToolExporter.h"
+#include "Tools/Importer/ToolImporter.h"
 #include "Tools/Manipulator/ToolManipulator.h"
+#include "Tools/Remover/ToolRemover.h"
 
 UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UActorComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
 
+	RegisterTool<UToolImporter>(ObjectInitializer, "Tool Importer");
+	RegisterTool<UToolExporter>(ObjectInitializer, "Tool Exporter");
 	RegisterTool<UToolManipulator>(ObjectInitializer, "Tool Manipulator");
+	RegisterTool<UToolRemover>(ObjectInitializer, "Tool Remover");
 }
 
 void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
@@ -90,7 +96,15 @@ void UToolProvider::BeginPlay() {
 	GraphProvider = Cast<AGraphProvider>(UGameplayStatics::GetActorOfClass(GetWorld(), AGraphProvider::StaticClass()));
 	// TODO: only for test
 	{
-		const TArray<FVector> Positions = {
+		const auto ImporterTool = Cast<UToolImporter>(Tools[0]);
+		FString ErrorMessage;
+		const bool Result = ImporterTool->ImportGraphFromFile(
+			FPaths::LaunchDir() + FileConsts::ExportDirName + "Test_8_Vertices_8_Edges.json",
+			ErrorMessage
+		);
+		check(Result && ErrorMessage.Len() == 0);
+
+		/*const TArray<FVector> Positions = {
 			{437.109619f, 225.096985f, 50.0f},
 			{748.974915f, 345.263428f, 260.0f},
 			{504.859009f, -437.556763f, 460.0f},
@@ -124,27 +138,22 @@ void UToolProvider::BeginPlay() {
 			const EntityId SecondVertexId = VertexDisplayIdToEntityId.FindChecked(Connections[i].second);
 			GraphProvider->ExecuteCommand(EdgeCommands::Create(
 				GraphId,
-				FirstVertexId, SecondVertexId,
 				nullptr,
-				i
+				FirstVertexId, SecondVertexId
 			));
-		}
+		}*/
 	}
 }
 
 void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const {
-	switch (GraphProvider->GetEntityType(HitEntityId)) {
-		case EntityType::VERTEX: {
-			GraphProvider->ExecuteCommand(VertexCommands::SetSelectionType(HitEntityId, Selection));
-			break;
-		}
-		case EntityType::EDGE: {
-			GraphProvider->ExecuteCommand(EdgeCommands::SetSelectionType(HitEntityId, Selection));
-			break;
-		}
-		case EntityType::GRAPH: {
-			GraphProvider->ExecuteCommand(GraphCommands::SetSelectionType(HitEntityId, Selection));
-			break;
-		}
+	const auto HitEntityType = GraphProvider->GetEntityType(HitEntityId);
+
+	if (HitEntityType == EntityType::VERTEX)
+		GraphProvider->ExecuteCommand(VertexCommands::SetSelectionType(HitEntityId, Selection));
+	else if (HitEntityType == EntityType::EDGE)
+		GraphProvider->ExecuteCommand(EdgeCommands::SetSelectionType(HitEntityId, Selection));
+	else {
+		check(HitEntityType == EntityType::GRAPH);
+		GraphProvider->ExecuteCommand(GraphCommands::SetSelectionType(HitEntityId, Selection));
 	}
 }

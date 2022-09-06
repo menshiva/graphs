@@ -3,9 +3,6 @@
 #include "Components/UniformGridSlot.h"
 #include "Components/WidgetSwitcher.h"
 #include "Components/WidgetSwitcherSlot.h"
-#include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/Player/ToolProvider/ToolProvider.h"
-#include "Graphs/Player/ToolProvider/Tools/Tool.h"
 #include "Graphs/Player/ToolProvider/Tools/ToolWidget.h"
 #include "Graphs/UI/Button/ImageButtonWidget.h"
 #include "Graphs/UI/Button/ToolButtonWidget.h"
@@ -31,24 +28,25 @@ void UToolsPanelWidget::NativeConstruct() {
 	const auto Pawn = Cast<AVRPawn>(GetOwningPlayerPawn());
 	ToolProvider = Pawn->GetToolProvider();
 
-	// TODO: set both to 0
-	size_t CurrentRow = 1, CurrentColumn = 1;
-	for (const auto Tool : ToolProvider->GetTools()) {
+	for (size_t i = 0; i < ToolProvider->GetTools().Num(); ++i) {
+		constexpr static size_t MaxToolsInRow = 2;
+
+		const auto Tool = ToolProvider->GetTools()[i];
 		const auto ToolBtn = CreateWidget<UToolButtonWidget>(
 			this,
 			ToolButtonWidgetClass,
 			FName(Tool->GetToolName().ToString() + "ToolBtn")
 		);
 
-		const auto NewSlot = ToolButtonsHolder->AddChildToUniformGrid(ToolBtn, CurrentRow, CurrentColumn++);
+		const auto NewSlot = ToolButtonsHolder->AddChildToUniformGrid(ToolBtn, i / MaxToolsInRow, i % MaxToolsInRow);
 		NewSlot->SetHorizontalAlignment(HAlign_Center);
 		NewSlot->SetVerticalAlignment(VAlign_Top);
 
 		ToolBtn->SetToolImage(Tool->GetToolImage());
 		ToolBtn->SetToolNameText(FText::FromName(Tool->GetToolName()));
-		ToolBtn->SetOnClickEvent([&, Tool] {
+		ToolBtn->SetOnClickEvent([&, Tool, i] {
 			ToolProvider->SetActiveTool(Tool);
-			ToolPanelSwitcher->SetActiveWidgetIndex(1); // TODO
+			ToolPanelSwitcher->SetActiveWidgetIndex(i + 1);
 			CloseToolButton->SetVisibility(ESlateVisibility::Visible);
 		});
 
@@ -61,10 +59,5 @@ void UToolsPanelWidget::NativeConstruct() {
 		const auto ToolPanelSlot = Cast<UWidgetSwitcherSlot>(ToolPanelSwitcher->AddChild(ToolPanel));
 		ToolPanelSlot->SetHorizontalAlignment(HAlign_Fill);
 		ToolPanelSlot->SetVerticalAlignment(VAlign_Fill);
-
-		if (CurrentColumn == 2) {
-			++CurrentRow;
-			CurrentColumn = 0;
-		}
 	}
 }

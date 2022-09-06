@@ -1,7 +1,7 @@
 ﻿#include "EdgeEntity.h"
 #include "Graphs/GraphProvider/GraphProvider.h"
 #include "Engine/StaticMeshActor.h"
-#include "Graphs/Utils/Colors.h"
+#include "Graphs/Utils/Consts.h"
 
 EdgeEntity::EdgeEntity(const AGraphProvider &Provider): Entity(
 	Provider.GetWorld()->SpawnActor<AStaticMeshActor>(),
@@ -10,16 +10,18 @@ EdgeEntity::EdgeEntity(const AGraphProvider &Provider): Entity(
 	const auto StaticMeshActor = Cast<AStaticMeshActor>(Actor);
 	StaticMeshActor->PrimaryActorTick.bCanEverTick = false;
 	StaticMeshActor->SetMobility(EComponentMobility::Movable);
+
 	const auto Smc = StaticMeshActor->GetStaticMeshComponent();
 	Smc->SetStaticMesh(Provider.GetEdgeMesh());
-	const auto MaterialInstance = Smc->CreateAndSetMaterialInstanceDynamicFromMaterial(0, Provider.GetEntityActorMaterial());
-	MaterialInstance->SetVectorParameterValue("Color", ColorUtils::GraphDefaultColor);
-	Smc->SetMaterial(0, MaterialInstance);
 	Smc->SetEnableGravity(false);
 	Smc->CanCharacterStepUpOn = ECB_No;
 	Smc->SetCollisionProfileName("Graph");
 	Smc->SetCastShadow(false);
 	Smc->SetWorldScale3D(FVector(0.2f));
+
+	const auto MaterialInstance = Smc->CreateAndSetMaterialInstanceDynamicFromMaterial(0, Provider.GetEntityActorMaterial());
+	MaterialInstance->SetVectorParameterValue("Color", ColorConsts::GraphDefaultColor);
+	Smc->SetMaterial(0, MaterialInstance);
 
 	for (auto &VertexId : VerticesIds)
 		VertexId = ENTITY_NONE;
