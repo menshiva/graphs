@@ -122,50 +122,107 @@ EdgeCommands::Serialize::Serialize(
 	const auto ToVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[1]);
 
 	Writer.StartObject();
-
-	Writer.Key("vertices");
-	Writer.StartObject();
-
-	Writer.Key("from_id");
+	Writer.Key("from_vertex_id");
 	Writer.Uint(FromVertex->DisplayId);
-	Writer.Key("to_id");
+	Writer.Key("to_vertex_id");
 	Writer.Uint(ToVertex->DisplayId);
-
-	Writer.EndObject();
-
 	Writer.EndObject();
 }) {}
+
+struct EdgeSAXDeserializationHandler {
+	EdgeSAXDeserializationHandler() = default;
+	EdgeSAXDeserializationHandler(const EdgeSAXDeserializationHandler&) = delete;
+	EdgeSAXDeserializationHandler& operator=(const EdgeSAXDeserializationHandler&) = delete;
+
+	enum class State {
+		EDGE,
+		FROM_VERTEX_ID_KEY,
+		TO_VERTEX_ID_KEY,
+		DONE
+	};
+
+	static bool Null() { return false; }
+	static bool Bool(bool) { return false; }
+	static bool RawNumber(const char*, rapidjson::SizeType, bool) { return false; }
+	static bool String(const char*, rapidjson::SizeType, bool) { return false; }
+	static bool StartObject() { return false; }
+	static bool StartArray() { return false; }
+	static bool EndArray(rapidjson::SizeType) { return false; }
+	static bool Int(int) { return false; }
+	static bool Int64(int64_t) { return false; }
+	static bool Uint64(uint64_t) { return false; }
+	static bool Double(double) { return false; }
+
+	bool Key(const char *Str, rapidjson::SizeType, bool) {
+		if (CurrentState == State::EDGE) {
+			if (strcmp(Str, "from_vertex_id") == 0) {
+				CurrentState = State::FROM_VERTEX_ID_KEY;
+				return true;
+			}
+			if (strcmp(Str, "to_vertex_id") == 0) {
+				CurrentState = State::TO_VERTEX_ID_KEY;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool EndObject(rapidjson::SizeType) {
+		if (CurrentState == State::EDGE && FromVertexId != -1 && ToVertexId != -1) {
+			CurrentState = State::DONE;
+			return true;
+		}
+		return false;
+	}
+
+	bool Uint(const unsigned Val) {
+		if (CurrentState == State::FROM_VERTEX_ID_KEY) {
+			FromVertexId = Val;
+			CurrentState = State::EDGE;
+			return true;
+		}
+		if (CurrentState == State::TO_VERTEX_ID_KEY) {
+			ToVertexId = Val;
+			CurrentState = State::EDGE;
+			return true;
+		}
+		return false;
+	}
+
+	State CurrentState = State::EDGE;
+	uint32_t FromVertexId = -1, ToVertexId = -1;
+};
 
 EdgeCommands::Deserialize::Deserialize(
 	EntityId GraphId,
 	EntityId *NewEdgeId,
-	rapidjson::Value &EdgeDomValue,
+	rapidjson::StringStream &JsonStringStream,
+	rapidjson::Reader &Reader,
 	const TMap<uint32_t, EntityId> &VerticesIdsMapping,
 	FString &ErrorMessage
-) : Command([GraphId, NewEdgeId, &EdgeDomValue, &VerticesIdsMapping, &ErrorMessage] (AGraphProvider &Provider) {
+) : Command([GraphId, NewEdgeId, &JsonStringStream, &Reader, &VerticesIdsMapping, &ErrorMessage] (AGraphProvider &Provider) {
 	*NewEdgeId = ENTITY_NONE;
 
-	const auto &FromIdMember = EdgeDomValue.FindMember("from_vertex_id");
-	const auto &ToIdMember = EdgeDomValue.FindMember("to_vertex_id");
-	for (const auto &IdMember : {FromIdMember, ToIdMember}) {
-		if (IdMember == EdgeDomValue.MemberEnd() || !IdMember->value.IsUint()) {
-			ErrorMessage = "Edge should have \"from_vertex_id\" and \"to_vertex_id\" integer fields.";
+	EdgeSAXDeserializationHandler Handler;
+	while (!Reader.IterativeParseComplete()) {
+		if (!Reader.IterativeParseNext<rapidjson::kParseDefaultFlags>(JsonStringStream, Handler))
+			return;
+		if (Handler.CurrentState == EdgeSAXDeserializationHandler::State::DONE)
+			break;
+	}
+
+	if (Handler.CurrentState == EdgeSAXDeserializationHandler::State::DONE) {
+		const auto FromIdVertexMapping = VerticesIdsMapping.Find(Handler.FromVertexId);
+		if (!FromIdVertexMapping) {
+			ErrorMessage = "Vertex with id from \"from_id\" field is not found.";
 			return;
 		}
-	}
-	const uint32_t FromId = FromIdMember->value.GetUint();
-	const uint32_t ToId = ToIdMember->value.GetUint();
+		const auto ToIdVertexMapping = VerticesIdsMapping.Find(Handler.ToVertexId);
+		if (!ToIdVertexMapping) {
+			ErrorMessage = "Vertex with id from \"to_id\" field is not found.";
+			return;
+		}
 
-	const auto FromIdVertexMapping = VerticesIdsMapping.Find(FromId);
-	if (!FromIdVertexMapping) {
-		ErrorMessage = "Vertex with id from \"from_id\" field is not found.";
-		return;
+		Provider.ExecuteCommand(Create(GraphId, NewEdgeId, *FromIdVertexMapping, *ToIdVertexMapping));
 	}
-	const auto ToIdVertexMapping = VerticesIdsMapping.Find(ToId);
-	if (!ToIdVertexMapping) {
-		ErrorMessage = "Vertex with id from \"to_id\" field is not found.";
-		return;
-	}
-
-	Provider.ExecuteCommand(Create(GraphId, NewEdgeId, *FromIdVertexMapping, *ToIdVertexMapping));
 }) {}

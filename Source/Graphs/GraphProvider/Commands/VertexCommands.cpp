@@ -94,15 +94,11 @@ VertexCommands::Serialize::Serialize(
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
 ) : Command([Id, &Writer] (const AGraphProvider &Provider) {
 	const auto Vertex = GetEntity<const VertexEntity>(Provider, Id);
+	const auto Pos = Vertex->Actor->GetActorLocation();
 
 	Writer.StartObject();
-
 	Writer.Key("id");
 	Writer.Uint(Vertex->DisplayId);
-
-	const auto Pos = Vertex->Actor->GetActorLocation();
-	Writer.Key("position");
-	Writer.StartObject();
 	Writer.Key("x");
 	Writer.Double(Pos.X);
 	Writer.Key("y");
@@ -110,42 +106,118 @@ VertexCommands::Serialize::Serialize(
 	Writer.Key("z");
 	Writer.Double(Pos.Z);
 	Writer.EndObject();
-
-	Writer.EndObject();
 }) {}
+
+struct VertexSAXDeserializationHandler {
+	VertexSAXDeserializationHandler() = default;
+	VertexSAXDeserializationHandler(const VertexSAXDeserializationHandler&) = delete;
+	VertexSAXDeserializationHandler& operator=(const VertexSAXDeserializationHandler&) = delete;
+
+	enum class State {
+		VERTEX,
+		ID_KEY,
+		X_KEY,
+		Y_KEY,
+		Z_KEY,
+		DONE
+	};
+
+	static bool Null() { return false; }
+	static bool Bool(bool) { return false; }
+	static bool RawNumber(const char*, rapidjson::SizeType, bool) { return false; }
+	static bool String(const char*, rapidjson::SizeType, bool) { return false; }
+	static bool StartObject() { return false; }
+	static bool StartArray() { return false; }
+	static bool EndArray(rapidjson::SizeType) { return false; }
+	static bool Int(int) { return false; }
+	static bool Int64(int64_t) { return false; }
+	static bool Uint64(uint64_t) { return false; }
+
+	bool Key(const char *Str, rapidjson::SizeType, bool) {
+		if (CurrentState == State::VERTEX) {
+			if (strcmp(Str, "id") == 0) {
+				CurrentState = State::ID_KEY;
+				return true;
+			}
+			if (strcmp(Str, "x") == 0) {
+				CurrentState = State::X_KEY;
+				return true;
+			}
+			if (strcmp(Str, "y") == 0) {
+				CurrentState = State::Y_KEY;
+				return true;
+			}
+			if (strcmp(Str, "z") == 0) {
+				CurrentState = State::Z_KEY;
+				return true;
+			}
+		}
+		return false;
+	}
+
+	bool EndObject(rapidjson::SizeType) {
+		if (CurrentState == State::VERTEX && Id != -1 && !Pos.ContainsNaN()) {
+			CurrentState = State::DONE;
+			return true;
+		}
+		return false;
+	}
+
+	bool Uint(const unsigned Val) {
+		if (CurrentState == State::ID_KEY) {
+			Id = Val;
+			CurrentState = State::VERTEX;
+			return true;
+		}
+		return false;
+	}
+
+	bool Double(const double Val) {
+		if (CurrentState == State::X_KEY) {
+			Pos.X = Val;
+			CurrentState = State::VERTEX;
+			return true;
+		}
+		if (CurrentState == State::Y_KEY) {
+			Pos.Y = Val;
+			CurrentState = State::VERTEX;
+			return true;
+		}
+		if (CurrentState == State::Z_KEY) {
+			Pos.Z = Val;
+			CurrentState = State::VERTEX;
+			return true;
+		}
+		return false;
+	}
+
+	State CurrentState = State::VERTEX;
+	uint32_t Id = -1;
+	FVector Pos = FVector(NAN);
+};
 
 VertexCommands::Deserialize::Deserialize(
 	EntityId GraphId,
 	EntityId *NewVertexId,
-	rapidjson::Value &VertexDomValue,
-	FString &ErrorMessage
-) : Command([GraphId, NewVertexId, &VertexDomValue, &ErrorMessage] (AGraphProvider &Provider) {
+	rapidjson::StringStream &JsonStringStream,
+	rapidjson::Reader &Reader
+) : Command([GraphId, NewVertexId, &JsonStringStream, &Reader] (AGraphProvider &Provider) {
 	*NewVertexId = ENTITY_NONE;
 
-	const auto &IdMember = VertexDomValue.FindMember("id");
-	if (IdMember == VertexDomValue.MemberEnd() || !IdMember->value.IsUint()) {
-		ErrorMessage = "Vertex should have an integer \"id\" field.";
-		return;
-	}
-	const uint32_t NewVertexDisplayId = IdMember->value.GetUint();
-
-	const auto &PositionXMember = VertexDomValue.FindMember("x");
-	const auto &PositionYMember = VertexDomValue.FindMember("y");
-	const auto &PositionZMember = VertexDomValue.FindMember("z");
-	for (const auto &PosIter : {PositionXMember, PositionYMember, PositionZMember}) {
-		if (PosIter == VertexDomValue.MemberEnd() || !PosIter->value.IsFloat()) {
-			ErrorMessage =
-				"Vertex with id "
-				+ FString::FromInt(NewVertexDisplayId)
-				+ " should have\n \"x\", \"y\", \"z\" fields.";
+	VertexSAXDeserializationHandler Handler;
+	while (!Reader.IterativeParseComplete()) {
+		if (!Reader.IterativeParseNext<rapidjson::kParseDefaultFlags>(JsonStringStream, Handler))
 			return;
-		}
+		if (Handler.CurrentState == VertexSAXDeserializationHandler::State::DONE)
+			break;
 	}
-	const FVector NewVertexPosition(
-		PositionXMember->value.GetFloat(),
-		PositionYMember->value.GetFloat(),
-		PositionZMember->value.GetFloat()
-	);
 
-	Provider.ExecuteCommand(Create(GraphId, NewVertexId, NewVertexDisplayId, NewVertexPosition));
+	if (Handler.CurrentState == VertexSAXDeserializationHandler::State::DONE) {
+		Provider.ExecuteCommand(Create(
+			GraphId,
+			NewVertexId,
+			Handler.Id,
+			Handler.Pos
+		));
+	}
 }) {}

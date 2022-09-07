@@ -2,7 +2,7 @@
 
 #include "Graphs/GraphProvider/GraphProvider.h"
 #include "ThirdParty/rapidjson/prettywriter.h"
-#include "ThirdParty/rapidjson/document.h"
+#include "ThirdParty/rapidjson/reader.h"
 
 namespace EdgeCommands {
 	struct Create final : AGraphProvider::Command {
@@ -45,7 +45,8 @@ namespace EdgeCommands {
 		Deserialize(
 			EntityId GraphId,
 			EntityId *NewEdgeId,
-			rapidjson::Value &EdgeDomValue,
+			rapidjson::StringStream &JsonStringStream,
+			rapidjson::Reader &Reader,
 			const TMap<uint32_t, EntityId> &VerticesIdsMapping,
 			FString &ErrorMessage
 		);

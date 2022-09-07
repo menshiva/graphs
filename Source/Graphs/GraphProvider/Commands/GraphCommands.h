@@ -2,11 +2,11 @@
 
 #include "Graphs/GraphProvider/GraphProvider.h"
 #include "ThirdParty/rapidjson/prettywriter.h"
-#include "ThirdParty/rapidjson/document.h"
+#include "ThirdParty/rapidjson/reader.h"
 
 namespace GraphCommands {
 	struct Create final : AGraphProvider::Command {
-		explicit Create(EntityId *NewGraphId, size_t ReserveVerticesNum = 0, size_t ReserveEdgesNum = 0);
+		explicit Create(EntityId *NewGraphId);
 	};
 
 	struct Remove final : AGraphProvider::Command {
@@ -38,6 +38,11 @@ namespace GraphCommands {
 	};
 
 	struct Deserialize final : AGraphProvider::Command {
-		Deserialize(EntityId *NewGraphId, rapidjson::Value &GraphDomValue, FString &ErrorMessage);
+		Deserialize(
+			EntityId *NewGraphId,
+			rapidjson::StringStream &JsonStringStream,
+			rapidjson::Reader &Reader,
+			FString &ErrorMessage
+		);
 	};
 }

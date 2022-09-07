@@ -2,7 +2,7 @@
 
 #include "Graphs/GraphProvider/GraphProvider.h"
 #include "ThirdParty/rapidjson/prettywriter.h"
-#include "ThirdParty/rapidjson/document.h"
+#include "ThirdParty/rapidjson/reader.h"
 
 namespace VertexCommands {
 	struct Create final : AGraphProvider::Command {
@@ -34,6 +34,11 @@ namespace VertexCommands {
 	};
 
 	struct Deserialize final : AGraphProvider::Command {
-		Deserialize(EntityId GraphId, EntityId *NewVertexId, rapidjson::Value &VertexDomValue, FString &ErrorMessage);
+		Deserialize(
+			EntityId GraphId,
+			EntityId *NewVertexId,
+			rapidjson::StringStream &JsonStringStream,
+			rapidjson::Reader &Reader
+		);
 	};
 }

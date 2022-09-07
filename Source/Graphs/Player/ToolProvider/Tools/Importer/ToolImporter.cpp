@@ -47,20 +47,28 @@ bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorM
 		return false;
 	}
 
-	// Parse json with DOM style API.
-	// https://rapidjson.org/md_doc_features.html#:~:text=DOM%20(Document%20Object%20Model)%20style%20API
-	rapidjson::Document JsonDom;
 	const FTCHARToUTF8 Convert(*InputStr);
-	const rapidjson::ParseResult &ParseResult = JsonDom.Parse(Convert.Get(), Convert.Length());
-	if (!ParseResult) {
-		ErrorMessage =
-			"JSON parse error: " + FString(GetParseError_En(ParseResult.Code()))
-			+ " (" + FString::FromInt(ParseResult.Offset()) + ")";
-		return false;
-	}
+	rapidjson::StringStream JsonStringStream(Convert.Get());
+	rapidjson::Reader Reader;
+	Reader.IterativeParseInit();
 
 	// Deserialize graph.
 	EntityId NewGraphId = ENTITY_NONE;
-	GetGraphProvider()->ExecuteCommand(GraphCommands::Deserialize(&NewGraphId, JsonDom, ErrorMessage));
+	GetGraphProvider()->ExecuteCommand(GraphCommands::Deserialize(
+		&NewGraphId,
+		JsonStringStream,
+		Reader,
+		ErrorMessage
+	));
+
+	if (NewGraphId == ENTITY_NONE) {
+		if (ErrorMessage.Len() == 0) {
+			ErrorMessage =
+				"JSON parse error: " + FString(GetParseError_En(Reader.GetParseErrorCode()))
+				+ " (" + FString::FromInt(Reader.GetErrorOffset()) + ")";
+		}
+		return false;
+	}
+
 	return NewGraphId != ENTITY_NONE;
 }
