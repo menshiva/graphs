@@ -41,17 +41,8 @@ bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorM
 		return false;
 	}
 
-	// Open selected file for reading.
-	const TUniquePtr<IFileHandle> InputFileHandler(FileManager.OpenRead(*FilePath));
-	if (!InputFileHandler.IsValid()) {
-		ErrorMessage = "Failed to open file.";
-		return false;
-	}
-
-	// Read all bytes from file.
-	TArray<uint8> InputBuffer;
-	InputBuffer.AddUninitialized(InputFileHandler->Size());
-	if (!InputFileHandler->Read(InputBuffer.GetData(), InputFileHandler->Size())) {
+	FString InputStr;
+	if (!FFileHelper::LoadFileToString(InputStr, &FileManager, *FilePath)) {
 		ErrorMessage = "Failed to read from file.";
 		return false;
 	}
@@ -59,8 +50,8 @@ bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorM
 	// Parse json with DOM style API.
 	// https://rapidjson.org/md_doc_features.html#:~:text=DOM%20(Document%20Object%20Model)%20style%20API
 	rapidjson::Document JsonDom;
-	const auto Input = reinterpret_cast<char*>(InputBuffer.GetData());
-	const rapidjson::ParseResult &ParseResult = JsonDom.Parse(Input);
+	const FTCHARToUTF8 Convert(*InputStr);
+	const rapidjson::ParseResult &ParseResult = JsonDom.Parse(Convert.Get(), Convert.Length());
 	if (!ParseResult) {
 		ErrorMessage =
 			"JSON parse error: " + FString(GetParseError_En(ParseResult.Code()))
