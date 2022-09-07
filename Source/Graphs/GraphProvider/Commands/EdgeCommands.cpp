@@ -145,17 +145,11 @@ EdgeCommands::Deserialize::Deserialize(
 ) : Command([GraphId, NewEdgeId, &EdgeDomValue, &VerticesIdsMapping, &ErrorMessage] (AGraphProvider &Provider) {
 	*NewEdgeId = ENTITY_NONE;
 
-	const auto &VerticesMember = EdgeDomValue.FindMember("vertices");
-	if (VerticesMember == EdgeDomValue.MemberEnd() || !VerticesMember->value.IsObject()) {
-		ErrorMessage = "Edge should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
-		return;
-	}
-	const auto &VerticesObj = VerticesMember->value.GetObject();
-	const auto &FromIdMember = VerticesObj.FindMember("from_id");
-	const auto &ToIdMember = VerticesObj.FindMember("to_id");
+	const auto &FromIdMember = EdgeDomValue.FindMember("from_vertex_id");
+	const auto &ToIdMember = EdgeDomValue.FindMember("to_vertex_id");
 	for (const auto &IdMember : {FromIdMember, ToIdMember}) {
-		if (IdMember == VerticesObj.MemberEnd() || !IdMember->value.IsUint()) {
-			ErrorMessage = "Edge should have \"vertices\" object with \"from_id\" and \"to_id\" integer fields.";
+		if (IdMember == EdgeDomValue.MemberEnd() || !IdMember->value.IsUint()) {
+			ErrorMessage = "Edge should have \"from_vertex_id\" and \"to_vertex_id\" integer fields.";
 			return;
 		}
 	}

@@ -129,24 +129,15 @@ VertexCommands::Deserialize::Deserialize(
 	}
 	const uint32_t NewVertexDisplayId = IdMember->value.GetUint();
 
-	const auto &PositionMember = VertexDomValue.FindMember("position");
-	if (PositionMember == VertexDomValue.MemberEnd() || !PositionMember->value.IsObject()) {
-		ErrorMessage =
-			"Vertex with id "
-			+ FString::FromInt(NewVertexDisplayId)
-			+ " should have\n\"position\" object with X, Y, Z fields.";
-		return;
-	}
-	const auto &PositionObject = PositionMember->value.GetObject();
-	const auto &PositionXMember = PositionObject.FindMember("x");
-	const auto &PositionYMember = PositionObject.FindMember("y");
-	const auto &PositionZMember = PositionObject.FindMember("z");
+	const auto &PositionXMember = VertexDomValue.FindMember("x");
+	const auto &PositionYMember = VertexDomValue.FindMember("y");
+	const auto &PositionZMember = VertexDomValue.FindMember("z");
 	for (const auto &PosIter : {PositionXMember, PositionYMember, PositionZMember}) {
-		if (PosIter == PositionObject.MemberEnd() || !PosIter->value.IsFloat()) {
+		if (PosIter == VertexDomValue.MemberEnd() || !PosIter->value.IsFloat()) {
 			ErrorMessage =
 				"Vertex with id "
 				+ FString::FromInt(NewVertexDisplayId)
-				+ " should have\n\"position\" object with X, Y, Z fields.";
+				+ " should have\n \"x\", \"y\", \"z\" fields.";
 			return;
 		}
 	}
