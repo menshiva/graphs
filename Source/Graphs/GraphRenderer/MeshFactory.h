@@ -5,40 +5,14 @@
 
 namespace VertexMeshFactory {
 	constexpr static uint32_t QUALITY = 1;
-	constexpr static float SIZE = 50.0f;
+	constexpr static float SCALE = 50.0f;
 
 	// simple constexpr version of FVector
 	struct Vec {
 		constexpr Vec() : X(0.0f), Y(0.0f), Z(0.0f) {}
 		constexpr Vec(const float X, const float Y, const float Z) : X(X), Y(Y), Z(Z) {}
 
-		constexpr static float SqrtNewtonRaphson(const float Val, const float Curr, const float Prev) {
-			// TODO: maybe remove
-			return Curr == Prev
-				? Curr
-				: SqrtNewtonRaphson(Val, 0.5f * (Curr + Val / Curr), Curr);
-		}
-
-		constexpr void Normalize() {
-			// TODO: maybe remove
-			constexpr float Tolerance = 1e-08;
-			const float SquareSum = X * X + Y * Y + Z * Z;
-			if (SquareSum > Tolerance) {
-				const float Scale = 1.0f / SqrtNewtonRaphson(SquareSum, SquareSum, 0.0f);
-				X *= Scale; Y *= Scale; Z *= Scale;
-			}
-			else {
-				X = 0.0f; Y = 0.0f; Z = 0.0f;
-			}
-		}
-
 		float X, Y, Z;
-	};
-
-	struct Triangle {
-		constexpr Triangle() : VertsIdx() {}
-		constexpr Triangle(const int32 A, const int32 B, const int32 C) : VertsIdx({A, B, C}) {}
-		std::array<int32, 3> VertsIdx;
 	};
 
 	// simple constexpr version of pow function that returns 4^Exp
@@ -53,63 +27,80 @@ namespace VertexMeshFactory {
 		return 10 * Pow4(Quality) + 2;
 	}
 
-	constexpr static uint32_t GetMeshTrianglesNum(const uint32_t Quality) {
-		return 5 * Pow4(Quality + 1);
+	constexpr static uint32_t GetMeshTrianglesIndicesNum(const uint32_t Quality) {
+		return 5 * Pow4(Quality + 1) * 3;
 	}
 
 	template <uint32_t Quality>
 	constexpr static std::pair<
 		std::array<Vec, GetMeshVerticesNum(Quality)>,
-		std::array<Triangle, GetMeshTrianglesNum(Quality)>
+		std::array<int32, GetMeshTrianglesIndicesNum(Quality)>
 	> GenerateIcosahedron() {
 	    constexpr auto PrevQualityIcosahedron = GenerateIcosahedron<Quality - 1>();
 	    auto &PrevVertices = PrevQualityIcosahedron.first;
 	    auto &PrevTriangles = PrevQualityIcosahedron.second;
+
 	    std::array<Vec, GetMeshVerticesNum(Quality)> NewVertices;
-	    std::array<Triangle, GetMeshTrianglesNum(Quality)> NewTriangles;
+	    std::array<int32, GetMeshTrianglesIndicesNum(Quality)> NewTriangles;
 
     	for (size_t i = 0; i < PrevVertices.size(); ++i)
     	    NewVertices[i] = PrevVertices[i];
+
     	size_t NewVerticesSize = PrevVertices.size();
+    	std::vector<std::pair<int32, int32>> Lookup;
 
-    	std::vector<std::pair<std::pair<uint32_t, uint32_t>, size_t>> Lookup;
-    	for (size_t i = 0; i < PrevTriangles.size(); ++i) {
-    	    const auto PrevTriangle = PrevTriangles[i];
-    	    std::array<int32, 3> Mid{};
+		auto AddMidPoint = [&] (const int32 A, const int32 B) -> int32 {
+			// Cantor's pairing function
+			const int32 Key = (A + B) * (A + B + 1) / 2 + std::min(A, B);
 
-        	for (int Edge = 0; Edge < 3; ++Edge) {
-        	    auto Vi1 = PrevTriangle.VertsIdx[Edge];
-        	    auto Vi2 = PrevTriangle.VertsIdx[(Edge + 1) % 3];
-        	    if (Vi1 > Vi2) std::swap(Vi1, Vi2);
-
-            	bool Found = false;
-            	for (size_t k = 0; k < Lookup.size(); ++k) {
-            	    if (Lookup[k].first.first == Vi1 && Lookup[k].first.second == Vi2) {
-            	        Mid[Edge] = Lookup[k].second;
-            	        Found = true;
-            	        break;
-            	    }
-            	}
-
-            	if (!Found) {
-            	    Mid[Edge] = NewVerticesSize;
-            	    Lookup.push_back({{Vi1, Vi2}, NewVerticesSize});
-            	    const auto &EdgeVert0 = NewVertices[Vi1];
-            	    const auto &EdgeVert1 = NewVertices[Vi2];
-            	    Vec NewEdgeVert(
-            	            EdgeVert0.X + EdgeVert1.X,
-            	            EdgeVert0.Y + EdgeVert1.Y,
-            	            EdgeVert0.Z + EdgeVert1.Z
-            	    );
-            	    NewEdgeVert.Normalize(); // TODO: / 2.0f
-            	    NewVertices[NewVerticesSize++] = NewEdgeVert;
-            	}
+			for (size_t k = 0; k < Lookup.size(); ++k) {
+				if (Lookup[k].first == Key) {
+					const auto Ret = Lookup[k].second;
+					Lookup.erase(Lookup.begin() + k);
+					return Ret;
+				}
 			}
 
-        	NewTriangles[i * 4 + 0] = Triangle(PrevTriangle.VertsIdx[0], Mid[0], Mid[2]);
-        	NewTriangles[i * 4 + 1] = Triangle(PrevTriangle.VertsIdx[1], Mid[1], Mid[0]);
-        	NewTriangles[i * 4 + 2] = Triangle(PrevTriangle.VertsIdx[2], Mid[2], Mid[1]);
-        	NewTriangles[i * 4 + 3] = Triangle(Mid[0], Mid[1], Mid[2]);
+			Lookup.emplace_back(Key, NewVerticesSize);
+
+			auto &MidPoint = NewVertices[NewVerticesSize];
+			MidPoint.X = (NewVertices[A].X + NewVertices[B].X) / 2.0f;
+			MidPoint.Y = (NewVertices[A].Y + NewVertices[B].Y) / 2.0f;
+			MidPoint.Z = (NewVertices[A].Z + NewVertices[B].Z) / 2.0f;
+
+			// normalize mid point
+			const float SquareSum =
+				  MidPoint.X * MidPoint.X
+				+ MidPoint.Y * MidPoint.Y
+				+ MidPoint.Z * MidPoint.Z;
+			float Curr = SquareSum, Prev = 0.0f;
+			while (Curr != Prev) {
+				// simple constexpr version of sqruare root: Newton Raphson algorithm
+				Prev = Curr;
+				Curr = 0.5f * (Curr + SquareSum / Curr);
+			}
+			const float Scale = 1.0f / Curr;
+			MidPoint.X *= Scale;
+			MidPoint.Y *= Scale;
+			MidPoint.Z *= Scale;
+
+			return NewVerticesSize++;
+		};
+
+		for (size_t k = 0; k < PrevTriangles.size(); k += 3) {
+			// subdivide each triangle into 4 triangles
+			const auto v1 = PrevTriangles[k + 0];
+			const auto v2 = PrevTriangles[k + 1];
+			const auto v3 = PrevTriangles[k + 2];
+			const auto a = AddMidPoint(v1, v2);
+			const auto b = AddMidPoint(v2, v3);
+			const auto c = AddMidPoint(v3, v1);
+
+			auto t = k * 4;
+			NewTriangles[t++] = v1; NewTriangles[t++] = a; NewTriangles[t++] = c;
+			NewTriangles[t++] = v2; NewTriangles[t++] = b; NewTriangles[t++] = a;
+			NewTriangles[t++] = v3; NewTriangles[t++] = c; NewTriangles[t++] = b;
+			NewTriangles[t++] = a;  NewTriangles[t++] = b; NewTriangles[t] = c;
 		}
 
 		return {NewVertices, NewTriangles};
@@ -118,76 +109,71 @@ namespace VertexMeshFactory {
 	template <>
 	constexpr std::pair<
 		std::array<Vec, GetMeshVerticesNum(0)>,
-		std::array<Triangle, GetMeshTrianglesNum(0)>
+		std::array<int32, GetMeshTrianglesIndicesNum(0)>
 	> GenerateIcosahedron<0>() {
 		return {
 		    {
-		    	Vec(-0.525731f, 0.0f, 0.850651f),
-				Vec(0.525731f, 0.0f, 0.850651f),
-				Vec(-0.525731f, 0.0f, -0.850651f),
-				Vec(0.525731f, 0.0f, -0.850651f),
-				Vec(0.0f, 0.850651f, 0.525731f),
-				Vec(0.0f, 0.850651f, -0.525731f),
-				Vec(0.0f, -0.850651f, 0.525731f),
-				Vec(0.0f, -0.850651f, -0.525731f),
-				Vec(0.850651f, 0.525731f, 0.0f),
-				Vec(-0.850651f, 0.525731f, 0.0f),
-				Vec(0.850651f, -0.525731f, 0.0f),
-				Vec(-0.850651f, -0.525731f, 0.0f)
+		    	Vec(-0.525731087f, 0.850650787f, 0.0f),
+		    	Vec(0.525731087f, 0.850650787f, 0.0f),
+		    	Vec(-0.525731087f, -0.850650787f, 0.0f),
+		    	Vec(0.525731087f, -0.850650787f, 0.0f), 
+				Vec(0.0f, -0.525731087f, 0.850650787f),
+		    	Vec(0.0f, 0.525731087f, 0.850650787f),
+		    	Vec(0.0f, -0.525731087f, -0.850650787f),
+		    	Vec(0.0f, 0.525731087f, -0.850650787f), 
+				Vec(0.850650787f, 0.0f, -0.525731087f),
+		    	Vec(0.850650787f, 0.0f, 0.525731087f),
+		    	Vec(-0.850650787f, 0.0f, -0.525731087f),
+		    	Vec(-0.850650787f, 0.0f, 0.525731087f)
 			},
 			{
-				Triangle(0, 4, 1),
-				Triangle(0, 9, 4),
-				Triangle(9, 5, 4),
-				Triangle(4, 5, 8),
-				Triangle(4, 8, 1),
-				Triangle(8, 10, 1),
-				Triangle(8, 3, 10),
-				Triangle(5, 3, 8),
-				Triangle(5, 2, 3),
-				Triangle(2, 7, 3),
-				Triangle(7, 10, 3),
-				Triangle(7, 6, 10),
-				Triangle(7, 11, 6),
-				Triangle(11, 0, 6),
-				Triangle(0, 1, 6),
-				Triangle(6, 1, 10),
-				Triangle(9, 0, 11),
-				Triangle(9, 11, 2),
-				Triangle(9, 2, 5),
-				Triangle(7, 2, 11)
+				0, 11, 5,
+				0, 5, 1,
+				0, 1, 7,
+				0, 7, 10,
+				0, 10, 11, 
+				11, 10, 2,
+				5, 11, 4,
+				1, 5, 9,
+				7, 1, 8,
+				10, 7, 6, 
+				3, 9, 4,
+				3, 4, 2,
+				3, 2, 6,
+				3, 6, 8,
+				3, 8, 9, 
+				9, 8, 1,
+				4, 9, 5,
+				2, 4, 11,
+				6, 2, 10,
+				8, 6, 7
 			}
 		};
 	}
 
 	constexpr static size_t MESH_VERTICES_NUM = GetMeshVerticesNum(QUALITY);
-	constexpr static size_t MESH_TRIANGLES_INDICES_NUM = GetMeshTrianglesNum(QUALITY) * 3;
+	constexpr static size_t MESH_TRIANGLES_INDICES_NUM = GetMeshTrianglesIndicesNum(QUALITY);
 
 	static void GenerateMesh(
 		const FVector &Origin, const FLinearColor &Color,
 		TArray<FVector> &OutVertices, TArray<int32_t> &OutTriangles, TArray<FLinearColor> &OutColors
 	) {
 		constexpr static auto Icosahedron = GenerateIcosahedron<QUALITY>();
-		static_assert(Icosahedron.first[0].X == -0.525731f);
-		static_assert(Icosahedron.first[0].Y == 0.0f);
-		static_assert(Icosahedron.first[0].Z == 0.850651f);
+		static_assert(Icosahedron.first[0].X == -0.525731087f);
+		static_assert(Icosahedron.first[0].Y == 0.850650787f);
+		static_assert(Icosahedron.first[0].Z == 0.0f);
 
 		const int32 VerticesOffset = OutVertices.Num();
 
 		check(OutVertices.Max() >= OutVertices.Num() + Icosahedron.first.size());
 		check(OutColors.Max() >= OutColors.Num() + Icosahedron.first.size());
 		for (const auto &V : Icosahedron.first) {
-			OutVertices.Push(Origin + *reinterpret_cast<const FVector*>(&V) * SIZE);
+			OutVertices.Push(Origin + *reinterpret_cast<const FVector*>(&V) * SCALE);
 			OutColors.Push(Color);
 		}
 
 		check(OutTriangles.Max() >= OutTriangles.Num() + Icosahedron.second.size());
-		for (const auto &T : Icosahedron.second) {
-			OutTriangles.Append({
-				VerticesOffset + T.VertsIdx[0],
-				VerticesOffset + T.VertsIdx[1],
-				VerticesOffset + T.VertsIdx[2]
-			});
-		}
+		for (const auto T : Icosahedron.second)
+			OutTriangles.Push(VerticesOffset + T);
 	}
 }
