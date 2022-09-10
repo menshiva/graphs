@@ -2,8 +2,7 @@
 
 EdgeCommands::Create::Create(
 	const EntityId *GraphId, EntityId *NewEdgeId,
-	const uint32_t FromVertexUserId, const uint32_t ToVertexUserId,
-	const FLinearColor& Color
+	const uint32_t FromVertexUserId, const uint32_t ToVertexUserId
 ) : Command([=] (EntityStorage &Storage) {
 	const auto EdgeId = Storage.NewEntity<EdgeEntity>();
 
@@ -28,7 +27,6 @@ EdgeCommands::Create::Create(
 
 	Edge.VerticesIds[0] = FromVertexId;
 	Edge.VerticesIds[1] = ToVertexId;
-	Edge.Color = Color;
 
 	if (NewEdgeId)
 		*NewEdgeId = EdgeId;

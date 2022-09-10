@@ -135,7 +135,7 @@ void UToolProvider::BeginPlay() {
 				&GraphId, &NewVertexId,
 				i,
 				Positions[i],
-				ColorConsts::VertexDefaultColor
+				FLinearColor::MakeRandomColor()
 			));
 			check(NewVertexId == EntityId::NONE());
 		}
@@ -144,8 +144,7 @@ void UToolProvider::BeginPlay() {
 			EntityId NewEdgeId;
 			GraphRenderer->PushCommand(EdgeCommands::Create(
 				&GraphId, &NewEdgeId,
-				Connections[i].first, Connections[i].second,
-				ColorConsts::EdgeDefaultColor
+				Connections[i].first, Connections[i].second
 			));
 			check(NewEdgeId == EntityId::NONE());
 		}

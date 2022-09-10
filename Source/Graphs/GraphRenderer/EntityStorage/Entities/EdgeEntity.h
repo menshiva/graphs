@@ -16,5 +16,4 @@ struct EdgeEntity {
 
 	// Serializable data
 	TStaticArray<EntityId, 2> VerticesIds;
-	FLinearColor Color;
 };

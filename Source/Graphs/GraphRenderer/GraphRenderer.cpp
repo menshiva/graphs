@@ -79,7 +79,10 @@ void AGraphRenderer::MarkDirty() {
 
 		for (const auto &VertexEnt : VerticesStorage) {
 			VertexMeshFactory::GenerateMesh(
-				VertexEnt.Position, VertexEnt.Color,
+				VertexEnt.Position,
+				VertexEnt.Selection == VertexEntity::SelectionType::NONE
+					? VertexEnt.Color
+					: ColorConsts::BlueColor,
 				Vertices, Triangles, Colors
 			);
 		}
@@ -94,36 +97,35 @@ void AGraphRenderer::MarkDirty() {
 	// Edges
 	const auto &EdgesStorage = Storage.GetStorage<EdgeEntity>().Data;
 	if (EdgesStorage.Num() > 0) {
+		const size_t VerticesNum = EdgeMeshFactory::MESH_VERTICES_NUM * EdgesStorage.Num();
+		const size_t TrianglesNum = EdgeMeshFactory::MESH_TRIANGLES_INDICES_NUM * EdgesStorage.Num();
+
 		// clear arrays but not memory allocations
-		Vertices.Reset(Vertices.Max());
-		Triangles.Reset(Triangles.Max());
-		Colors.Reset(Colors.Max());
+		Vertices.Reset(VerticesNum);
+		Triangles.Reset(TrianglesNum);
+		Colors.Reset(VerticesNum);
 
-		// TODO
+		for (const auto &EdgeEnt : EdgesStorage) {
+			const auto &FromVertEnt = Storage.GetEntity<VertexEntity>(EdgeEnt.VerticesIds[0]);
+			const auto &ToVertEnt = Storage.GetEntity<VertexEntity>(EdgeEnt.VerticesIds[1]);
+			EdgeMeshFactory::GenerateMesh(
+				FromVertEnt.Position, ToVertEnt.Position,
+				EdgeEnt.Selection == EdgeEntity::SelectionType::NONE
+					? FromVertEnt.Color
+					: ColorConsts::BlueColor,
+				EdgeEnt.Selection == EdgeEntity::SelectionType::NONE
+					? ToVertEnt.Color
+					: ColorConsts::BlueColor,
+				Vertices, Triangles, Colors
+			);
+		}
+
+		check(Vertices.Num() == VerticesNum);
+		check(Triangles.Num() == TrianglesNum);
+		check(Colors.Num() == VerticesNum);
+
+		UpdateSection(EDGES, Vertices, Triangles, Colors);
 	}
-
-	// TODO: remove
-	/*TArray<FVector> vertices;
-	vertices.Add(FVector(0, 0, 0));
-	vertices.Add(FVector(0, 100, 0));
-	vertices.Add(FVector(0, 50, 100));
-
-	TArray<int32> triangles;
-	triangles.Add(0);
-	triangles.Add(1);
-	triangles.Add(2);
-
-	TArray<FVector2D> UV0;
-	UV0.Add(FVector2D(0.0f, 0.0f));
-	UV0.Add(FVector2D(1.0f, 0.0f));
-	UV0.Add(FVector2D(0.0f, 1.0f));
-
-	TArray<FLinearColor> vertexColors;
-	vertexColors.Add(FLinearColor::Blue);
-	vertexColors.Add(FLinearColor::Green);
-	vertexColors.Add(FLinearColor::Red);
-
-	ProcMesh->CreateMeshSection_LinearColor(EDGES, vertices, triangles, TArray<FVector>(), UV0, vertexColors, TArray<FProcMeshTangent>(), true);*/
 }
 
 void AGraphRenderer::UpdateSection(
