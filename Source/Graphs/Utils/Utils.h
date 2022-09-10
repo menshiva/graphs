@@ -13,7 +13,7 @@ namespace FileConsts {
 }
 
 namespace ColorConsts {
-	constexpr static FLinearColor VertexDefaultColor = FLinearColor(0.4375f, 0.4375f, 0.4375f);
+	constexpr static FLinearColor VertexDefaultColor = FLinearColor(0.8375f, 0.8375f, 0.8375f);
 	constexpr static FLinearColor EdgeDefaultColor = VertexDefaultColor;
 
 	constexpr static FLinearColor BlueColor = FLinearColor(0.033345f, 0.066689f, 0.161458f);
