@@ -1,11 +1,10 @@
 #include "ToolProvider.h"
-#include "Graphs/GraphProvider/Commands/EdgeCommands.h"
-#include "Graphs/GraphProvider/Commands/GraphCommands.h"
-#include "Graphs/GraphProvider/Commands/VertexCommands.h"
-#include "Graphs/Utils/Consts.h"
+#include "Graphs/GraphRenderer/Commands/EdgeCommands.h"
+#include "Graphs/GraphRenderer/Commands/GraphCommands.h"
+#include "Graphs/GraphRenderer/Commands/VertexCommands.h"
 #include "Kismet/GameplayStatics.h"
-#include "Tools/Exporter/ToolExporter.h"
 #include "Tools/Importer/ToolImporter.h"
+#include "Tools/Exporter/ToolExporter.h"
 #include "Tools/Manipulator/ToolManipulator.h"
 #include "Tools/Remover/ToolRemover.h"
 
@@ -19,7 +18,8 @@ UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UAct
 }
 
 void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
-	if (HitEntityId != ENTITY_NONE && GraphProvider->IsEntityValid(HitEntityId))
+	// TODO
+	/*if (HitEntityId != ENTITY_NONE && GraphProvider->IsEntityValid(HitEntityId))
 		SetEntitySelectionType(SelectionType::NONE);
 	HitResult.Reset();
 	HitEntityId = ENTITY_NONE;
@@ -46,7 +46,7 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 				SetEntitySelectionType(SelectionType::HIT);
 			}
 		}
-	}
+	}*/
 }
 
 bool UToolProvider::OnRightTriggerAction(const bool IsPressed) {
@@ -93,18 +93,18 @@ void UToolProvider::SetActiveTool(UTool *NewTool) {
 
 void UToolProvider::BeginPlay() {
 	Super::BeginPlay();
-	GraphProvider = Cast<AGraphProvider>(UGameplayStatics::GetActorOfClass(GetWorld(), AGraphProvider::StaticClass()));
+	GraphRenderer = Cast<AGraphRenderer>(UGameplayStatics::GetActorOfClass(GetWorld(), AGraphRenderer::StaticClass()));
 	// TODO: only for test
 	{
-		const auto ImporterTool = Cast<UToolImporter>(Tools[0]);
+		/*const auto ImporterTool = Cast<UToolImporter>(Tools[0]);
 		FString ErrorMessage;
 		const bool Result = ImporterTool->ImportGraphFromFile(
 			FPaths::LaunchDir() + FileConsts::ExportDirName + "Test_8_Vertices_8_Edges.json",
 			ErrorMessage
 		);
-		check(Result && ErrorMessage.Len() == 0);
+		check(Result && ErrorMessage.Len() == 0);*/
 
-		/*const TArray<FVector> Positions = {
+		const TArray<FVector> Positions = {
 			{437.109619f, 225.096985f, 50.0f},
 			{748.974915f, 345.263428f, 260.0f},
 			{504.859009f, -437.556763f, 460.0f},
@@ -124,28 +124,57 @@ void UToolProvider::BeginPlay() {
 			{5, 6},
 			{6, 4},
 		};
-		TMap<uint32_t, EntityId> VertexDisplayIdToEntityId;
 
-		EntityId GraphId = ENTITY_NONE;
-		GraphProvider->ExecuteCommand(GraphCommands::Create(&GraphId));
+		EntityId GraphId;
+		GraphRenderer->PushCommand(GraphCommands::Create(&GraphId));
+		check(GraphId == EntityId::NONE());
+
 		for (size_t i = 0; i < Positions.Num(); ++i) {
-			EntityId NewVertexId = ENTITY_NONE;
-			GraphProvider->ExecuteCommand(VertexCommands::Create(GraphId, &NewVertexId, i, Positions[i]));
-			VertexDisplayIdToEntityId.Add(i, NewVertexId);
-		}
-		for (size_t i = 0; i < Connections.Num(); ++i) {
-			const EntityId FirstVertexId = VertexDisplayIdToEntityId.FindChecked(Connections[i].first);
-			const EntityId SecondVertexId = VertexDisplayIdToEntityId.FindChecked(Connections[i].second);
-			GraphProvider->ExecuteCommand(EdgeCommands::Create(
-				GraphId,
-				nullptr,
-				FirstVertexId, SecondVertexId
+			EntityId NewVertexId;
+			GraphRenderer->PushCommand(VertexCommands::Create(
+				&GraphId, &NewVertexId,
+				i,
+				Positions[i],
+				ColorConsts::VertexDefaultColor
 			));
-		}*/
+			check(NewVertexId == EntityId::NONE());
+		}
+
+		for (size_t i = 0; i < Connections.Num(); ++i) {
+			EntityId NewEdgeId;
+			GraphRenderer->PushCommand(EdgeCommands::Create(
+				&GraphId, &NewEdgeId,
+				Connections[i].first, Connections[i].second,
+				ColorConsts::EdgeDefaultColor
+			));
+			check(NewEdgeId == EntityId::NONE());
+		}
+
+		GraphRenderer->MarkDirty();
+
+		check(GetEntityStorage().IsValid<GraphEntity>(GraphId));
+		const auto Graph = GetEntityStorage().GetEntity<GraphEntity>(GraphId);
+		check(Graph.VerticesIds.Num() == Positions.Num());
+		for (const auto &VertexId : Graph.VerticesIds) {
+			check(GetEntityStorage().IsValid<VertexEntity>(VertexId));
+			const auto &Vertex = GetEntityStorage().GetEntity<VertexEntity>(VertexId);
+			for (const auto &EdgeId : Vertex.EdgesIds) {
+				check(GetEntityStorage().IsValid<EdgeEntity>(EdgeId));
+			}
+		}
+		check(Graph.EdgesIds.Num() == Connections.Num());
+		for (const auto &EdgeId : Graph.EdgesIds) {
+			check(GetEntityStorage().IsValid<EdgeEntity>(EdgeId));
+			const auto &Edge = GetEntityStorage().GetEntity<EdgeEntity>(EdgeId);
+			for (const auto &VertexId : Edge.VerticesIds) {
+				check(GetEntityStorage().IsValid<VertexEntity>(VertexId));
+			}
+		}
 	}
 }
 
-void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const {
+// TODO
+/*void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const {
 	const auto HitEntityType = GraphProvider->GetEntityType(HitEntityId);
 
 	if (HitEntityType == EntityType::VERTEX)
@@ -156,4 +185,4 @@ void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const 
 		check(HitEntityType == EntityType::GRAPH);
 		GraphProvider->ExecuteCommand(GraphCommands::SetSelectionType(HitEntityId, Selection));
 	}
-}
+}*/

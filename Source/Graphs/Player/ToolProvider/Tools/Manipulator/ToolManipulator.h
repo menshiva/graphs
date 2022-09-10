@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Graphs/Player/ToolProvider/Tools/Tool.h"
+#include "../Tool.h"
 #include "ToolManipulator.generated.h"
 
 enum class ManipulationMode {

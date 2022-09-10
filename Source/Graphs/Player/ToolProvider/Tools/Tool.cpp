@@ -20,8 +20,8 @@ void UTool::SetToolPanel(UToolWidget *Panel) {
 	ToolPanel->SetupTool(this);
 }
 
-void UTool::SetSupportedEntityTypes(std::initializer_list<EntityType> &&Types) {
-	SupportedEntityTypesMask = 0;
-	for (const auto SupportedType : Types)
-		SupportedEntityTypesMask |= static_cast<std::underlying_type_t<EntityType>>(SupportedType);
+void UTool::SetSupportedEntities(std::initializer_list<EntitySignature> &&Signatures) {
+	SupportedEntitiesMask = 0;
+	for (const auto Signature : Signatures)
+		SupportedEntitiesMask[Utils::EnumUnderlyingType(Signature)] = true;
 }

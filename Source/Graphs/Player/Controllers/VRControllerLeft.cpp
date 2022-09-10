@@ -1,7 +1,7 @@
 #include "VRControllerLeft.h"
 #include "NiagaraComponent.h"
 #include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/Utils/Consts.h"
+#include "Graphs/Utils/Utils.h"
 
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer

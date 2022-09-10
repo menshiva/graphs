@@ -1,8 +1,5 @@
 ﻿#include "ToolImporter.h"
 #include "ToolImporterPanelWidget.h"
-#include "Graphs/GraphProvider/Commands/GraphCommands.h"
-#include "Graphs/Utils/Consts.h"
-#include "ThirdParty/rapidjson/error/en.h"
 
 UToolImporter::UToolImporter() : UTool(
 	"Import",
@@ -47,7 +44,8 @@ bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorM
 		return false;
 	}
 
-	const FTCHARToUTF8 Convert(*InputStr);
+	// TODO
+	/*const FTCHARToUTF8 Convert(*InputStr);
 	rapidjson::StringStream JsonStringStream(Convert.Get());
 	rapidjson::Reader Reader;
 	Reader.IterativeParseInit();
@@ -70,5 +68,6 @@ bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorM
 		return false;
 	}
 
-	return NewGraphId != ENTITY_NONE;
+	return NewGraphId != ENTITY_NONE;*/
+	return true;
 }

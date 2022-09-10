@@ -3,7 +3,7 @@
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
 #include "Graphs/UI/OptionSelector/OptionSelectorWidget.h"
-#include "Graphs/Utils/Consts.h"
+#include "Graphs/Utils/Utils.h"
 
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
@@ -75,11 +75,16 @@ void UVRControllerRight::TickComponent(
 	}
 	else if (State == ControllerState::NONE && IsLaserActive()) {
 		FHitResult NewHitResult;
+		FCollisionQueryParams QueryParams;
+		QueryParams.bReturnFaceIndex = true;
+		QueryParams.bTraceComplex = false;
+		QueryParams.MobilityType = EQueryMobilityType::Static;
 		GetWorld()->LineTraceSingleByChannel(
 			NewHitResult,
 			GetLaserStartPosition(),
 			GetLaserStartPosition() + MeshInteractionLaserMaxDistance * GetLaserDirection(),
-			ECC_GameTraceChannel2 // Graph trace channel
+			ECC_GameTraceChannel2, // Graph trace channel
+			QueryParams
 		);
 		const auto ToolProvider = GetVrPawn()->GetToolProvider();
 		if (NewHitResult.GetActor() != ToolProvider->GetHitResult().GetActor())

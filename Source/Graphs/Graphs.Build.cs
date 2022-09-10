@@ -16,7 +16,8 @@ public class Graphs : ModuleRules {
 		PublicDependencyModuleNames.AddRange(new[] {
 			"Core",
 			"CoreUObject",
-			"InputCore"
+			"InputCore",
+			"ProceduralMeshComponent"
 		});
 		PrivateDependencyModuleNames.AddRange(new[] {
 			"HeadMountedDisplay",
@@ -24,7 +25,7 @@ public class Graphs : ModuleRules {
 		});
 		PublicIncludePaths.Add(EngineThirdPartyPath);
 
-		CppStandard = CppStandardVersion.Cpp17;
+		CppStandard = CppStandardVersion.Latest;
 		bUseRTTI = true;
 	}
 }
