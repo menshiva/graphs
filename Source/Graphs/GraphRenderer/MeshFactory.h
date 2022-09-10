@@ -127,26 +127,26 @@ namespace VertexMeshFactory {
 		    	Vec(-0.850650787f, 0.0f, 0.525731087f)
 			},
 			{
-				0, 11, 5,
-				0, 5, 1,
-				0, 1, 7,
-				0, 7, 10,
-				0, 10, 11, 
-				11, 10, 2,
-				5, 11, 4,
-				1, 5, 9,
-				7, 1, 8,
-				10, 7, 6, 
-				3, 9, 4,
-				3, 4, 2,
-				3, 2, 6,
-				3, 6, 8,
-				3, 8, 9, 
-				9, 8, 1,
-				4, 9, 5,
-				2, 4, 11,
-				6, 2, 10,
-				8, 6, 7
+				5, 11, 0,
+				1, 5, 0,
+				7, 1, 0,
+				10, 7, 0,
+				11, 10, 0,
+				2, 10, 11,
+				4, 11, 5,
+				9, 5, 1,
+				8, 1, 7,
+				6, 7, 10,
+				4, 9, 3,
+				2, 4, 3,
+				6, 2, 3,
+				8, 6, 3,
+				9, 8, 3,
+				1, 8, 9,
+				5, 9, 4,
+				11, 4, 2,
+				10, 2, 6,
+				7, 6, 8
 			}
 		};
 	}
@@ -163,16 +163,16 @@ namespace VertexMeshFactory {
 		static_assert(Icosahedron.first[0].Y == 0.850650787f);
 		static_assert(Icosahedron.first[0].Z == 0.0f);
 
-		const int32 VerticesOffset = OutVertices.Num();
+		const auto VerticesOffset = OutVertices.Num();
 
-		check(OutVertices.Max() >= OutVertices.Num() + Icosahedron.first.size());
-		check(OutColors.Max() >= OutColors.Num() + Icosahedron.first.size());
+		check(OutVertices.Num() + Icosahedron.first.size() <= OutVertices.Max());
+		check(OutColors.Num() + Icosahedron.first.size() <= OutColors.Max());
 		for (const auto &V : Icosahedron.first) {
 			OutVertices.Push(Origin + *reinterpret_cast<const FVector*>(&V) * SCALE);
 			OutColors.Push(Color);
 		}
 
-		check(OutTriangles.Max() >= OutTriangles.Num() + Icosahedron.second.size());
+		check(OutTriangles.Num() + Icosahedron.second.size() <= OutTriangles.Max());
 		for (const auto T : Icosahedron.second)
 			OutTriangles.Push(VerticesOffset + T);
 	}
