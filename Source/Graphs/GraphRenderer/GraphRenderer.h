@@ -29,6 +29,13 @@ public:
 	}
 
 	void MarkDirty();
+
+	void UpdateSection(
+		int32 SectionIdx,
+		const TArray<FVector> &Vertices,
+		const TArray<int32_t> &Triangles,
+		const TArray<FLinearColor> &Colors
+	) const;
 private:
 	UPROPERTY()
 	class UProceduralMeshComponent *ProcMesh;

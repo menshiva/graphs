@@ -58,20 +58,26 @@ void AGraphRenderer::MarkDirty() {
 		CmdImpl(Storage);
 	}
 
-	// Vertices
-	{
-		const auto &VerticesStorage = Storage.GetStorage<VertexEntity>();
-		const size_t VerticesNum = VertexMeshFactory::MESH_VERTICES_NUM * VerticesStorage.Data.Num();
-		const size_t TrianglesNum = VertexMeshFactory::MESH_TRIANGLES_INDICES_NUM * VerticesStorage.Data.Num();
+	TArray<FVector> Vertices;
+	TArray<int32_t> Triangles;
+	TArray<FLinearColor> Colors;
 
-		TArray<FVector> Vertices;
+	// Vertices
+	const auto &VerticesStorage = Storage.GetStorage<VertexEntity>().Data;
+	if (VerticesStorage.Num() == 0) {
+		check(Storage.GetStorage<GraphEntity>().Data.Num() == 0);
+		check(Storage.GetStorage<EdgeEntity>().Data.Num() == 0);
+		return;
+	}
+	{
+		const size_t VerticesNum = VertexMeshFactory::MESH_VERTICES_NUM * VerticesStorage.Num();
+		const size_t TrianglesNum = VertexMeshFactory::MESH_TRIANGLES_INDICES_NUM * VerticesStorage.Num();
+
 		Vertices.Reserve(VerticesNum);
-		TArray<int32_t> Triangles;
 		Triangles.Reserve(TrianglesNum);
-		TArray<FLinearColor> Colors;
 		Colors.Reserve(VerticesNum);
 
-		for (const auto &VertexEnt : VerticesStorage.Data) {
+		for (const auto &VertexEnt : VerticesStorage) {
 			VertexMeshFactory::GenerateMesh(
 				VertexEnt.Position, VertexEnt.Color,
 				Vertices, Triangles, Colors
@@ -82,27 +88,70 @@ void AGraphRenderer::MarkDirty() {
 		check(Triangles.Num() == TrianglesNum);
 		check(Colors.Num() == VerticesNum);
 
-		if (ProcMesh->GetProcMeshSection(VERTICES)->ProcIndexBuffer.Num() == TrianglesNum) {
-			ProcMesh->UpdateMeshSection_LinearColor(
-				VERTICES,
-				Vertices,
-				TArray<FVector>(),
-				TArray<FVector2D>(),
-				Colors,
-				TArray<FProcMeshTangent>()
-			);
-		}
-		else {
-			ProcMesh->CreateMeshSection_LinearColor(
-				VERTICES,
-				Vertices,
-				Triangles,
-				TArray<FVector>(),
-				TArray<FVector2D>(),
-				Colors,
-				TArray<FProcMeshTangent>(),
-				true
-			);
-		}
+		UpdateSection(VERTICES, Vertices, Triangles, Colors);
+	}
+
+	// Edges
+	const auto &EdgesStorage = Storage.GetStorage<EdgeEntity>().Data;
+	if (EdgesStorage.Num() > 0) {
+		// clear arrays but not memory allocations
+		Vertices.Reset(Vertices.Max());
+		Triangles.Reset(Triangles.Max());
+		Colors.Reset(Colors.Max());
+
+		// TODO
+	}
+
+	// TODO: remove
+	/*TArray<FVector> vertices;
+	vertices.Add(FVector(0, 0, 0));
+	vertices.Add(FVector(0, 100, 0));
+	vertices.Add(FVector(0, 50, 100));
+
+	TArray<int32> triangles;
+	triangles.Add(0);
+	triangles.Add(1);
+	triangles.Add(2);
+
+	TArray<FVector2D> UV0;
+	UV0.Add(FVector2D(0.0f, 0.0f));
+	UV0.Add(FVector2D(1.0f, 0.0f));
+	UV0.Add(FVector2D(0.0f, 1.0f));
+
+	TArray<FLinearColor> vertexColors;
+	vertexColors.Add(FLinearColor::Blue);
+	vertexColors.Add(FLinearColor::Green);
+	vertexColors.Add(FLinearColor::Red);
+
+	ProcMesh->CreateMeshSection_LinearColor(EDGES, vertices, triangles, TArray<FVector>(), UV0, vertexColors, TArray<FProcMeshTangent>(), true);*/
+}
+
+void AGraphRenderer::UpdateSection(
+	const int32 SectionIdx,
+	const TArray<FVector> &Vertices,
+	const TArray<int32_t> &Triangles,
+	const TArray<FLinearColor> &Colors
+) const {
+	if (ProcMesh->GetProcMeshSection(SectionIdx)->ProcIndexBuffer.Num() == Triangles.Num()) {
+		ProcMesh->UpdateMeshSection_LinearColor(
+			SectionIdx,
+			Vertices,
+			TArray<FVector>(),
+			TArray<FVector2D>(),
+			Colors,
+			TArray<FProcMeshTangent>()
+		);
+	}
+	else {
+		ProcMesh->CreateMeshSection_LinearColor(
+			SectionIdx,
+			Vertices,
+			Triangles,
+			TArray<FVector>(),
+			TArray<FVector2D>(),
+			Colors,
+			TArray<FProcMeshTangent>(),
+			true
+		);
 	}
 }
