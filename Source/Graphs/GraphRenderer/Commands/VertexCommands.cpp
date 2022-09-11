@@ -1,5 +1,6 @@
 ﻿#include "VertexCommands.h"
 #include "EdgeCommands.h"
+#include "GraphCommands.h"
 
 VertexCommands::Create::Create(
 	const EntityId *GraphId, EntityId *NewVertexId,
@@ -37,6 +38,12 @@ VertexCommands::Remove::Remove(const EntityId &VertexId) : Command([=] (EntitySt
 	auto &Graph = Storage.GetEntityMut<GraphEntity>(Vertex.GraphId);
 	auto CheckNum = Graph.VerticesIds.Remove(VertexId);
 	check(CheckNum == 1);
+
+	if (Graph.VerticesIds.Num() == 0) {
+		ExecuteSubCommand(GraphCommands::Remove(Vertex.GraphId), Storage);
+		return true;
+	}
+
 	CheckNum = Graph.VertexUserIdToEntityId.Remove(Vertex.UserId);
 	check(CheckNum == 1);
 
