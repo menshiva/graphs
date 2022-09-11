@@ -94,3 +94,23 @@ EdgeCommands::Move::Move(
 
 	return true;
 }) {}
+
+void EdgeCommands::ConstFuncs::Serialize(
+	const EntityStorage &Storage,
+	const EntityId &EdgeId,
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
+) {
+	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
+	const auto &FromVertex = Storage.GetEntity<VertexEntity>(Edge.VerticesIds[0]);
+	const auto &ToVertex = Storage.GetEntity<VertexEntity>(Edge.VerticesIds[1]);
+
+	Writer.StartObject();
+
+	Writer.Key("from_vertex_id");
+	Writer.Uint(FromVertex.UserId);
+
+	Writer.Key("to_vertex_id");
+	Writer.Uint(ToVertex.UserId);
+
+	Writer.EndObject();
+}

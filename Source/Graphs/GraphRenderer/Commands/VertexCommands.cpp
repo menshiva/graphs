@@ -73,9 +73,11 @@ VertexCommands::SetHit::SetHit(
 	const bool IsHit
 ) : Command([=] (EntityStorage &Storage) -> bool {
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
+
 	if (Vertex.IsHit == IsHit)
 		return false;
 	Vertex.IsHit = IsHit;
+
 	return true;
 }) {}
 
@@ -84,9 +86,11 @@ VertexCommands::SetOverrideColor::SetOverrideColor(
 	const FLinearColor &OverrideColor
 ) : Command([=] (EntityStorage &Storage) -> bool {
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
+
 	if (Vertex.OverrideColor == OverrideColor)
 		return false;
 	Vertex.OverrideColor = OverrideColor;
+
 	return true;
 }) {}
 
@@ -98,3 +102,24 @@ VertexCommands::Move::Move(
 	Vertex.Position += Delta;
 	return true;
 }) {}
+
+void VertexCommands::ConstFuncs::Serialize(
+	const EntityStorage &Storage,
+	const EntityId &VertexId,
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
+) {
+	const auto &Vertex = Storage.GetEntity<VertexEntity>(VertexId);
+	Writer.StartObject();
+
+	Writer.Key("id");
+	Writer.Uint(Vertex.UserId);
+
+	const auto PositionStr = Vertex.Position.ToString();
+	const FTCHARToUTF8 Convert(*PositionStr);
+	Writer.Key("position");
+	Writer.String(Convert.Get(), Convert.Length());
+
+	// TODO: serialize color to hex
+
+	Writer.EndObject();
+}

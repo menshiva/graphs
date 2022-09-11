@@ -1,5 +1,6 @@
 ﻿#include "ToolExporter.h"
 #include "ToolExporterPanelWidget.h"
+#include "Graphs/GraphRenderer/Commands/GraphCommands.h"
 
 UToolExporter::UToolExporter() : UTool(
 	"Export",
@@ -21,10 +22,7 @@ void UToolExporter::OnDetach() {
 }
 
 bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
-	// TODO
-	/*if (IsPressed && GetHitEntityId() != ENTITY_NONE) {
-		check(GetGraphProvider()->GetEntityType(GetHitEntityId()) == EntityType::GRAPH);
-
+	if (IsPressed && GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId())) {
 		auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 		const auto &GameDirPath = FPaths::LaunchDir();
@@ -52,7 +50,7 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 		GetVrRightController()->SetLaserActive(false);
 
 		return true;
-	}*/
+	}
 	return Super::OnRightTriggerAction(IsPressed);
 }
 
@@ -79,7 +77,7 @@ FString UToolExporter::GenerateJsonFileNameInDirectory(
 }
 
 bool UToolExporter::ExportGraph(
-	const EntityId GraphId,
+	const EntityId &GraphId,
 	IPlatformFile &FileManager,
 	const FString &OutputPath,
 	FString &ErrorMessage
@@ -90,16 +88,15 @@ bool UToolExporter::ExportGraph(
 		return false;
 	}
 
-	// TODO
-	/*rapidjson::StringBuffer SBuffer;
+	rapidjson::StringBuffer SBuffer;
 	rapidjson::PrettyWriter Writer(SBuffer);
 	Writer.SetIndent('\t', 1);
-	GetGraphProvider()->ExecuteCommand(GraphCommands::Serialize(GraphId, Writer));
+	GraphCommands::ConstFuncs::Serialize(GetEntityStorage(), GraphId, Writer);
 	if (!OutputFileHandler->Write(reinterpret_cast<const uint8*>(SBuffer.GetString()), SBuffer.GetSize())) {
 		ErrorMessage = "Failed to write data to a new file.";
 		return false;
 	}
-	OutputFileHandler->Flush();*/
+	OutputFileHandler->Flush();
 
 	return true;
 }

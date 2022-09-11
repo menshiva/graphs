@@ -20,5 +20,10 @@ private:
 		const FString &FilePrefix
 	);
 
-	bool ExportGraph(EntityId GraphId, IPlatformFile &FileManager, const FString &OutputPath, FString &ErrorMessage) const;
+	bool ExportGraph(
+		const EntityId &GraphId,
+		IPlatformFile &FileManager,
+		const FString &OutputPath,
+		FString &ErrorMessage
+	) const;
 };

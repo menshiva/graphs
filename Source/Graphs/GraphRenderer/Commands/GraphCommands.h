@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "../GraphRenderer.h"
+#include "ThirdParty/rapidjson/prettywriter.h"
 
 namespace GraphCommands {
 	struct Create final : AGraphRenderer::Command {
@@ -28,6 +29,12 @@ namespace GraphCommands {
 	};
 
 	namespace ConstFuncs {
+		void Serialize(
+			const EntityStorage &Storage,
+			const EntityId &GraphId,
+			rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
+		);
+
 		FVector ComputeCenterPosition(const EntityStorage &Storage, const EntityId &GraphId);
 	}
 }

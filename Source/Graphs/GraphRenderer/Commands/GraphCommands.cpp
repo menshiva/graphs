@@ -94,6 +94,33 @@ GraphCommands::Rotate::Rotate(
 	return true;
 }) {}
 
+void GraphCommands::ConstFuncs::Serialize(
+	const EntityStorage &Storage,
+	const EntityId &GraphId,
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
+) {
+	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
+
+	Writer.StartObject();
+
+	check(Graph.VerticesIds.Num() > 0);
+	Writer.Key("vertices");
+	Writer.StartArray();
+	for (const auto &VertexId : Graph.VerticesIds)
+		VertexCommands::ConstFuncs::Serialize(Storage, VertexId, Writer);
+	Writer.EndArray();
+
+	if (Graph.EdgesIds.Num() > 0) {
+		Writer.Key("edges");
+		Writer.StartArray();
+		for (const auto &EdgeId : Graph.EdgesIds)
+			EdgeCommands::ConstFuncs::Serialize(Storage, EdgeId, Writer);
+		Writer.EndArray();
+	}
+
+	Writer.EndObject();
+}
+
 FVector GraphCommands::ConstFuncs::ComputeCenterPosition(const EntityStorage &Storage, const EntityId &GraphId) {
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 	check(Graph.VerticesIds.Num() > 0);
