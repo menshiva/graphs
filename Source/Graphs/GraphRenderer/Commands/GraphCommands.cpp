@@ -21,27 +21,43 @@ GraphCommands::Remove::Remove(const EntityId &GraphId) : Command([=] (EntityStor
 	return true;
 }) {}
 
-GraphCommands::SetSelection::SetSelection(
+GraphCommands::SetHit::SetHit(
 	const EntityId &GraphId,
-	const EntitySelection NewSelection
+	const bool IsHit
 ) : Command([=] (EntityStorage &Storage) -> bool {
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 	bool ChangesProvided = false;
 
 	for (const auto &VertexId : Graph.VerticesIds) {
-		const bool IsSuccess = ExecuteSubCommand(
-			VertexCommands::SetSelection(VertexId, NewSelection),
-			Storage
-		);
+		const bool IsSuccess = ExecuteSubCommand(VertexCommands::SetHit(VertexId, IsHit), Storage);
 		if (!ChangesProvided)
 			ChangesProvided = IsSuccess;
 	}
 
 	for (const auto &EdgeId : Graph.EdgesIds) {
-		const bool IsSuccess = ExecuteSubCommand(
-			EdgeCommands::SetSelection(EdgeId, NewSelection),
-			Storage
-		);
+		const bool IsSuccess = ExecuteSubCommand(EdgeCommands::SetHit(EdgeId, IsHit), Storage);
+		if (!ChangesProvided)
+			ChangesProvided = IsSuccess;
+	}
+
+	return ChangesProvided;
+}) {}
+
+GraphCommands::SetOverrideColor::SetOverrideColor(
+	const EntityId &GraphId,
+	const FLinearColor &OverrideColor
+) : Command([=] (EntityStorage &Storage) -> bool {
+	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
+	bool ChangesProvided = false;
+
+	for (const auto &VertexId : Graph.VerticesIds) {
+		const bool IsSuccess = ExecuteSubCommand(VertexCommands::SetOverrideColor(VertexId, OverrideColor), Storage);
+		if (!ChangesProvided)
+			ChangesProvided = IsSuccess;
+	}
+
+	for (const auto &EdgeId : Graph.EdgesIds) {
+		const bool IsSuccess = ExecuteSubCommand(EdgeCommands::SetOverrideColor(EdgeId, OverrideColor), Storage);
 		if (!ChangesProvided)
 			ChangesProvided = IsSuccess;
 	}

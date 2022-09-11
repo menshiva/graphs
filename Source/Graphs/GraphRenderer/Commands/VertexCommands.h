@@ -16,8 +16,12 @@ namespace VertexCommands {
 		explicit Remove(const EntityId &VertexId);
 	};
 
-	struct SetSelection final : AGraphRenderer::Command {
-		SetSelection(const EntityId &VertexId, EntitySelection NewSelection);
+	struct SetHit final : AGraphRenderer::Command {
+		SetHit(const EntityId &VertexId, bool IsHit);
+	};
+
+	struct SetOverrideColor final : AGraphRenderer::Command {
+		SetOverrideColor(const EntityId &VertexId, const FLinearColor &OverrideColor);
 	};
 
 	struct Move final : AGraphRenderer::Command {

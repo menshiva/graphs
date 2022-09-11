@@ -94,11 +94,13 @@ void AGraphRenderer::MarkDirty() {
 		Colors.Reserve(VerticesVerticesNum);
 
 		for (auto VertexEntIter = VerticesStorage.CreateConstIterator(); VertexEntIter; ++VertexEntIter) {
+			const auto &Color = VertexEntIter->IsHit
+				? ColorConsts::BlueColor
+				: VertexEntIter->OverrideColor != ColorConsts::OverrideColorNone
+					? VertexEntIter->OverrideColor
+					: VertexEntIter->Color;
 			VertexMeshFactory::GenerateMesh(
-				VertexEntIter->Position,
-				VertexEntIter->Selection == EntitySelection::NONE
-					? VertexEntIter->Color
-					: ColorConsts::BlueColor,
+				VertexEntIter->Position, Color,
 				Vertices, Triangles, Colors
 			);
 
@@ -124,14 +126,24 @@ void AGraphRenderer::MarkDirty() {
 		for (auto EdgeEntIter = EdgesStorage.CreateConstIterator(); EdgeEntIter; ++EdgeEntIter) {
 			const auto &FromVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[0]);
 			const auto &ToVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[1]);
+
+			FLinearColor FromVertColor, ToVertColor;
+			if (EdgeEntIter->IsHit) {
+				FromVertColor = ColorConsts::BlueColor;
+				ToVertColor = ColorConsts::BlueColor;
+			}
+			else if (EdgeEntIter->OverrideColor != ColorConsts::OverrideColorNone) {
+				FromVertColor = EdgeEntIter->OverrideColor;
+				ToVertColor = EdgeEntIter->OverrideColor;
+			}
+			else {
+				FromVertColor = FromVertEnt.Color;
+				ToVertColor = ToVertEnt.Color;
+			}
+
 			EdgeMeshFactory::GenerateMesh(
 				FromVertEnt.Position, ToVertEnt.Position,
-				EdgeEntIter->Selection == EntitySelection::NONE
-					? FromVertEnt.Color
-					: ColorConsts::BlueColor,
-				EdgeEntIter->Selection == EntitySelection::NONE
-					? ToVertEnt.Color
-					: ColorConsts::BlueColor,
+				FromVertColor, ToVertColor,
 				Vertices, Triangles, Colors
 			);
 

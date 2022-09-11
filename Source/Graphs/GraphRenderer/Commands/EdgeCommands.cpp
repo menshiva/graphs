@@ -24,7 +24,8 @@ EdgeCommands::Create::Create(
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 
 	Edge.GraphId = *GraphId;
-	Edge.Selection = EntitySelection::NONE;
+	Edge.IsHit = false;
+	Edge.OverrideColor = ColorConsts::OverrideColorNone;
 
 	Edge.VerticesIds[0] = FromVertexId;
 	Edge.VerticesIds[1] = ToVertexId;
@@ -55,16 +56,25 @@ EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([=] (EntityStorag
 	return true;
 }) {}
 
-EdgeCommands::SetSelection::SetSelection(
+EdgeCommands::SetHit::SetHit(
 	const EntityId &EdgeId,
-	const EntitySelection NewSelection
+	const bool IsHit
 ) : Command([=] (EntityStorage &Storage) -> bool {
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
-
-	if (Edge.Selection == NewSelection)
+	if (Edge.IsHit == IsHit)
 		return false;
-	Edge.Selection = NewSelection;
+	Edge.IsHit = IsHit;
+	return true;
+}) {}
 
+EdgeCommands::SetOverrideColor::SetOverrideColor(
+	const EntityId &EdgeId,
+	const FLinearColor &OverrideColor
+) : Command([=] (EntityStorage &Storage) -> bool {
+	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
+	if (Edge.OverrideColor == OverrideColor)
+		return false;
+	Edge.OverrideColor = OverrideColor;
 	return true;
 }) {}
 

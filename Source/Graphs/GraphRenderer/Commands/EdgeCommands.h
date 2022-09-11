@@ -14,8 +14,12 @@ namespace EdgeCommands {
 		explicit Remove(const EntityId &EdgeId);
 	};
 
-	struct SetSelection final : AGraphRenderer::Command {
-		SetSelection(const EntityId &EdgeId, EntitySelection NewSelection);
+	struct SetHit final : AGraphRenderer::Command {
+		SetHit(const EntityId &EdgeId, bool IsHit);
+	};
+
+	struct SetOverrideColor final : AGraphRenderer::Command {
+		SetOverrideColor(const EntityId &EdgeId, const FLinearColor &OverrideColor);
 	};
 
 	struct Move final : AGraphRenderer::Command {

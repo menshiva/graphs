@@ -43,13 +43,13 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 	if (NewHitEntityId != HitEntityId) {
 		bool Set = false;
 		if (GetEntityStorage().IsValid(HitEntityId)) {
-			SetEntitySelection(EntitySelection::NONE);
+			SetEntityHit(false);
 			Set = true;
 		}
 		HitEntityId = EntityId::NONE();
 		if (GetEntityStorage().IsValid(NewHitEntityId) && ActiveTool.IsValid() && ActiveTool->SupportsEntity(NewHitEntityId)) {
 			HitEntityId = NewHitEntityId;
-			SetEntitySelection(EntitySelection::HIT);
+			SetEntityHit(true);
 			Set = true;
 		}
 		if (Set)
@@ -180,15 +180,15 @@ void UToolProvider::BeginPlay() {
 	}
 }
 
-void UToolProvider::SetEntitySelection(const EntitySelection NewSelection) const {
+void UToolProvider::SetEntityHit(const bool IsHit) const {
 	if (GetEntityStorage().IsValid<VertexEntity>(HitEntityId)) {
-		GetGraphRenderer()->PushCommand(VertexCommands::SetSelection(HitEntityId, NewSelection));
+		GetGraphRenderer()->PushCommand(VertexCommands::SetHit(HitEntityId, IsHit));
 	}
 	else if (GetEntityStorage().IsValid<EdgeEntity>(HitEntityId)) {
-		GetGraphRenderer()->PushCommand(EdgeCommands::SetSelection(HitEntityId, NewSelection));
+		GetGraphRenderer()->PushCommand(EdgeCommands::SetHit(HitEntityId, IsHit));
 	}
 	else {
 		check(GetEntityStorage().IsValid<GraphEntity>(HitEntityId));
-		GetGraphRenderer()->PushCommand(GraphCommands::SetSelection(HitEntityId, NewSelection));
+		GetGraphRenderer()->PushCommand(GraphCommands::SetHit(HitEntityId, IsHit));
 	}
 }

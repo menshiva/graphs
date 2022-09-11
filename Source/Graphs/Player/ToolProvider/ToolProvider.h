@@ -41,7 +41,7 @@ private:
 		Tools.Push(Tool);
 	}
 
-	void SetEntitySelection(EntitySelection NewSelection) const;
+	void SetEntityHit(bool IsHit) const;
 
 	TWeakObjectPtr<AVRPawn> VrPawn;
 	TWeakObjectPtr<AGraphRenderer> GraphRenderer;

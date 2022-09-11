@@ -11,8 +11,12 @@ namespace GraphCommands {
 		explicit Remove(const EntityId &GraphId);
 	};
 
-	struct SetSelection final : AGraphRenderer::Command {
-		SetSelection(const EntityId &GraphId, EntitySelection NewSelection);
+	struct SetHit final : AGraphRenderer::Command {
+		SetHit(const EntityId &GraphId, bool IsHit);
+	};
+
+	struct SetOverrideColor final : AGraphRenderer::Command {
+		SetOverrideColor(const EntityId &GraphId, const FLinearColor &OverrideColor);
 	};
 
 	struct Move final : AGraphRenderer::Command {

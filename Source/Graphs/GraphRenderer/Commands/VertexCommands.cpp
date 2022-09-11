@@ -19,7 +19,8 @@ VertexCommands::Create::Create(
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
 
 	Vertex.GraphId = *GraphId;
-	Vertex.Selection = EntitySelection::NONE;
+	Vertex.IsHit = false;
+	Vertex.OverrideColor = ColorConsts::OverrideColorNone;
 
 	Vertex.UserId = UserId;
 	Vertex.Position = Position;
@@ -67,16 +68,25 @@ VertexCommands::Remove::Remove(const EntityId &VertexId) : Command([=] (EntitySt
 	return true;
 }) {}
 
-VertexCommands::SetSelection::SetSelection(
+VertexCommands::SetHit::SetHit(
 	const EntityId &VertexId,
-	const EntitySelection NewSelection
+	const bool IsHit
 ) : Command([=] (EntityStorage &Storage) -> bool {
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
-
-	if (Vertex.Selection == NewSelection)
+	if (Vertex.IsHit == IsHit)
 		return false;
-	Vertex.Selection = NewSelection;
+	Vertex.IsHit = IsHit;
+	return true;
+}) {}
 
+VertexCommands::SetOverrideColor::SetOverrideColor(
+	const EntityId &VertexId,
+	const FLinearColor &OverrideColor
+) : Command([=] (EntityStorage &Storage) -> bool {
+	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
+	if (Vertex.OverrideColor == OverrideColor)
+		return false;
+	Vertex.OverrideColor = OverrideColor;
 	return true;
 }) {}
 

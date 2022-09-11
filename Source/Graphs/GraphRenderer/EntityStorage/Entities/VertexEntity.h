@@ -1,13 +1,13 @@
 ﻿#pragma once
 
 #include "EntityId.h"
-#include "EntitySelection.h"
 
 struct VertexEntity {
 	constexpr static EntitySignature Signature = EntitySignature::VERTEX;
 
 	EntityId GraphId;
-	EntitySelection Selection;
+	bool IsHit;
+	FLinearColor OverrideColor;
 	TArray<EntityId> EdgesIds;
 
 	// Serializable data
