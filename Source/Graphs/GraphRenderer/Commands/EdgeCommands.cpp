@@ -37,6 +37,7 @@ EdgeCommands::Create::Create(
 }) {}
 
 EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([=] (EntityStorage &Storage) -> bool {
+	if (!Storage.IsValid<EdgeEntity>(EdgeId)) return false;
 	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
 
 	// remove from associated parent graph
@@ -61,9 +62,11 @@ EdgeCommands::SetHit::SetHit(
 	const bool IsHit
 ) : Command([=] (EntityStorage &Storage) -> bool {
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
+
 	if (Edge.IsHit == IsHit)
 		return false;
 	Edge.IsHit = IsHit;
+
 	return true;
 }) {}
 
@@ -72,9 +75,11 @@ EdgeCommands::SetOverrideColor::SetOverrideColor(
 	const FLinearColor &OverrideColor
 ) : Command([=] (EntityStorage &Storage) -> bool {
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
+
 	if (Edge.OverrideColor == OverrideColor)
 		return false;
 	Edge.OverrideColor = OverrideColor;
+
 	return true;
 }) {}
 

@@ -40,28 +40,28 @@ VertexCommands::Remove::Remove(const EntityId &VertexId) : Command([=] (EntitySt
 	auto CheckNum = Graph.VerticesIds.Remove(VertexId);
 	check(CheckNum == 1);
 
-	if (Graph.VerticesIds.Num() == 0) {
-		ExecuteSubCommand(GraphCommands::Remove(Vertex.GraphId), Storage);
-		return true;
-	}
+	if (Graph.VerticesIds.Num() > 0) {
+		CheckNum = Graph.VertexUserIdToEntityId.Remove(Vertex.UserId);
+		check(CheckNum == 1);
 
-	CheckNum = Graph.VertexUserIdToEntityId.Remove(Vertex.UserId);
-	check(CheckNum == 1);
+		// remove connected edges
+		for (const auto &EdgeId : Vertex.EdgesIds) {
+			auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 
-	// remove connected edges
-	for (const auto &EdgeId : Vertex.EdgesIds) {
-		auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
+			// remove this edge from VerticesIds array of connected edge because otherwise the next
+			// EdgeCommands::Remove command will invalidate this vertex EdgesIds while we iterating it
+			if (Edge.VerticesIds[0] == VertexId)
+				Edge.VerticesIds[0] = EntityId::NONE();
+			else {
+				check(Edge.VerticesIds[1] == VertexId);
+				Edge.VerticesIds[1] = EntityId::NONE();
+			}
 
-		// remove this edge from VerticesIds array of connected edge because otherwise the next
-		// EdgeCommands::Remove command will invalidate this vertex EdgesIds while we iterating it
-		if (Edge.VerticesIds[0] == VertexId)
-			Edge.VerticesIds[0] = EntityId::NONE();
-		else {
-			check(Edge.VerticesIds[1] == VertexId);
-			Edge.VerticesIds[1] = EntityId::NONE();
+			ExecuteSubCommand(EdgeCommands::Remove(EdgeId), Storage);
 		}
-
-		ExecuteSubCommand(EdgeCommands::Remove(EdgeId), Storage);
+	}
+	else {
+		ExecuteSubCommand(GraphCommands::Remove(Vertex.GraphId), Storage);
 	}
 
 	Storage.RemoveEntity<VertexEntity>(VertexId);
