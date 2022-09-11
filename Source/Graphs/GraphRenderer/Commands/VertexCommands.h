@@ -15,4 +15,8 @@ namespace VertexCommands {
 	struct SetSelection final : AGraphRenderer::Command {
 		SetSelection(const EntityId &VertexId, EntitySelection NewSelection);
 	};
+
+	struct Move final : AGraphRenderer::Command {
+		Move(const EntityId &VertexId, const FVector &Delta);
+	};
 }

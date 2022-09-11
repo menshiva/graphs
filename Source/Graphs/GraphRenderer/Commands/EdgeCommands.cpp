@@ -1,4 +1,5 @@
 ﻿#include "EdgeCommands.h"
+#include "VertexCommands.h"
 
 EdgeCommands::Create::Create(
 	const EntityId *GraphId, EntityId *NewEdgeId,
@@ -39,8 +40,22 @@ EdgeCommands::SetSelection::SetSelection(
 	const EntitySelection NewSelection
 ) : Command([=] (EntityStorage &Storage) -> bool {
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
+
 	if (Edge.Selection == NewSelection)
 		return false;
 	Edge.Selection = NewSelection;
+
+	return true;
+}) {}
+
+EdgeCommands::Move::Move(
+	const EntityId &EdgeId,
+	const FVector &Delta
+) : Command([=] (EntityStorage &Storage) -> bool {
+	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
+
+	for (const auto &VertexId : Edge.VerticesIds)
+		ExecuteSubCommand(VertexCommands::Move(VertexId, Delta), Storage);
+
 	return true;
 }) {}

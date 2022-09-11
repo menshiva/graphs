@@ -46,13 +46,14 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 			SetEntitySelection(EntitySelection::NONE);
 			Set = true;
 		}
-		HitEntityId = NewHitEntityId;
-		if (GetEntityStorage().IsValid(NewHitEntityId)) {
+		HitEntityId = EntityId::NONE();
+		if (GetEntityStorage().IsValid(NewHitEntityId) && ActiveTool.IsValid() && ActiveTool->SupportsEntity(NewHitEntityId)) {
+			HitEntityId = NewHitEntityId;
 			SetEntitySelection(EntitySelection::HIT);
 			Set = true;
 		}
-		check(Set);
-		GetGraphRenderer()->MarkDirty();
+		if (Set)
+			GetGraphRenderer()->MarkDirty();
 	}
 }
 

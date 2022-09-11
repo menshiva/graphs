@@ -13,4 +13,8 @@ namespace EdgeCommands {
 	struct SetSelection final : AGraphRenderer::Command {
 		SetSelection(const EntityId &EdgeId, EntitySelection NewSelection);
 	};
+
+	struct Move final : AGraphRenderer::Command {
+		Move(const EntityId &EdgeId, const FVector &Delta);
+	};
 }

@@ -34,8 +34,19 @@ VertexCommands::SetSelection::SetSelection(
 	const EntitySelection NewSelection
 ) : Command([=] (EntityStorage &Storage) -> bool {
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
+
 	if (Vertex.Selection == NewSelection)
 		return false;
 	Vertex.Selection = NewSelection;
+
+	return true;
+}) {}
+
+VertexCommands::Move::Move(
+	const EntityId &VertexId,
+	const FVector &Delta
+) : Command([=] (EntityStorage &Storage) -> bool {
+	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
+	Vertex.Position += Delta;
 	return true;
 }) {}
