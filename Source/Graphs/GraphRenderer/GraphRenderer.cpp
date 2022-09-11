@@ -53,76 +53,100 @@ AGraphRenderer::AGraphRenderer() {
 }
 
 void AGraphRenderer::MarkDirty() {
+	bool ChangesProvided = false;
 	CommandImplementation CmdImpl;
 	while (CommandQueue.Dequeue(CmdImpl)) {
-		CmdImpl(Storage);
+		const bool IsSuccess = CmdImpl(Storage);
+		if (!ChangesProvided)
+			ChangesProvided = IsSuccess;
 	}
+	if (!ChangesProvided)
+		return; // do not redraw meshes if nothing was happened during command execution
 
 	TArray<FVector> Vertices;
 	TArray<int32_t> Triangles;
-	TArray<FLinearColor> Colors;
+	TArray<FColor> Colors;
 
-	// Vertices
 	const auto &VerticesStorage = Storage.GetStorage<VertexEntity>().Data;
+	const auto &EdgesStorage = Storage.GetStorage<EdgeEntity>().Data;
+
 	if (VerticesStorage.Num() == 0) {
 		check(Storage.GetStorage<GraphEntity>().Data.Num() == 0);
 		check(Storage.GetStorage<EdgeEntity>().Data.Num() == 0);
 		return;
 	}
+
+	const size_t VerticesVerticesNum = VertexMeshFactory::MESH_VERTICES_NUM * VerticesStorage.Num();
+	const size_t VerticesTrianglesNum = VertexMeshFactory::MESH_TRIANGLES_INDICES_NUM * VerticesStorage.Num();
+
+	const size_t EdgesVerticesNum = EdgeMeshFactory::MESH_VERTICES_NUM * EdgesStorage.Num();
+	const size_t EdgesTrianglesNum = EdgeMeshFactory::MESH_TRIANGLES_INDICES_NUM * EdgesStorage.Num();
+
+	check(VerticesTrianglesNum % 3 == 0);
+	check(EdgesTrianglesNum % 3 == 0);
+	const size_t CollisionDataNum = (VerticesTrianglesNum + EdgesTrianglesNum) / 3;
+	CollisionData.Reset(CollisionDataNum); // TODO: update collision data only when calling CreateMeshSection
+	TArray<EntityId> EntityCollisionData;
+
+	// Vertices
 	{
-		const size_t VerticesNum = VertexMeshFactory::MESH_VERTICES_NUM * VerticesStorage.Num();
-		const size_t TrianglesNum = VertexMeshFactory::MESH_TRIANGLES_INDICES_NUM * VerticesStorage.Num();
+		Vertices.Reserve(VerticesVerticesNum);
+		Triangles.Reserve(VerticesTrianglesNum);
+		Colors.Reserve(VerticesVerticesNum);
 
-		Vertices.Reserve(VerticesNum);
-		Triangles.Reserve(TrianglesNum);
-		Colors.Reserve(VerticesNum);
-
-		for (const auto &VertexEnt : VerticesStorage) {
+		for (auto VertexEntIter = VerticesStorage.CreateConstIterator(); VertexEntIter; ++VertexEntIter) {
 			VertexMeshFactory::GenerateMesh(
-				VertexEnt.Position,
-				VertexEnt.Selection == VertexEntity::SelectionType::NONE
-					? VertexEnt.Color
+				VertexEntIter->Position,
+				VertexEntIter->Selection == EntitySelection::NONE
+					? VertexEntIter->Color
 					: ColorConsts::BlueColor,
 				Vertices, Triangles, Colors
 			);
+
+			EntityCollisionData.Init(
+				EntityId(VertexEntIter.GetIndex(), EntitySignature::VERTEX),
+				VertexMeshFactory::MESH_TRIANGLES_INDICES_NUM / 3
+			);
+			CollisionData.Append(EntityCollisionData);
 		}
 
-		check(Vertices.Num() == VerticesNum);
-		check(Triangles.Num() == TrianglesNum);
-		check(Colors.Num() == VerticesNum);
+		check(Vertices.Num() == VerticesVerticesNum);
+		check(Triangles.Num() == VerticesTrianglesNum);
+		check(Colors.Num() == VerticesVerticesNum);
 
 		UpdateSection(VERTICES, Vertices, Triangles, Colors);
 	}
 
 	// Edges
-	const auto &EdgesStorage = Storage.GetStorage<EdgeEntity>().Data;
 	if (EdgesStorage.Num() > 0) {
-		const size_t VerticesNum = EdgeMeshFactory::MESH_VERTICES_NUM * EdgesStorage.Num();
-		const size_t TrianglesNum = EdgeMeshFactory::MESH_TRIANGLES_INDICES_NUM * EdgesStorage.Num();
+		Vertices.Reset(EdgesVerticesNum);
+		Triangles.Reset(EdgesTrianglesNum);
+		Colors.Reset(EdgesVerticesNum);
 
-		// clear arrays but not memory allocations
-		Vertices.Reset(VerticesNum);
-		Triangles.Reset(TrianglesNum);
-		Colors.Reset(VerticesNum);
-
-		for (const auto &EdgeEnt : EdgesStorage) {
-			const auto &FromVertEnt = Storage.GetEntity<VertexEntity>(EdgeEnt.VerticesIds[0]);
-			const auto &ToVertEnt = Storage.GetEntity<VertexEntity>(EdgeEnt.VerticesIds[1]);
+		for (auto EdgeEntIter = EdgesStorage.CreateConstIterator(); EdgeEntIter; ++EdgeEntIter) {
+			const auto &FromVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[0]);
+			const auto &ToVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[1]);
 			EdgeMeshFactory::GenerateMesh(
 				FromVertEnt.Position, ToVertEnt.Position,
-				EdgeEnt.Selection == EdgeEntity::SelectionType::NONE
+				EdgeEntIter->Selection == EntitySelection::NONE
 					? FromVertEnt.Color
 					: ColorConsts::BlueColor,
-				EdgeEnt.Selection == EdgeEntity::SelectionType::NONE
+				EdgeEntIter->Selection == EntitySelection::NONE
 					? ToVertEnt.Color
 					: ColorConsts::BlueColor,
 				Vertices, Triangles, Colors
 			);
+
+			EntityCollisionData.Init(
+				EntityId(EdgeEntIter.GetIndex(), EntitySignature::EDGE),
+				EdgeMeshFactory::MESH_TRIANGLES_INDICES_NUM / 3
+			);
+			CollisionData.Append(EntityCollisionData);
 		}
 
-		check(Vertices.Num() == VerticesNum);
-		check(Triangles.Num() == TrianglesNum);
-		check(Colors.Num() == VerticesNum);
+		check(Vertices.Num() == EdgesVerticesNum);
+		check(Triangles.Num() == EdgesTrianglesNum);
+		check(Colors.Num() == EdgesVerticesNum);
 
 		UpdateSection(EDGES, Vertices, Triangles, Colors);
 	}
@@ -132,10 +156,10 @@ void AGraphRenderer::UpdateSection(
 	const int32 SectionIdx,
 	const TArray<FVector> &Vertices,
 	const TArray<int32_t> &Triangles,
-	const TArray<FLinearColor> &Colors
+	const TArray<FColor> &Colors
 ) const {
 	if (ProcMesh->GetProcMeshSection(SectionIdx)->ProcIndexBuffer.Num() == Triangles.Num()) {
-		ProcMesh->UpdateMeshSection_LinearColor(
+		ProcMesh->UpdateMeshSection(
 			SectionIdx,
 			Vertices,
 			TArray<FVector>(),
@@ -145,7 +169,7 @@ void AGraphRenderer::UpdateSection(
 		);
 	}
 	else {
-		ProcMesh->CreateMeshSection_LinearColor(
+		ProcMesh->CreateMeshSection(
 			SectionIdx,
 			Vertices,
 			Triangles,

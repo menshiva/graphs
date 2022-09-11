@@ -11,4 +11,8 @@ namespace VertexCommands {
 			const FLinearColor &Color
 		);
 	};
+
+	struct SetSelection final : AGraphRenderer::Command {
+		SetSelection(const EntityId &VertexId, EntitySelection NewSelection);
+	};
 }

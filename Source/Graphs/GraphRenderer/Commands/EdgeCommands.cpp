@@ -3,7 +3,7 @@
 EdgeCommands::Create::Create(
 	const EntityId *GraphId, EntityId *NewEdgeId,
 	const uint32_t FromVertexUserId, const uint32_t ToVertexUserId
-) : Command([=] (EntityStorage &Storage) {
+) : Command([=] (EntityStorage &Storage) -> bool {
 	const auto EdgeId = Storage.NewEntity<EdgeEntity>();
 
 	auto &Graph = Storage.GetEntityMut<GraphEntity>(*GraphId);
@@ -23,11 +23,24 @@ EdgeCommands::Create::Create(
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 
 	Edge.GraphId = *GraphId;
-	Edge.Selection = EdgeEntity::SelectionType::NONE;
+	Edge.Selection = EntitySelection::NONE;
 
 	Edge.VerticesIds[0] = FromVertexId;
 	Edge.VerticesIds[1] = ToVertexId;
 
 	if (NewEdgeId)
 		*NewEdgeId = EdgeId;
+
+	return true;
+}) {}
+
+EdgeCommands::SetSelection::SetSelection(
+	const EntityId &EdgeId,
+	const EntitySelection NewSelection
+) : Command([=] (EntityStorage &Storage) -> bool {
+	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
+	if (Edge.Selection == NewSelection)
+		return false;
+	Edge.Selection = NewSelection;
+	return true;
 }) {}

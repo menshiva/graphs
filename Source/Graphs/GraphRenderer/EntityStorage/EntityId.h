@@ -23,10 +23,13 @@ struct EntityId {
 	bool operator!=(const EntityId OtherId) const {
 		return !(*this == OtherId);
 	}
+
+	FORCEINLINE EntitySignature GetSignature() const {
+		return Signature;
+	}
 private:
 	uint32_t Index;
 	EntitySignature Signature;
 
 	friend class EntityStorage;
-	friend class UTool;
 };

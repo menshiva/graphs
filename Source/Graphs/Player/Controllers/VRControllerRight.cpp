@@ -86,9 +86,7 @@ void UVRControllerRight::TickComponent(
 			ECC_GameTraceChannel2, // Graph trace channel
 			QueryParams
 		);
-		const auto ToolProvider = GetVrPawn()->GetToolProvider();
-		if (NewHitResult.GetActor() != ToolProvider->GetHitResult().GetActor())
-			ToolProvider->SetHitResult(NewHitResult);
+		GetVrPawn()->GetToolProvider()->SetHitResult(NewHitResult);
 		if (NewHitResult.bBlockingHit)
 			SetLaserLength(FVector::Dist(GetLaserStartPosition(), NewHitResult.ImpactPoint));
 		else

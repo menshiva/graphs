@@ -18,35 +18,42 @@ UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UAct
 }
 
 void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
-	// TODO
-	/*if (HitEntityId != ENTITY_NONE && GraphProvider->IsEntityValid(HitEntityId))
-		SetEntitySelectionType(SelectionType::NONE);
-	HitResult.Reset();
-	HitEntityId = ENTITY_NONE;
-	if (NewHitResult.bBlockingHit && NewHitResult.GetActor()) {
-		EntityId Id = NewHitResult.GetActor()->GetUniqueID();
-		if (GraphProvider->IsEntityValid(Id)) {
+	HitResult = NewHitResult;
+	auto NewHitEntityId = EntityId::NONE();
+
+	if (NewHitResult.bBlockingHit && NewHitResult.GetActor() == GetGraphRenderer()) {
+		NewHitEntityId = GetGraphRenderer()->GetEntityIdFromCollisionData(NewHitResult.FaceIndex);
+		if (GetEntityStorage().IsValid(NewHitEntityId)) {
+			check(NewHitEntityId.GetSignature() == EntitySignature::VERTEX
+					|| NewHitEntityId.GetSignature() == EntitySignature::EDGE);
+
 			const auto RightController = VrPawn->GetRightVrController();
-
 			if (RightController->GetSelectionMode() == SelectionMode::GRAPH) {
-				const auto EntityType = GraphProvider->GetEntityType(Id);
-				check(EntityType == EntityType::VERTEX || EntityType == EntityType::EDGE);
-				EntityId GraphId = ENTITY_NONE;
-				if (EntityType == EntityType::VERTEX)
-					GetGraphProvider()->ExecuteCommand(VertexCommands::GetGraphId(Id, GraphId));
+				if (NewHitEntityId.GetSignature() == EntitySignature::VERTEX)
+					NewHitEntityId = GetEntityStorage().GetEntity<VertexEntity>(NewHitEntityId).GraphId;
 				else
-					GetGraphProvider()->ExecuteCommand(EdgeCommands::GetGraphId(Id, GraphId));
-				check(GetGraphProvider()->IsEntityValid(GraphId));
-				Id = GraphId;
+					NewHitEntityId = GetEntityStorage().GetEntity<EdgeEntity>(NewHitEntityId).GraphId;
 			}
 
-			if (!ActiveTool.IsValid() || ActiveTool->SupportsType(GraphProvider->GetEntityType(Id))) {
-				HitResult = NewHitResult;
-				HitEntityId = Id;
-				SetEntitySelectionType(SelectionType::HIT);
-			}
+			check(GetEntityStorage().IsValid(NewHitEntityId));
 		}
-	}*/
+		else NewHitEntityId = EntityId::NONE();
+	}
+
+	if (NewHitEntityId != HitEntityId) {
+		bool Set = false;
+		if (GetEntityStorage().IsValid(HitEntityId)) {
+			SetEntitySelection(EntitySelection::NONE);
+			Set = true;
+		}
+		HitEntityId = NewHitEntityId;
+		if (GetEntityStorage().IsValid(NewHitEntityId)) {
+			SetEntitySelection(EntitySelection::HIT);
+			Set = true;
+		}
+		check(Set);
+		GetGraphRenderer()->MarkDirty();
+	}
 }
 
 bool UToolProvider::OnRightTriggerAction(const bool IsPressed) {
@@ -172,16 +179,22 @@ void UToolProvider::BeginPlay() {
 	}
 }
 
-// TODO
-/*void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const {
-	const auto HitEntityType = GraphProvider->GetEntityType(HitEntityId);
-
-	if (HitEntityType == EntityType::VERTEX)
-		GraphProvider->ExecuteCommand(VertexCommands::SetSelectionType(HitEntityId, Selection));
-	else if (HitEntityType == EntityType::EDGE)
-		GraphProvider->ExecuteCommand(EdgeCommands::SetSelectionType(HitEntityId, Selection));
-	else {
-		check(HitEntityType == EntityType::GRAPH);
-		GraphProvider->ExecuteCommand(GraphCommands::SetSelectionType(HitEntityId, Selection));
+void UToolProvider::SetEntitySelection(const EntitySelection NewSelection) const {
+	switch (HitEntityId.GetSignature()) {
+		case EntitySignature::VERTEX: {
+			GetGraphRenderer()->PushCommand(VertexCommands::SetSelection(HitEntityId, NewSelection));
+			break;
+		}
+		case EntitySignature::EDGE: {
+			GetGraphRenderer()->PushCommand(EdgeCommands::SetSelection(HitEntityId, NewSelection));
+			break;
+		}
+		case EntitySignature::GRAPH: {
+			GetGraphRenderer()->PushCommand(GraphCommands::SetSelection(HitEntityId, NewSelection));
+			break;
+		}
+		default: {
+			check(false);
+		}
 	}
-}*/
+}

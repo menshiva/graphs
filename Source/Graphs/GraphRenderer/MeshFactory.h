@@ -156,7 +156,7 @@ namespace VertexMeshFactory {
 
 	static void GenerateMesh(
 		const FVector &Origin, const FLinearColor &Color,
-		TArray<FVector> &OutVertices, TArray<int32_t> &OutTriangles, TArray<FLinearColor> &OutColors
+		TArray<FVector> &OutVertices, TArray<int32_t> &OutTriangles, TArray<FColor> &OutColors
 	) {
 		constexpr static auto Icosahedron = GenerateIcosahedron<QUALITY>();
 		static_assert(Icosahedron.first[0].X == -0.525731087f);
@@ -169,7 +169,7 @@ namespace VertexMeshFactory {
 		check(OutColors.Num() + Icosahedron.first.size() <= OutColors.Max());
 		for (const auto &V : Icosahedron.first) {
 			OutVertices.Push(Origin + *reinterpret_cast<const FVector*>(&V) * SCALE);
-			OutColors.Push(Color);
+			OutColors.Push(Color.ToFColor(false));
 		}
 
 		check(OutTriangles.Num() + Icosahedron.second.size() <= OutTriangles.Max());
@@ -189,7 +189,7 @@ namespace EdgeMeshFactory {
 	static void GenerateMesh(
 		FVector FirstVertexPos, FVector SecondVertexPos,
 		const FLinearColor &FirstVertexColor, const FLinearColor &SecondVertexColor,
-		TArray<FVector> &OutVertices, TArray<int32_t> &OutTriangles, TArray<FLinearColor> &OutColors
+		TArray<FVector> &OutVertices, TArray<int32_t> &OutTriangles, TArray<FColor> &OutColors
 	) {
 		// do not generate edge if vertices have intersection
 		if (FVector::DistSquared(FirstVertexPos, SecondVertexPos) <= 4 * VertexMeshFactory::SCALE * VertexMeshFactory::SCALE)
@@ -218,10 +218,15 @@ namespace EdgeMeshFactory {
 
 		const auto VerticesOffset = OutVertices.Num();
 		check(OutVertices.Num() + MESH_VERTICES_NUM <= OutVertices.Max());
-		for (const auto &V : Face)
+		check(OutColors.Num() + MESH_VERTICES_NUM <= OutColors.Max());
+		for (const auto &V : Face) {
 			OutVertices.Push(FirstVertexPos + V);
-		for (const auto &V : Face)
+			OutColors.Push(FirstVertexColor.ToFColor(false));
+		}
+		for (const auto &V : Face) {
 			OutVertices.Push(SecondVertexPos + V);
+			OutColors.Push(SecondVertexColor.ToFColor(false));
+		}
 
 		check(OutTriangles.Num() + MESH_TRIANGLES_INDICES_NUM <= OutTriangles.Max());
 		for (int32 i = 0; i < QUALITY; ++i) {
@@ -240,13 +245,5 @@ namespace EdgeMeshFactory {
 				VerticesOffset + FirstFaceNextI
 			});
 		}
-
-		check(MESH_VERTICES_NUM % 2 == 0);
-		check(OutColors.Num() + MESH_VERTICES_NUM <= OutColors.Max());
-		TArray<FLinearColor> MeshColors;
-		MeshColors.Init(FirstVertexColor, MESH_VERTICES_NUM / 2);
-		OutColors.Append(MeshColors);
-		MeshColors.Init(SecondVertexColor, MESH_VERTICES_NUM / 2);
-		OutColors.Append(MoveTemp(MeshColors));
 	}
 }

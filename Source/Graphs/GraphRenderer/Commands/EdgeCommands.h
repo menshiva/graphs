@@ -9,4 +9,8 @@ namespace EdgeCommands {
 			uint32_t FromVertexUserId, uint32_t ToVertexUserId
 		);
 	};
+
+	struct SetSelection final : AGraphRenderer::Command {
+		SetSelection(const EntityId &EdgeId, EntitySelection NewSelection);
+	};
 }

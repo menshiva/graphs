@@ -1,18 +1,13 @@
 ﻿#pragma once
 
 #include "EntityId.h"
+#include "EntitySelection.h"
 
 struct VertexEntity {
-	enum class SelectionType : uint8_t {
-		NONE = 0,
-		HIT,
-		SELECTED
-	};
-
 	constexpr static EntitySignature Signature = EntitySignature::VERTEX;
 
 	EntityId GraphId;
-	SelectionType Selection;
+	EntitySelection Selection;
 	TArray<EntityId> EdgesIds;
 
 	// Serializable data

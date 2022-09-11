@@ -42,6 +42,19 @@ public:
 		return GetStorage<Entity>().Data.IsValidIndex(Id.Index);
 	}
 
+	bool IsValid(const EntityId &Id) const {
+		switch (Id.Signature) {
+			case EntitySignature::VERTEX:
+				return IsValid<VertexEntity>(Id);
+			case EntitySignature::EDGE:
+				return IsValid<EdgeEntity>(Id);
+			case EntitySignature::GRAPH:
+				return IsValid<GraphEntity>(Id);
+			default:
+				return false;
+		}
+	}
+
 	template <typename Entity>
 	const Entity &GetEntity(const EntityId &Id) const {
 		check(Id != EntityId::NONE());
