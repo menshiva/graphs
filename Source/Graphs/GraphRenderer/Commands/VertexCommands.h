@@ -12,6 +12,10 @@ namespace VertexCommands {
 		);
 	};
 
+	struct Remove final : AGraphRenderer::Command {
+		explicit Remove(const EntityId &VertexId);
+	};
+
 	struct SetSelection final : AGraphRenderer::Command {
 		SetSelection(const EntityId &VertexId, EntitySelection NewSelection);
 	};

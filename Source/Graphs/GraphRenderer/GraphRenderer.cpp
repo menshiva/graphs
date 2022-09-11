@@ -73,7 +73,6 @@ void AGraphRenderer::MarkDirty() {
 	if (VerticesStorage.Num() == 0) {
 		check(Storage.GetStorage<GraphEntity>().Data.Num() == 0);
 		check(Storage.GetStorage<EdgeEntity>().Data.Num() == 0);
-		return;
 	}
 
 	const size_t VerticesVerticesNum = VertexMeshFactory::MESH_VERTICES_NUM * VerticesStorage.Num();
@@ -113,9 +112,8 @@ void AGraphRenderer::MarkDirty() {
 		check(Vertices.Num() == VerticesVerticesNum);
 		check(Triangles.Num() == VerticesTrianglesNum);
 		check(Colors.Num() == VerticesVerticesNum);
-
-		UpdateSection(VERTICES, Vertices, Triangles, Colors);
 	}
+	UpdateSection(VERTICES, Vertices, Triangles, Colors);
 
 	// Edges
 	if (EdgesStorage.Num() > 0) {
@@ -144,12 +142,11 @@ void AGraphRenderer::MarkDirty() {
 			CollisionData.Append(EntityCollisionData);
 		}
 
-		check(Vertices.Num() == EdgesVerticesNum);
-		check(Triangles.Num() == EdgesTrianglesNum);
-		check(Colors.Num() == EdgesVerticesNum);
-
-		UpdateSection(EDGES, Vertices, Triangles, Colors);
+		check(Vertices.Num() <= EdgesVerticesNum);
+		check(Triangles.Num() <= EdgesTrianglesNum);
+		check(Colors.Num() <= EdgesVerticesNum);
 	}
+	UpdateSection(EDGES, Vertices, Triangles, Colors);
 }
 
 void AGraphRenderer::UpdateSection(

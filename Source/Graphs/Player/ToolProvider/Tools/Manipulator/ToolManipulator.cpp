@@ -36,22 +36,15 @@ void UToolManipulator::TickTool() {
 		const auto NewLaserPosition = GetVrRightController()->GetLaserEndPosition();
 		const auto Delta = NewLaserPosition - PreviousLaserEndPosition;
 
-		switch (GetHitEntityId().GetSignature()) {
-			case EntitySignature::VERTEX: {
-				GetGraphRenderer()->PushCommand(VertexCommands::Move(GetHitEntityId(), Delta));
-				break;
-			}
-			case EntitySignature::EDGE: {
-				GetGraphRenderer()->PushCommand(EdgeCommands::Move(GetHitEntityId(), Delta));
-				break;
-			}
-			case EntitySignature::GRAPH: {
-				GetGraphRenderer()->PushCommand(GraphCommands::Move(GetHitEntityId(), Delta));
-				break;
-			}
-			default: {
-				check(false);
-			}
+		if (GetEntityStorage().IsValid<VertexEntity>(GetHitEntityId())) {
+			GetGraphRenderer()->PushCommand(VertexCommands::Move(GetHitEntityId(), Delta));
+		}
+		else if (GetEntityStorage().IsValid<EdgeEntity>(GetHitEntityId())) {
+			GetGraphRenderer()->PushCommand(EdgeCommands::Move(GetHitEntityId(), Delta));
+		}
+		else {
+			check(GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId()));
+			GetGraphRenderer()->PushCommand(GraphCommands::Move(GetHitEntityId(), Delta));
 		}
 
 		GetGraphRenderer()->MarkDirty();
@@ -66,7 +59,7 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 				PreviousLaserEndPosition = GetVrRightController()->GetLaserEndPosition();
 			}
 			else {
-				check(GetHitEntityId().GetSignature() == EntitySignature::GRAPH);
+				check(GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId()));
 				GraphCenterPosition = GraphCommands::ConstFuncs::ComputeCenterPosition(
 					GetEntityStorage(),
 					GetHitEntityId()
@@ -97,7 +90,7 @@ bool UToolManipulator::OnRightThumbstickY(const float Value) {
 
 bool UToolManipulator::OnRightThumbstickX(const float Value) {
 	if (Mode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
-		check(GetHitEntityId().GetSignature() == EntitySignature::GRAPH);
+		check(GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId()));
 		GetGraphRenderer()->PushCommand(GraphCommands::Rotate(
 			GetHitEntityId(),
 			GraphCenterPosition,

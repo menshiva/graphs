@@ -35,6 +35,26 @@ EdgeCommands::Create::Create(
 	return true;
 }) {}
 
+EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([=] (EntityStorage &Storage) -> bool {
+	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
+
+	// remove from associated parent graph
+	auto &Graph = Storage.GetEntityMut<GraphEntity>(Edge.GraphId);
+	auto CheckNum = Graph.EdgesIds.Remove(EdgeId);
+	check(CheckNum == 1);
+
+	// remove connected edges
+	for (const auto &VertexId : Edge.VerticesIds) {
+		if (VertexId != EntityId::NONE()) {
+			CheckNum = Storage.GetEntityMut<VertexEntity>(VertexId).EdgesIds.Remove(EdgeId);
+			check(CheckNum == 1);
+		}
+	}
+
+	Storage.RemoveEntity<EdgeEntity>(EdgeId);
+	return true;
+}) {}
+
 EdgeCommands::SetSelection::SetSelection(
 	const EntityId &EdgeId,
 	const EntitySelection NewSelection

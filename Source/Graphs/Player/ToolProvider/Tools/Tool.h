@@ -21,7 +21,7 @@ public:
 	void SetToolPanel(UToolWidget *Panel);
 
 	FORCEINLINE bool SupportsEntity(const EntityId &Id) const {
-		return SupportedEntitiesMask[Utils::EnumUnderlyingType(Id.GetSignature())];
+		return SupportedEntitiesMask[Utils::EnumUnderlyingType(Id.Signature)];
 	}
 
 	virtual void OnAttach() {}

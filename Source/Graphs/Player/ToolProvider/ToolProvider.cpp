@@ -24,12 +24,12 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 	if (NewHitResult.bBlockingHit && NewHitResult.GetActor() == GetGraphRenderer()) {
 		NewHitEntityId = GetGraphRenderer()->GetEntityIdFromCollisionData(NewHitResult.FaceIndex);
 		if (GetEntityStorage().IsValid(NewHitEntityId)) {
-			check(NewHitEntityId.GetSignature() == EntitySignature::VERTEX
-					|| NewHitEntityId.GetSignature() == EntitySignature::EDGE);
+			check(GetEntityStorage().IsValid<VertexEntity>(NewHitEntityId)
+				|| GetEntityStorage().IsValid<EdgeEntity>(NewHitEntityId));
 
 			const auto RightController = VrPawn->GetRightVrController();
 			if (RightController->GetSelectionMode() == SelectionMode::GRAPH) {
-				if (NewHitEntityId.GetSignature() == EntitySignature::VERTEX)
+				if (GetEntityStorage().IsValid<VertexEntity>(NewHitEntityId))
 					NewHitEntityId = GetEntityStorage().GetEntity<VertexEntity>(NewHitEntityId).GraphId;
 				else
 					NewHitEntityId = GetEntityStorage().GetEntity<EdgeEntity>(NewHitEntityId).GraphId;
@@ -181,21 +181,14 @@ void UToolProvider::BeginPlay() {
 }
 
 void UToolProvider::SetEntitySelection(const EntitySelection NewSelection) const {
-	switch (HitEntityId.GetSignature()) {
-		case EntitySignature::VERTEX: {
-			GetGraphRenderer()->PushCommand(VertexCommands::SetSelection(HitEntityId, NewSelection));
-			break;
-		}
-		case EntitySignature::EDGE: {
-			GetGraphRenderer()->PushCommand(EdgeCommands::SetSelection(HitEntityId, NewSelection));
-			break;
-		}
-		case EntitySignature::GRAPH: {
-			GetGraphRenderer()->PushCommand(GraphCommands::SetSelection(HitEntityId, NewSelection));
-			break;
-		}
-		default: {
-			check(false);
-		}
+	if (GetEntityStorage().IsValid<VertexEntity>(HitEntityId)) {
+		GetGraphRenderer()->PushCommand(VertexCommands::SetSelection(HitEntityId, NewSelection));
+	}
+	else if (GetEntityStorage().IsValid<EdgeEntity>(HitEntityId)) {
+		GetGraphRenderer()->PushCommand(EdgeCommands::SetSelection(HitEntityId, NewSelection));
+	}
+	else {
+		check(GetEntityStorage().IsValid<GraphEntity>(HitEntityId));
+		GetGraphRenderer()->PushCommand(GraphCommands::SetSelection(HitEntityId, NewSelection));
 	}
 }

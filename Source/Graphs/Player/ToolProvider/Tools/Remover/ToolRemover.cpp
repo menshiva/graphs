@@ -1,4 +1,7 @@
 ﻿#include "ToolRemover.h"
+#include "Graphs/GraphRenderer/Commands/EdgeCommands.h"
+#include "Graphs/GraphRenderer/Commands/GraphCommands.h"
+#include "Graphs/GraphRenderer/Commands/VertexCommands.h"
 
 UToolRemover::UToolRemover() : UTool(
 	"Remove",
@@ -19,18 +22,19 @@ void UToolRemover::OnDetach() {
 }
 
 bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
-	// TODO
-	/*if (IsPressed && GetHitEntityId() != ENTITY_NONE) {
-		const auto HitEntityType = GetGraphProvider()->GetEntityType(GetHitEntityId());
-		if (HitEntityType == EntityType::VERTEX)
-			GetGraphProvider()->ExecuteCommand(VertexCommands::Remove(GetHitEntityId()));
-		else if (HitEntityType == EntityType::EDGE)
-			GetGraphProvider()->ExecuteCommand(EdgeCommands::Remove(GetHitEntityId()));
-		else {
-			check(HitEntityType == EntityType::GRAPH);
-			GetGraphProvider()->ExecuteCommand(GraphCommands::Remove(GetHitEntityId()));
+	if (IsPressed && GetHitEntityId() != EntityId::NONE()) {
+		if (GetEntityStorage().IsValid<VertexEntity>(GetHitEntityId())) {
+			GetGraphRenderer()->PushCommand(VertexCommands::Remove(GetHitEntityId()));
 		}
+		else if (GetEntityStorage().IsValid<EdgeEntity>(GetHitEntityId())) {
+			GetGraphRenderer()->PushCommand(EdgeCommands::Remove(GetHitEntityId()));
+		}
+		else {
+			check(GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId()));
+			GetGraphRenderer()->PushCommand(GraphCommands::Remove(GetHitEntityId()));
+		}
+		GetGraphRenderer()->MarkDirty();
 		return true;
-	}*/
+	}
 	return Super::OnRightTriggerAction(IsPressed);
 }

@@ -9,6 +9,18 @@ GraphCommands::Create::Create(EntityId *NewGraphId) : Command([=] (EntityStorage
 	return true;
 }) {}
 
+GraphCommands::Remove::Remove(const EntityId &GraphId) : Command([=] (EntityStorage &Storage) -> bool {
+	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
+
+	for (const auto &VertexId : Graph.VerticesIds)
+		Storage.RemoveEntity<VertexEntity>(VertexId);
+	for (const auto &EdgeId : Graph.EdgesIds)
+		Storage.RemoveEntity<EdgeEntity>(EdgeId);
+	Storage.RemoveEntity<GraphEntity>(GraphId);
+
+	return true;
+}) {}
+
 GraphCommands::SetSelection::SetSelection(
 	const EntityId &GraphId,
 	const EntitySelection NewSelection

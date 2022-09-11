@@ -10,6 +10,10 @@ namespace EdgeCommands {
 		);
 	};
 
+	struct Remove final : AGraphRenderer::Command {
+		explicit Remove(const EntityId &EdgeId);
+	};
+
 	struct SetSelection final : AGraphRenderer::Command {
 		SetSelection(const EntityId &EdgeId, EntitySelection NewSelection);
 	};

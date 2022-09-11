@@ -7,6 +7,10 @@ namespace GraphCommands {
 		explicit Create(EntityId *NewGraphId);
 	};
 
+	struct Remove final : AGraphRenderer::Command {
+		explicit Remove(const EntityId &GraphId);
+	};
+
 	struct SetSelection final : AGraphRenderer::Command {
 		SetSelection(const EntityId &GraphId, EntitySelection NewSelection);
 	};
