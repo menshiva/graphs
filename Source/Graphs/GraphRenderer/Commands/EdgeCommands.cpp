@@ -37,14 +37,17 @@ bool EdgeCommands::Create::CreateImpl(
 	Edge.VerticesIds[1] = ToVertexId;
 
 	bool AlreadyInSet = false;
-	const auto EdgeHash = ConstFuncs::ComputeHash(Edge);
 	auto &ParentGraph = Storage.GetEntityMut<GraphEntity>(GraphId);
 
 	check(!ParentGraph.EdgesIds.Contains(EdgeId));
 	ParentGraph.EdgesIds.Push(EdgeId);
 
+	const auto EdgeHash = ConstFuncs::ComputeHash(Edge, false);
 	ParentGraph.EdgeHashes.Add(EdgeHash, &AlreadyInSet);
 	check(!AlreadyInSet);
+	if (!ParentGraph.IsOriented) {
+		check(!ParentGraph.EdgeHashes.Contains(ConstFuncs::ComputeHash(Edge, true)));
+	}
 
 	Storage.GetEntityMut<VertexEntity>(FromVertexId).EdgesIds.Add(EdgeId, &AlreadyInSet);
 	check(!AlreadyInSet);
@@ -65,7 +68,7 @@ EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([&] (EntityStorag
 	auto &Graph = Storage.GetEntityMut<GraphEntity>(Edge.GraphId);
 	auto CheckNum = Graph.EdgesIds.Remove(EdgeId);
 	check(CheckNum == 1);
-	CheckNum = Graph.EdgeHashes.Remove(ConstFuncs::ComputeHash(Edge));
+	CheckNum = Graph.EdgeHashes.Remove(ConstFuncs::ComputeHash(Edge, false));
 	check(CheckNum == 1);
 
 	// remove connected edges
@@ -179,7 +182,7 @@ bool EdgeCommands::ConstFuncs::Deserialize(
 		NewEdge.VerticesIds[i++] = *VertexId;
 	}
 
-	if (ParentGraph.EdgeHashes.Contains(ComputeHash(NewEdge))) {
+	if (ParentGraph.EdgeHashes.Contains(ComputeHash(NewEdge, false))) {
 		ErrorMessage = "Edge error: {"
 			+ FString::FromInt(VertexUserIds[0])
 			+ ", "
@@ -187,15 +190,23 @@ bool EdgeCommands::ConstFuncs::Deserialize(
 			+ "} declared multiple times.";
 		return false;
 	}
+	if (!ParentGraph.IsOriented && ParentGraph.EdgeHashes.Contains(ComputeHash(NewEdge, true))) {
+		ErrorMessage = "Edge error: {"
+			+ FString::FromInt(VertexUserIds[0])
+			+ ", "
+			+ FString::FromInt(VertexUserIds[1])
+			+ "} declared multiple times in non-oriented graph.";
+		return false;
+	}
 
 	return true;
 }
 
-uint32_t EdgeCommands::ConstFuncs::ComputeHash(const EdgeEntity &Edge) {
+uint32_t EdgeCommands::ConstFuncs::ComputeHash(const EdgeEntity &Edge, const bool ReverseVerticesIds) {
 	check(Edge.VerticesIds[0] != EntityId::NONE());
 	check(Edge.VerticesIds[1] != EntityId::NONE());
 	return Utils::CantorPair(
-		EntityId::GetTypeHash(Edge.VerticesIds[0]),
-		EntityId::GetTypeHash(Edge.VerticesIds[1])
+		EntityId::GetHash(Edge.VerticesIds[!ReverseVerticesIds ? 0 : 1]),
+		EntityId::GetHash(Edge.VerticesIds[!ReverseVerticesIds ? 1 : 0])
 	);
 }

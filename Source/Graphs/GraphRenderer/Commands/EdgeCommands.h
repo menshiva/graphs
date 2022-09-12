@@ -58,6 +58,6 @@ namespace EdgeCommands {
 			EdgeEntity &NewEdge
 		);
 
-		uint32_t ComputeHash(const EdgeEntity &Edge);
+		uint32_t ComputeHash(const EdgeEntity &Edge, bool ReverseVerticesIds);
 	}
 }

@@ -26,7 +26,7 @@ struct EntityId {
 		return !(*this == OtherId);
 	}
 
-	FORCEINLINE static uint32 GetTypeHash(const EntityId &Id) {
+	FORCEINLINE static uint32 GetHash(const EntityId &Id) {
 		return Utils::CantorPair(Id.Index, Utils::EnumUnderlyingType(Id.Signature));
 	}
 private:
@@ -38,5 +38,5 @@ private:
 };
 
 FORCEINLINE uint32 GetTypeHash(const EntityId &Id) {
-	return EntityId::GetTypeHash(Id);
+	return EntityId::GetHash(Id);
 }
