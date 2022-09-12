@@ -5,6 +5,18 @@ namespace Utils {
 	constexpr static std::underlying_type_t<E> EnumUnderlyingType(E e) noexcept {
 		return static_cast<std::underlying_type_t<E>>(e);
 	}
+
+	constexpr static uint32_t CantorPair(const uint32_t X, const uint32_t Y) {
+		return (X + Y) * (X + Y + 1) / 2 + Y;
+	}
+
+	static std::pair<uint32_t, uint32_t> CantorUnpair(const uint32_t Val) {
+		const auto T = static_cast<uint32_t>(floorf(-1.0f + sqrtf(1.0f + 8.0f * Val)) / 2.0f);
+		return {
+			T * (T + 3) / 2 - Val,
+			Val - T * (T + 1) / 2
+		};
+	}
 }
 
 namespace FileConsts {

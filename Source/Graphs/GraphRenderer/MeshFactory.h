@@ -51,7 +51,7 @@ namespace VertexMeshFactory {
 
 		auto AddMidPoint = [&] (const int32 A, const int32 B) -> int32 {
 			// Cantor's pairing function
-			const int32 Key = (A + B) * (A + B + 1) / 2 + std::min(A, B);
+			const int32 Key = std::min(Utils::CantorPair(A, B), Utils::CantorPair(B, A));
 
 			for (size_t k = 0; k < Lookup.size(); ++k) {
 				if (Lookup[k].first == Key) {

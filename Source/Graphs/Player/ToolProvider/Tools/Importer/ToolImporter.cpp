@@ -1,5 +1,6 @@
 ﻿#include "ToolImporter.h"
 #include "ToolImporterPanelWidget.h"
+#include "Graphs/GraphRenderer/Commands/GraphCommands.h"
 
 UToolImporter::UToolImporter() : UTool(
 	"Import",
@@ -38,36 +39,11 @@ bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorM
 		return false;
 	}
 
-	FString InputStr;
-	if (!FFileHelper::LoadFileToString(InputStr, &FileManager, *FilePath)) {
+	FString JsonStr;
+	if (!FFileHelper::LoadFileToString(JsonStr, &FileManager, *FilePath)) {
 		ErrorMessage = "Failed to read from file.";
 		return false;
 	}
 
-	// TODO
-	/*const FTCHARToUTF8 Convert(*InputStr);
-	rapidjson::StringStream JsonStringStream(Convert.Get());
-	rapidjson::Reader Reader;
-	Reader.IterativeParseInit();
-
-	// Deserialize graph.
-	EntityId NewGraphId = ENTITY_NONE;
-	GetGraphProvider()->ExecuteCommand(GraphCommands::Deserialize(
-		&NewGraphId,
-		JsonStringStream,
-		Reader,
-		ErrorMessage
-	));
-
-	if (NewGraphId == ENTITY_NONE) {
-		if (ErrorMessage.Len() == 0) {
-			ErrorMessage =
-				"JSON parse error: " + FString(GetParseError_En(Reader.GetParseErrorCode()))
-				+ " (" + FString::FromInt(Reader.GetErrorOffset()) + ")";
-		}
-		return false;
-	}
-
-	return NewGraphId != ENTITY_NONE;*/
-	return true;
+	return GetGraphRenderer()->ExecuteCommand(GraphCommands::Deserialize(JsonStr, ErrorMessage), true);
 }

@@ -37,14 +37,14 @@ void UToolManipulator::TickTool() {
 		const auto Delta = NewLaserPosition - PreviousLaserEndPosition;
 
 		if (GetEntityStorage().IsValid<VertexEntity>(GetHitEntityId())) {
-			GetGraphRenderer()->PushCommand(VertexCommands::Move(GetHitEntityId(), Delta));
+			GetGraphRenderer()->ExecuteCommand(VertexCommands::Move(GetHitEntityId(), Delta), true);
 		}
 		else if (GetEntityStorage().IsValid<EdgeEntity>(GetHitEntityId())) {
-			GetGraphRenderer()->PushCommand(EdgeCommands::Move(GetHitEntityId(), Delta));
+			GetGraphRenderer()->ExecuteCommand(EdgeCommands::Move(GetHitEntityId(), Delta), true);
 		}
 		else {
 			check(GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId()));
-			GetGraphRenderer()->PushCommand(GraphCommands::Move(GetHitEntityId(), Delta));
+			GetGraphRenderer()->ExecuteCommand(GraphCommands::Move(GetHitEntityId(), Delta), true);
 		}
 
 		GetGraphRenderer()->MarkDirty();
@@ -91,12 +91,11 @@ bool UToolManipulator::OnRightThumbstickY(const float Value) {
 bool UToolManipulator::OnRightThumbstickX(const float Value) {
 	if (Mode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
 		check(GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId()));
-		GetGraphRenderer()->PushCommand(GraphCommands::Rotate(
+		GetGraphRenderer()->ExecuteCommand(GraphCommands::Rotate(
 			GetHitEntityId(),
 			GraphCenterPosition,
 			Value * DefaultRotationSpeed
-		));
-		GetGraphRenderer()->MarkDirty();
+		), true);
 		return true;
 	}
 	return Super::OnRightThumbstickX(Value);

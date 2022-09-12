@@ -27,9 +27,7 @@ struct EntityId {
 	}
 
 	FORCEINLINE static uint32 GetTypeHash(const EntityId &Id) {
-		const auto SignatureNum = static_cast<uint32>(Utils::EnumUnderlyingType(Id.Signature));
-		return (Id.Index + SignatureNum) * (Id.Index + SignatureNum + 1) / 2
-			+ std::min(Id.Index, SignatureNum); // Cantor's pairing function
+		return Utils::CantorPair(Id.Index, Utils::EnumUnderlyingType(Id.Signature));
 	}
 private:
 	uint32_t Index;

@@ -5,7 +5,7 @@
 
 namespace GraphCommands {
 	struct Create final : AGraphRenderer::Command {
-		explicit Create(EntityId *NewGraphId);
+		Create(EntityId *NewGraphId, bool UseDefaultColors);
 	};
 
 	struct Remove final : AGraphRenderer::Command {
@@ -28,6 +28,10 @@ namespace GraphCommands {
 		Rotate(const EntityId &GraphId, const FVector &Origin, float Angle);
 	};
 
+	struct Deserialize final : AGraphRenderer::Command {
+		Deserialize(const FString &JsonStr, FString &ErrorMessage);
+	};
+
 	namespace ConstFuncs {
 		void Serialize(
 			const EntityStorage &Storage,
@@ -36,5 +40,11 @@ namespace GraphCommands {
 		);
 
 		FVector ComputeCenterPosition(const EntityStorage &Storage, const EntityId &GraphId);
+
+		bool IsSetContainsGraphChildrenEntities(
+			const EntityStorage &Storage,
+			const EntityId &GraphId,
+			const TSet<EntityId> &InSet
+		);
 	}
 }

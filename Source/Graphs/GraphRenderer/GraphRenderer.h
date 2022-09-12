@@ -28,15 +28,9 @@ public:
 		return Storage;
 	}
 
-	FORCEINLINE EntityId GetEntityIdFromCollisionData(const int32 FaceIndex) const {
-		if (FaceIndex >= 0 && FaceIndex < CollisionData.Num())
-			return CollisionData[FaceIndex];
-		return EntityId::NONE();
-	}
+	EntityId GetEntityIdFromCollisionData(const int32 FaceIndex) const;
 
-	FORCEINLINE void PushCommand(Command &&Cmd) {
-		CommandQueue.Enqueue(MoveTemp(Cmd.Implementation));
-	}
+	bool ExecuteCommand(Command &&Cmd, bool MarkDirty = false);
 
 	void MarkDirty();
 private:
@@ -51,7 +45,6 @@ private:
 	class UProceduralMeshComponent *ProcMesh;
 
 	EntityStorage Storage;
-	TQueue<CommandImplementation> CommandQueue;
 
 	TArray<EntityId> CollisionData;
 };

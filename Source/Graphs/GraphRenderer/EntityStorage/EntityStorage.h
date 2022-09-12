@@ -63,6 +63,11 @@ public:
 	}
 
 	template <typename Entity>
+	FORCEINLINE Storage<Entity> &GetStorageMut() {
+		return *dynamic_cast<Storage<Entity>*>(Storages[Utils::EnumUnderlyingType(Entity::Signature)].Get());
+	}
+
+	template <typename Entity>
 	Entity &GetEntityMut(const EntityId &Id) {
 		check(Id != EntityId::NONE());
 		check(Entity::Signature == Id.Signature);
@@ -87,11 +92,6 @@ private:
 	template <typename Entity>
 	FORCEINLINE void InitStorage() {
 		Storages[Utils::EnumUnderlyingType(Entity::Signature)] = MakeUnique<Storage<Entity>>();
-	}
-
-	template <typename Entity>
-	FORCEINLINE Storage<Entity> &GetStorageMut() {
-		return *dynamic_cast<Storage<Entity>*>(Storages[Utils::EnumUnderlyingType(Entity::Signature)].Get());
 	}
 
 	TStaticArray<TUniquePtr<IStorage>, Utils::EnumUnderlyingType(EntitySignature::SIZE)> Storages;

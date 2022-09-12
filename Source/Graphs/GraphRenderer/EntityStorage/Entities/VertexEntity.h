@@ -8,7 +8,7 @@ struct VertexEntity {
 	EntityId GraphId;
 	bool IsHit;
 	FLinearColor OverrideColor;
-	TArray<EntityId> EdgesIds;
+	TSet<EntityId> EdgesIds;
 
 	// Serializable data
 	uint32_t UserId;

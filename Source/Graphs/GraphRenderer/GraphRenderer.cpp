@@ -17,8 +17,7 @@ AGraphRenderer::AGraphRenderer() {
 	ProcMesh->CanCharacterStepUpOn = ECB_No;
 	ProcMesh->SetCollisionProfileName("Graph");
 	ProcMesh->SetCastShadow(false);
-
-	// TODO: ProcMesh attributes, such as bUseAsyncCooking
+	ProcMesh->bUseAsyncCooking = true;
 
 	ProcMesh->CreateMeshSection_LinearColor(
 		VERTICES,
@@ -52,17 +51,20 @@ AGraphRenderer::AGraphRenderer() {
 	RootComponent = ProcMesh;
 }
 
-void AGraphRenderer::MarkDirty() {
-	bool ChangesProvided = false;
-	CommandImplementation CmdImpl;
-	while (CommandQueue.Dequeue(CmdImpl)) {
-		const bool IsSuccess = CmdImpl(Storage);
-		if (!ChangesProvided)
-			ChangesProvided = IsSuccess;
-	}
-	if (!ChangesProvided)
-		return; // do not redraw meshes if nothing was happened during command execution
+EntityId AGraphRenderer::GetEntityIdFromCollisionData(const int32 FaceIndex) const {
+	if (FaceIndex >= 0 && FaceIndex < CollisionData.Num())
+		return CollisionData[FaceIndex];
+	return EntityId::NONE();
+}
 
+bool AGraphRenderer::ExecuteCommand(Command&& Cmd, const bool MarkDirty) {
+	const auto CommandResult = Cmd.Implementation(Storage);
+	if (CommandResult && MarkDirty)
+		this->MarkDirty();
+	return CommandResult;
+}
+
+void AGraphRenderer::MarkDirty() {
 	TArray<FVector> Vertices;
 	TArray<int32_t> Triangles;
 	TArray<FColor> Colors;

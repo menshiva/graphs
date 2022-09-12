@@ -77,6 +77,6 @@ private:
 
 	constexpr static float ActionHapticScale = 0.15f;
 	constexpr static float LaserMinLength = 15.0f;
-	constexpr static float LaserMaxLength = 5000.0f;
+	constexpr static float LaserMaxLength = 7500.0f;
 	constexpr static float LaserLengthDeltaSpeed = 10.0f;
 };

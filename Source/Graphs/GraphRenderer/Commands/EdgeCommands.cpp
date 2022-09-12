@@ -2,65 +2,98 @@
 #include "VertexCommands.h"
 
 EdgeCommands::Create::Create(
-	const EntityId *GraphId, EntityId *NewEdgeId,
+	const EntityId &GraphId, EntityId *NewEdgeId,
+	const EntityId &FromVertexId, const EntityId &ToVertexId
+) : Command([&, NewEdgeId] (EntityStorage &Storage) -> bool {
+	return CreateImpl(Storage, GraphId, NewEdgeId, FromVertexId, ToVertexId);
+}) {}
+
+EdgeCommands::Create::Create(
+	const EntityId &GraphId, EntityId *NewEdgeId,
 	const uint32_t FromVertexUserId, const uint32_t ToVertexUserId
-) : Command([=] (EntityStorage &Storage) -> bool {
+) : Command([&, NewEdgeId, FromVertexUserId, ToVertexUserId] (EntityStorage &Storage) -> bool {
+	auto &ParentGraph = Storage.GetEntityMut<GraphEntity>(GraphId);
+	return CreateImpl(
+		Storage,
+		GraphId, NewEdgeId,
+		ParentGraph.VertexUserIdToEntityId.FindChecked(FromVertexUserId),
+		ParentGraph.VertexUserIdToEntityId.FindChecked(ToVertexUserId)
+	);
+}) {}
+
+bool EdgeCommands::Create::CreateImpl(
+	EntityStorage &Storage,
+	const EntityId& GraphId, EntityId* NewEdgeId,
+	const EntityId &FromVertexId, const EntityId &ToVertexId
+) {
 	const auto EdgeId = Storage.NewEntity<EdgeEntity>();
-
-	auto &Graph = Storage.GetEntityMut<GraphEntity>(*GraphId);
-	check(!Graph.EdgesIds.Contains(EdgeId));
-	Graph.EdgesIds.Push(EdgeId);
-
-	const auto &FromVertexId = Graph.VertexUserIdToEntityId.FindChecked(FromVertexUserId);
-	auto &FromVertex = Storage.GetEntityMut<VertexEntity>(FromVertexId);
-	check(!FromVertex.EdgesIds.Contains(EdgeId));
-	FromVertex.EdgesIds.Push(EdgeId);
-	
-	const auto &ToVertexId = Graph.VertexUserIdToEntityId.FindChecked(ToVertexUserId);
-	auto &ToVertex = Storage.GetEntityMut<VertexEntity>(ToVertexId);
-	check(!ToVertex.EdgesIds.Contains(EdgeId));
-	ToVertex.EdgesIds.Push(EdgeId);
-
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 
-	Edge.GraphId = *GraphId;
+	Edge.GraphId = GraphId;
 	Edge.IsHit = false;
 	Edge.OverrideColor = ColorConsts::OverrideColorNone;
 
 	Edge.VerticesIds[0] = FromVertexId;
 	Edge.VerticesIds[1] = ToVertexId;
 
+	bool AlreadyInSet = false;
+	const auto EdgeHash = ConstFuncs::ComputeHash(Edge);
+	auto &ParentGraph = Storage.GetEntityMut<GraphEntity>(GraphId);
+
+	check(!ParentGraph.EdgesIds.Contains(EdgeId));
+	ParentGraph.EdgesIds.Push(EdgeId);
+
+	ParentGraph.EdgeHashes.Add(EdgeHash, &AlreadyInSet);
+	check(!AlreadyInSet);
+
+	Storage.GetEntityMut<VertexEntity>(FromVertexId).EdgesIds.Add(EdgeId, &AlreadyInSet);
+	check(!AlreadyInSet);
+
+	Storage.GetEntityMut<VertexEntity>(ToVertexId).EdgesIds.Add(EdgeId, &AlreadyInSet);
+	check(!AlreadyInSet);
+
 	if (NewEdgeId)
 		*NewEdgeId = EdgeId;
 
 	return true;
-}) {}
+}
 
-EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([=] (EntityStorage &Storage) -> bool {
-	if (!Storage.IsValid<EdgeEntity>(EdgeId)) return false;
+EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([&] (EntityStorage &Storage) -> bool {
 	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
 
 	// remove from associated parent graph
 	auto &Graph = Storage.GetEntityMut<GraphEntity>(Edge.GraphId);
 	auto CheckNum = Graph.EdgesIds.Remove(EdgeId);
 	check(CheckNum == 1);
+	CheckNum = Graph.EdgeHashes.Remove(ConstFuncs::ComputeHash(Edge));
+	check(CheckNum == 1);
 
 	// remove connected edges
-	for (const auto &VertexId : Edge.VerticesIds) {
-		if (VertexId != EntityId::NONE()) {
-			CheckNum = Storage.GetEntityMut<VertexEntity>(VertexId).EdgesIds.Remove(EdgeId);
-			check(CheckNum == 1);
-		}
-	}
+	for (const auto &VertexId : Edge.VerticesIds)
+		Storage.GetEntityMut<VertexEntity>(VertexId).EdgesIds.Remove(EdgeId);
 
 	Storage.RemoveEntity<EdgeEntity>(EdgeId);
+	return true;
+}) {}
+
+EdgeCommands::Reserve::Reserve(
+	const EntityId &GraphId,
+	const uint32_t NewEdgesNum
+) : Command([&, NewEdgesNum] (EntityStorage &Storage) -> bool {
+	auto &EdgesStorage = Storage.GetStorageMut<EdgeEntity>().Data;
+	EdgesStorage.Reserve(EdgesStorage.Num() + NewEdgesNum);
+
+	auto &Graph = Storage.GetEntityMut<GraphEntity>(GraphId);
+	Graph.EdgesIds.Reserve(Graph.EdgesIds.Num() + NewEdgesNum);
+	Graph.EdgeHashes.Reserve(Graph.EdgeHashes.Num() + NewEdgesNum);
+
 	return true;
 }) {}
 
 EdgeCommands::SetHit::SetHit(
 	const EntityId &EdgeId,
 	const bool IsHit
-) : Command([=] (EntityStorage &Storage) -> bool {
+) : Command([&, IsHit] (EntityStorage &Storage) -> bool {
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 
 	if (Edge.IsHit == IsHit)
@@ -73,7 +106,7 @@ EdgeCommands::SetHit::SetHit(
 EdgeCommands::SetOverrideColor::SetOverrideColor(
 	const EntityId &EdgeId,
 	const FLinearColor &OverrideColor
-) : Command([=] (EntityStorage &Storage) -> bool {
+) : Command([&] (EntityStorage &Storage) -> bool {
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 
 	if (Edge.OverrideColor == OverrideColor)
@@ -86,7 +119,7 @@ EdgeCommands::SetOverrideColor::SetOverrideColor(
 EdgeCommands::Move::Move(
 	const EntityId &EdgeId,
 	const FVector &Delta
-) : Command([=] (EntityStorage &Storage) -> bool {
+) : Command([&] (EntityStorage &Storage) -> bool {
 	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
 
 	for (const auto &VertexId : Edge.VerticesIds)
@@ -106,11 +139,63 @@ void EdgeCommands::ConstFuncs::Serialize(
 
 	Writer.StartObject();
 
-	Writer.Key("from_vertex_id");
+	Writer.Key("from_id");
 	Writer.Uint(FromVertex.UserId);
 
-	Writer.Key("to_vertex_id");
+	Writer.Key("to_id");
 	Writer.Uint(ToVertex.UserId);
 
 	Writer.EndObject();
+}
+
+bool EdgeCommands::ConstFuncs::Deserialize(
+	const EntityStorage &Storage,
+	const EntityId &GraphId,
+	const rapidjson::Value &DomEdge,
+	FString &ErrorMessage,
+	EdgeEntity &NewEdge
+) {
+	if (!DomEdge.IsObject()) {
+		ErrorMessage = "Edge error: Should be an object.";
+		return false;
+	}
+
+	const auto &ParentGraph = Storage.GetEntity<GraphEntity>(GraphId);
+
+	int i = 0;
+	TStaticArray<uint32_t, 2> VertexUserIds;
+	for (const auto Key : {"from_id", "to_id"}) {
+		const auto &IdMember = DomEdge.FindMember(Key);
+		if (IdMember == DomEdge.MemberEnd() || !IdMember->value.IsUint()) {
+			ErrorMessage = "Edge error: Object should have \"" + FString(Key) + "\" integer number.";
+			return false;
+		}
+		VertexUserIds[i] = IdMember->value.GetUint();
+		const auto VertexId = ParentGraph.VertexUserIdToEntityId.Find(VertexUserIds[i]);
+		if (!VertexId) {
+			ErrorMessage = "Edge error: Vertex with ID " + FString::FromInt(VertexUserIds[i]) + " not found.";
+			return false;
+		}
+		NewEdge.VerticesIds[i++] = *VertexId;
+	}
+
+	if (ParentGraph.EdgeHashes.Contains(ComputeHash(NewEdge))) {
+		ErrorMessage = "Edge error: {"
+			+ FString::FromInt(VertexUserIds[0])
+			+ ", "
+			+ FString::FromInt(VertexUserIds[1])
+			+ "} declared multiple times.";
+		return false;
+	}
+
+	return true;
+}
+
+uint32_t EdgeCommands::ConstFuncs::ComputeHash(const EdgeEntity &Edge) {
+	check(Edge.VerticesIds[0] != EntityId::NONE());
+	check(Edge.VerticesIds[1] != EntityId::NONE());
+	return Utils::CantorPair(
+		EntityId::GetTypeHash(Edge.VerticesIds[0]),
+		EntityId::GetTypeHash(Edge.VerticesIds[1])
+	);
 }

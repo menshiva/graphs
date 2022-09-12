@@ -41,18 +41,18 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 	}
 
 	if (NewHitEntityId != HitEntityId) {
-		bool Set = false;
+		bool SetOk = false;
 		if (GetEntityStorage().IsValid(HitEntityId)) {
-			SetEntityHit(false);
-			Set = true;
+			SetOk = SetEntityHit(false);
 		}
 		HitEntityId = EntityId::NONE();
 		if (GetEntityStorage().IsValid(NewHitEntityId) && ActiveTool.IsValid() && ActiveTool->SupportsEntity(NewHitEntityId)) {
 			HitEntityId = NewHitEntityId;
-			SetEntityHit(true);
-			Set = true;
+			const auto NewEntSetHitOk = SetEntityHit(true);
+			if (!SetOk)
+				SetOk = NewEntSetHitOk;
 		}
-		if (Set)
+		if (SetOk)
 			GetGraphRenderer()->MarkDirty();
 	}
 }
@@ -134,30 +134,25 @@ void UToolProvider::BeginPlay() {
 		};
 
 		EntityId GraphId;
-		GraphRenderer->PushCommand(GraphCommands::Create(&GraphId));
-		check(GraphId == EntityId::NONE());
+		GraphRenderer->ExecuteCommand(GraphCommands::Create(&GraphId, true));
+		GraphRenderer->ExecuteCommand(VertexCommands::Reserve(GraphId, Positions.Num()));
+		GraphRenderer->ExecuteCommand(EdgeCommands::Reserve(GraphId, Connections.Num()));
 
 		for (size_t i = 0; i < Positions.Num(); ++i) {
-			EntityId NewVertexId;
-			GraphRenderer->PushCommand(VertexCommands::Create(
-				&GraphId, &NewVertexId,
+			GraphRenderer->ExecuteCommand(VertexCommands::Create(
+				GraphId, nullptr,
 				i,
 				Positions[i],
 				FLinearColor::MakeRandomColor()
 			));
-			check(NewVertexId == EntityId::NONE());
 		}
 
 		for (size_t i = 0; i < Connections.Num(); ++i) {
-			EntityId NewEdgeId;
-			GraphRenderer->PushCommand(EdgeCommands::Create(
-				&GraphId, &NewEdgeId,
+			GraphRenderer->ExecuteCommand(EdgeCommands::Create(
+				GraphId, nullptr,
 				Connections[i].first, Connections[i].second
 			));
-			check(NewEdgeId == EntityId::NONE());
 		}
-
-		GraphRenderer->MarkDirty();
 
 		check(GetEntityStorage().IsValid<GraphEntity>(GraphId));
 		const auto Graph = GetEntityStorage().GetEntity<GraphEntity>(GraphId);
@@ -177,18 +172,18 @@ void UToolProvider::BeginPlay() {
 				check(GetEntityStorage().IsValid<VertexEntity>(VertexId));
 			}
 		}
+
+		GraphRenderer->MarkDirty();
 	}
 }
 
-void UToolProvider::SetEntityHit(const bool IsHit) const {
-	if (GetEntityStorage().IsValid<VertexEntity>(HitEntityId)) {
-		GetGraphRenderer()->PushCommand(VertexCommands::SetHit(HitEntityId, IsHit));
-	}
-	else if (GetEntityStorage().IsValid<EdgeEntity>(HitEntityId)) {
-		GetGraphRenderer()->PushCommand(EdgeCommands::SetHit(HitEntityId, IsHit));
-	}
-	else {
-		check(GetEntityStorage().IsValid<GraphEntity>(HitEntityId));
-		GetGraphRenderer()->PushCommand(GraphCommands::SetHit(HitEntityId, IsHit));
-	}
+bool UToolProvider::SetEntityHit(const bool IsHit) const {
+	if (GetEntityStorage().IsValid<VertexEntity>(HitEntityId))
+		return GetGraphRenderer()->ExecuteCommand(VertexCommands::SetHit(HitEntityId, IsHit));
+
+	if (GetEntityStorage().IsValid<EdgeEntity>(HitEntityId))
+		return GetGraphRenderer()->ExecuteCommand(EdgeCommands::SetHit(HitEntityId, IsHit));
+
+	check(GetEntityStorage().IsValid<GraphEntity>(HitEntityId));
+	return GetGraphRenderer()->ExecuteCommand(GraphCommands::SetHit(HitEntityId, IsHit));
 }
