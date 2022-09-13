@@ -20,7 +20,7 @@ void UToolExporterPanelWidget::ShowSuccessPanel(const FString &ExportedFileDir) 
 	if (ExporterText)
 		ExporterText->SetText(FText::FromString("Selected graph has been successfuly\nexported to:\n\n" + ExportedFileDir));
 	if (ExporterConfirmButton)
-		ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor);
+		ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
 	if (ExporterPanelSwitcher)
 		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
 }
@@ -29,7 +29,7 @@ void UToolExporterPanelWidget::ShowErrorPanel(const FString &ErrorMessage) const
 	if (ExporterText)
 		ExporterText->SetText(FText::FromString("Error while exporting selected graph:\n\n" + ErrorMessage));
 	if (ExporterConfirmButton)
-		ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor);
+		ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
 	if (ExporterPanelSwitcher)
 		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
 }

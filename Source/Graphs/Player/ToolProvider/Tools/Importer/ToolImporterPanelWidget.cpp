@@ -54,7 +54,7 @@ void UToolImporterPanelWidget::ShowSuccessPanel() const {
 	if (ImporterText)
 		ImporterText->SetText(FText::FromString("Graph has been successfuly\nimported."));
 	if (ImporterConfirmButton)
-		ImporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor);
+		ImporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
 	if (ImporterPanelSwitcher)
 		ImporterPanelSwitcher->SetActiveWidgetIndex(1);
 }
@@ -63,7 +63,7 @@ void UToolImporterPanelWidget::ShowErrorPanel(const FString &ErrorMessage) const
 	if (ImporterText)
 		ImporterText->SetText(FText::FromString("Error while importing graph:\n\n" + ErrorMessage));
 	if (ImporterConfirmButton)
-		ImporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor);
+		ImporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
 	if (ImporterPanelSwitcher)
 		ImporterPanelSwitcher->SetActiveWidgetIndex(1);
 }

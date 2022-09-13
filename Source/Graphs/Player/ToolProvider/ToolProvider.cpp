@@ -1,4 +1,6 @@
 #include "ToolProvider.h"
+
+#include "Graphs/GraphRenderer/MeshFactory.h"
 #include "Graphs/GraphRenderer/Commands/EdgeCommands.h"
 #include "Graphs/GraphRenderer/Commands/GraphCommands.h"
 #include "Graphs/GraphRenderer/Commands/VertexCommands.h"
@@ -143,7 +145,7 @@ void UToolProvider::BeginPlay() {
 				GraphId, nullptr,
 				i,
 				Positions[i],
-				FLinearColor::MakeRandomColor()
+				FLinearColor::MakeRandomColor().ToFColor(false)
 			));
 		}
 

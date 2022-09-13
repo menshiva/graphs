@@ -108,7 +108,7 @@ EdgeCommands::SetHit::SetHit(
 
 EdgeCommands::SetOverrideColor::SetOverrideColor(
 	const EntityId &EdgeId,
-	const FLinearColor &OverrideColor
+	const FColor &OverrideColor
 ) : Command([&] (EntityStorage &Storage) -> bool {
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 

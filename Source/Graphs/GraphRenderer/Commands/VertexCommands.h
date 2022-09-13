@@ -10,7 +10,7 @@ namespace VertexCommands {
 			const EntityId &GraphId, EntityId *NewVertexId,
 			uint32_t UserId,
 			const FVector &Position,
-			const FLinearColor &Color
+			const FColor &Color
 		);
 	};
 
@@ -27,7 +27,7 @@ namespace VertexCommands {
 	};
 
 	struct SetOverrideColor final : AGraphRenderer::Command {
-		SetOverrideColor(const EntityId &VertexId, const FLinearColor &OverrideColor);
+		SetOverrideColor(const EntityId &VertexId, const FColor &OverrideColor);
 	};
 
 	struct Move final : AGraphRenderer::Command {

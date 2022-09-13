@@ -18,11 +18,11 @@ struct EntityId {
 	EntityId() : Index(-1), Signature(EntitySignature::SIZE) {}
 	EntityId(const uint32_t Index, const EntitySignature Signature) : Index(Index), Signature(Signature) {}
 
-	bool operator==(const EntityId OtherId) const {
+	bool operator==(const EntityId &OtherId) const {
 		return Signature == OtherId.Signature && Index == OtherId.Index;
 	}
 
-	bool operator!=(const EntityId OtherId) const {
+	bool operator!=(const EntityId &OtherId) const {
 		return !(*this == OtherId);
 	}
 

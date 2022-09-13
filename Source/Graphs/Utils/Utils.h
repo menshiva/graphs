@@ -25,11 +25,12 @@ namespace FileConsts {
 }
 
 namespace ColorConsts {
-	constexpr static FLinearColor VertexDefaultColor = FLinearColor(0.4375f, 0.4375f, 0.4375f);
+    // TODO
+	// const static FColor VertexDefaultColor = FLinearColor(0.4375f, 0.4375f, 0.4375f).ToFColor(false);
 
-	constexpr static FLinearColor BlueColor = FLinearColor(0.033345f, 0.066689f, 0.161458f);
-	constexpr static FLinearColor GreenColor = FLinearColor(0.033345f, 0.161458f, 0.128114f);
-	constexpr static FLinearColor RedColor = FLinearColor(0.161458f, 0.007046f, 0.007046f);
+	const static FColor BlueColor = FLinearColor(0.033345f, 0.066689f, 0.161458f).ToFColor(false);
+	const static FColor GreenColor = FLinearColor(0.033345f, 0.161458f, 0.128114f).ToFColor(false);
+	const static FColor RedColor = FLinearColor(0.161458f, 0.007046f, 0.007046f).ToFColor(false);
 
-	const static FLinearColor OverrideColorNone = FLinearColor::Transparent;
+	const static FColor OverrideColorNone = FColor::Transparent;
 }

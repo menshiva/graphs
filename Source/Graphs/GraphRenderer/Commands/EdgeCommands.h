@@ -36,7 +36,7 @@ namespace EdgeCommands {
 	};
 
 	struct SetOverrideColor final : AGraphRenderer::Command {
-		SetOverrideColor(const EntityId &EdgeId, const FLinearColor &OverrideColor);
+		SetOverrideColor(const EntityId &EdgeId, const FColor &OverrideColor);
 	};
 
 	struct Move final : AGraphRenderer::Command {

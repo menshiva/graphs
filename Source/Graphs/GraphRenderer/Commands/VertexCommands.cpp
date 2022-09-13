@@ -6,7 +6,7 @@ VertexCommands::Create::Create(
 	const EntityId &GraphId, EntityId *NewVertexId,
 	const uint32_t UserId,
 	const FVector &Position,
-	const FLinearColor &Color
+	const FColor &Color
 ) : Command([&, NewVertexId, UserId] (EntityStorage &Storage) -> bool {
 	const auto VertexId = Storage.NewEntity<VertexEntity>();
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
@@ -86,7 +86,7 @@ VertexCommands::SetHit::SetHit(
 
 VertexCommands::SetOverrideColor::SetOverrideColor(
 	const EntityId &VertexId,
-	const FLinearColor &OverrideColor
+	const FColor &OverrideColor
 ) : Command([&] (EntityStorage &Storage) -> bool {
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
 
@@ -121,7 +121,7 @@ void VertexCommands::ConstFuncs::Serialize(
 	Writer.Key("position");
 	Writer.String(PositionStrUTF.Get(), PositionStrUTF.Length());
 
-	auto ColorStr = "#" + Vertex.Color.ToFColor(false).ToHex();
+	auto ColorStr = "#" + Vertex.Color.ToHex();
 	ColorStr.RemoveAt(ColorStr.Len() - 2, 2, false); // removes alpha channel
 	const FTCHARToUTF8 ColorStrUTF(*ColorStr);
 	Writer.Key("color");
@@ -168,10 +168,8 @@ bool VertexCommands::ConstFuncs::Deserialize(
 	const auto &ColorMember = DomVertex.FindMember("color");
 	bool IsColorOk = ColorMember != DomVertex.MemberEnd() && ColorMember->value.IsString();
 	if (IsColorOk) {
-		const auto DesColor = FColor::FromHex(FString(ColorMember->value.GetString()));
-		IsColorOk = DesColor != FColor::Transparent;
-		if (IsColorOk)
-			NewVertex.Color = DesColor.ReinterpretAsLinear();
+		NewVertex.Color = FColor::FromHex(FString(ColorMember->value.GetString()));
+		IsColorOk = NewVertex.Color != FColor::Transparent;
 	}
 	if (!IsColorOk) {
 		ErrorMessage = "Vertex #" + FString::FromInt(NewVertex.UserId)

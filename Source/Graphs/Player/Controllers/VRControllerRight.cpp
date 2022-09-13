@@ -8,7 +8,7 @@
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Right) {
-	SetLaserNiagaraColor(ColorConsts::BlueColor);
+	SetLaserNiagaraColor(ColorConsts::BlueColor.ReinterpretAsLinear());
 	SetLaserLength(MeshInteractionLaserMaxDistance);
 	UVRControllerBase::SetLaserActive(LaserVisibleFlag);
 

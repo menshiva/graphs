@@ -7,7 +7,7 @@ struct EdgeEntity {
 
 	EntityId GraphId;
 	bool IsHit;
-	FLinearColor OverrideColor;
+	FColor OverrideColor;
 
 	// Serializable data
 	TStaticArray<EntityId, 2> VerticesIds;

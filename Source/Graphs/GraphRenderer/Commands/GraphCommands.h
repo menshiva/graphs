@@ -17,7 +17,7 @@ namespace GraphCommands {
 	};
 
 	struct SetOverrideColor final : AGraphRenderer::Command {
-		SetOverrideColor(const EntityId &GraphId, const FLinearColor &OverrideColor);
+		SetOverrideColor(const EntityId &GraphId, const FColor &OverrideColor);
 	};
 
 	struct Move final : AGraphRenderer::Command {

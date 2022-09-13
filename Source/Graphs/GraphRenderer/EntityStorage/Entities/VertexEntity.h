@@ -7,11 +7,11 @@ struct VertexEntity {
 
 	EntityId GraphId;
 	bool IsHit;
-	FLinearColor OverrideColor;
+	FColor OverrideColor;
 	TSet<EntityId> EdgesIds;
 
 	// Serializable data
 	uint32_t UserId;
 	FVector Position;
-	FLinearColor Color;
+	FColor Color;
 };

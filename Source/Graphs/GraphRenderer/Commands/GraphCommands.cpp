@@ -54,7 +54,7 @@ GraphCommands::SetHit::SetHit(
 
 GraphCommands::SetOverrideColor::SetOverrideColor(
 	const EntityId &GraphId,
-	const FLinearColor &OverrideColor
+	const FColor &OverrideColor
 ) : Command([&] (EntityStorage &Storage) -> bool {
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 	bool ChangesProvided = false;

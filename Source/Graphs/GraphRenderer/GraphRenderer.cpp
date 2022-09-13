@@ -19,13 +19,13 @@ AGraphRenderer::AGraphRenderer() {
 	ProcMesh->SetCastShadow(false);
 	ProcMesh->bUseAsyncCooking = true;
 
-	ProcMesh->CreateMeshSection_LinearColor(
+	ProcMesh->CreateMeshSection(
 		VERTICES,
 		TArray<FVector>(),
 		TArray<int32>(),
 		TArray<FVector>(),
 		TArray<FVector2D>(),
-		TArray<FLinearColor>(),
+		TArray<FColor>(),
 		TArray<FProcMeshTangent>(),
 		true
 	);
@@ -33,13 +33,13 @@ AGraphRenderer::AGraphRenderer() {
 		VERTICES,
 		ConstructorHelpers::FObjectFinder<UMaterial>(TEXT("/Game/Graphs/Materials/GraphMaterial")).Object
 	);
-	ProcMesh->CreateMeshSection_LinearColor(
+	ProcMesh->CreateMeshSection(
 		EDGES,
 		TArray<FVector>(),
 		TArray<int32>(),
 		TArray<FVector>(),
 		TArray<FVector2D>(),
-		TArray<FLinearColor>(),
+		TArray<FColor>(),
 		TArray<FProcMeshTangent>(),
 		true
 	);
@@ -77,8 +77,8 @@ void AGraphRenderer::MarkDirty() {
 		check(Storage.GetStorage<EdgeEntity>().Data.Num() == 0);
 	}
 
-	const size_t VerticesVerticesNum = VertexMeshFactory::MESH_VERTICES_NUM * VerticesStorage.Num();
-	const size_t VerticesTrianglesNum = VertexMeshFactory::MESH_TRIANGLES_INDICES_NUM * VerticesStorage.Num();
+	const size_t VerticesVerticesNum = VertexMeshFactory::VERTICES_NUM * VerticesStorage.Num();
+	const size_t VerticesTrianglesNum = VertexMeshFactory::TRIANGLES_INDICES_NUM * VerticesStorage.Num();
 
 	const size_t EdgesVerticesNum = EdgeMeshFactory::MESH_VERTICES_NUM * EdgesStorage.Num();
 	const size_t EdgesTrianglesNum = EdgeMeshFactory::MESH_TRIANGLES_INDICES_NUM * EdgesStorage.Num();
@@ -100,7 +100,7 @@ void AGraphRenderer::MarkDirty() {
 				? ColorConsts::BlueColor
 				: VertexEntIter->OverrideColor != ColorConsts::OverrideColorNone
 					? VertexEntIter->OverrideColor
-					: VertexEntIter->Color;
+					: VertexEntIter->Color; // TODO: VertexDefaultColor if parent graph is not colorful
 			VertexMeshFactory::GenerateMesh(
 				VertexEntIter->Position, Color,
 				Vertices, Triangles, Colors
@@ -108,7 +108,7 @@ void AGraphRenderer::MarkDirty() {
 
 			EntityCollisionData.Init(
 				EntityId(VertexEntIter.GetIndex(), EntitySignature::VERTEX),
-				VertexMeshFactory::MESH_TRIANGLES_INDICES_NUM / 3
+				VertexMeshFactory::TRIANGLES_INDICES_NUM / 3
 			);
 			CollisionData.Append(EntityCollisionData);
 		}
@@ -129,23 +129,24 @@ void AGraphRenderer::MarkDirty() {
 			const auto &FromVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[0]);
 			const auto &ToVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[1]);
 
-			FLinearColor FromVertColor, ToVertColor;
+			const FColor *FromVertColor, *ToVertColor;
 			if (EdgeEntIter->IsHit) {
-				FromVertColor = ColorConsts::BlueColor;
-				ToVertColor = ColorConsts::BlueColor;
+				FromVertColor = &ColorConsts::BlueColor;
+				ToVertColor = &ColorConsts::BlueColor;
 			}
 			else if (EdgeEntIter->OverrideColor != ColorConsts::OverrideColorNone) {
-				FromVertColor = EdgeEntIter->OverrideColor;
-				ToVertColor = EdgeEntIter->OverrideColor;
+				FromVertColor = &EdgeEntIter->OverrideColor;
+				ToVertColor = &EdgeEntIter->OverrideColor;
 			}
 			else {
-				FromVertColor = FromVertEnt.Color;
-				ToVertColor = ToVertEnt.Color;
+				// TODO: VertexDefaultColor if parent graph is not colorful
+				FromVertColor = &FromVertEnt.Color;
+				ToVertColor = &ToVertEnt.Color;
 			}
 
 			EdgeMeshFactory::GenerateMesh(
 				FromVertEnt.Position, ToVertEnt.Position,
-				FromVertColor, ToVertColor,
+				*FromVertColor, *ToVertColor,
 				Vertices, Triangles, Colors
 			);
 
