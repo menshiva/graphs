@@ -2,6 +2,13 @@
 #include "ProceduralMeshComponent.h"
 #include "MeshFactory.h"
 
+DECLARE_CYCLE_STAT(TEXT("AGraphRenderer::GetEntityIdFromCollisionData"), STAT_AGraphRenderer_GetEntityIdFromCollisionData, STATGROUP_GRAPHS_PERF_RENDERER);
+DECLARE_CYCLE_STAT(TEXT("AGraphRenderer::ExecuteCommand"), STAT_AGraphRenderer_ExecuteCommand, STATGROUP_GRAPHS_PERF_RENDERER);
+DECLARE_CYCLE_STAT(TEXT("AGraphRenderer::MarkDirty"), STAT_AGraphRenderer_MarkDirty, STATGROUP_GRAPHS_PERF_RENDERER);
+DECLARE_CYCLE_STAT(TEXT("AGraphRenderer::MarkDirty::Vertices"), STAT_AGraphRenderer_MarkDirty_Vertices, STATGROUP_GRAPHS_PERF_RENDERER);
+DECLARE_CYCLE_STAT(TEXT("AGraphRenderer::MarkDirty::Edges"), STAT_AGraphRenderer_MarkDirty_Edges, STATGROUP_GRAPHS_PERF_RENDERER);
+DECLARE_CYCLE_STAT(TEXT("AGraphRenderer::UpdateSection"), STAT_AGraphRenderer_UpdateSection, STATGROUP_GRAPHS_PERF_RENDERER);
+
 enum Section : int32 {
 	VERTICES = 0,
 	EDGES
@@ -52,19 +59,26 @@ AGraphRenderer::AGraphRenderer() {
 }
 
 EntityId AGraphRenderer::GetEntityIdFromCollisionData(const int32 FaceIndex) const {
+	SCOPE_CYCLE_COUNTER(STAT_AGraphRenderer_GetEntityIdFromCollisionData);
 	if (FaceIndex >= 0 && FaceIndex < CollisionData.Num())
 		return CollisionData[FaceIndex];
 	return EntityId::NONE();
 }
 
-bool AGraphRenderer::ExecuteCommand(Command&& Cmd, const bool MarkDirty) {
-	const auto CommandResult = Cmd.Implementation(Storage);
+bool AGraphRenderer::ExecuteCommand(Command &&Cmd, const bool MarkDirty) {
+	bool CommandResult;
+	{
+		SCOPE_CYCLE_COUNTER(STAT_AGraphRenderer_ExecuteCommand);
+		CommandResult = Cmd.Implementation(Storage);
+	}
 	if (CommandResult && MarkDirty)
 		this->MarkDirty();
 	return CommandResult;
 }
 
 void AGraphRenderer::MarkDirty() {
+	SCOPE_CYCLE_COUNTER(STAT_AGraphRenderer_MarkDirty);
+
 	TArray<FVector> Vertices;
 	TArray<int32_t> Triangles;
 	TArray<FColor> Colors;
@@ -91,6 +105,8 @@ void AGraphRenderer::MarkDirty() {
 
 	// Vertices
 	{
+		SCOPE_CYCLE_COUNTER(STAT_AGraphRenderer_MarkDirty_Vertices);
+
 		Vertices.Reserve(VerticesVerticesNum);
 		Triangles.Reserve(VerticesTrianglesNum);
 		Colors.Reserve(VerticesVerticesNum);
@@ -116,52 +132,58 @@ void AGraphRenderer::MarkDirty() {
 		check(Vertices.Num() == VerticesVerticesNum);
 		check(Triangles.Num() == VerticesTrianglesNum);
 		check(Colors.Num() == VerticesVerticesNum);
+
+		UpdateSection(VERTICES, Vertices, Triangles, Colors);
 	}
-	UpdateSection(VERTICES, Vertices, Triangles, Colors);
 
 	// Edges
-	if (EdgesStorage.Num() > 0) {
-		Vertices.Reset(EdgesVerticesNum);
-		Triangles.Reset(EdgesTrianglesNum);
-		Colors.Reset(EdgesVerticesNum);
+	{
+		SCOPE_CYCLE_COUNTER(STAT_AGraphRenderer_MarkDirty_Edges);
 
-		for (auto EdgeEntIter = EdgesStorage.CreateConstIterator(); EdgeEntIter; ++EdgeEntIter) {
-			const auto &FromVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[0]);
-			const auto &ToVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[1]);
+		if (EdgesStorage.Num() > 0) {
+			Vertices.Reset(EdgesVerticesNum);
+			Triangles.Reset(EdgesTrianglesNum);
+			Colors.Reset(EdgesVerticesNum);
 
-			const FColor *FromVertColor, *ToVertColor;
-			if (EdgeEntIter->IsHit) {
-				FromVertColor = &ColorConsts::BlueColor;
-				ToVertColor = &ColorConsts::BlueColor;
+			for (auto EdgeEntIter = EdgesStorage.CreateConstIterator(); EdgeEntIter; ++EdgeEntIter) {
+				const auto &FromVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[0]);
+				const auto &ToVertEnt = Storage.GetEntity<VertexEntity>(EdgeEntIter->VerticesIds[1]);
+
+				const FColor *FromVertColor, *ToVertColor;
+				if (EdgeEntIter->IsHit) {
+					FromVertColor = &ColorConsts::BlueColor;
+					ToVertColor = &ColorConsts::BlueColor;
+				}
+				else if (EdgeEntIter->OverrideColor != ColorConsts::OverrideColorNone) {
+					FromVertColor = &EdgeEntIter->OverrideColor;
+					ToVertColor = &EdgeEntIter->OverrideColor;
+				}
+				else {
+					// TODO: VertexDefaultColor if parent graph is not colorful
+					FromVertColor = &FromVertEnt.Color;
+					ToVertColor = &ToVertEnt.Color;
+				}
+
+				EdgeMeshFactory::GenerateMesh(
+					FromVertEnt.Position, ToVertEnt.Position,
+					*FromVertColor, *ToVertColor,
+					Vertices, Triangles, Colors
+				);
+
+				EntityCollisionData.Init(
+					EntityId(EdgeEntIter.GetIndex(), EntitySignature::EDGE),
+					EdgeMeshFactory::MESH_TRIANGLES_INDICES_NUM / 3
+				);
+				CollisionData.Append(EntityCollisionData);
 			}
-			else if (EdgeEntIter->OverrideColor != ColorConsts::OverrideColorNone) {
-				FromVertColor = &EdgeEntIter->OverrideColor;
-				ToVertColor = &EdgeEntIter->OverrideColor;
-			}
-			else {
-				// TODO: VertexDefaultColor if parent graph is not colorful
-				FromVertColor = &FromVertEnt.Color;
-				ToVertColor = &ToVertEnt.Color;
-			}
 
-			EdgeMeshFactory::GenerateMesh(
-				FromVertEnt.Position, ToVertEnt.Position,
-				*FromVertColor, *ToVertColor,
-				Vertices, Triangles, Colors
-			);
-
-			EntityCollisionData.Init(
-				EntityId(EdgeEntIter.GetIndex(), EntitySignature::EDGE),
-				EdgeMeshFactory::MESH_TRIANGLES_INDICES_NUM / 3
-			);
-			CollisionData.Append(EntityCollisionData);
+			check(Vertices.Num() <= EdgesVerticesNum);
+			check(Triangles.Num() <= EdgesTrianglesNum);
+			check(Colors.Num() <= EdgesVerticesNum);
 		}
 
-		check(Vertices.Num() <= EdgesVerticesNum);
-		check(Triangles.Num() <= EdgesTrianglesNum);
-		check(Colors.Num() <= EdgesVerticesNum);
+		UpdateSection(EDGES, Vertices, Triangles, Colors);
 	}
-	UpdateSection(EDGES, Vertices, Triangles, Colors);
 }
 
 void AGraphRenderer::UpdateSection(
@@ -170,6 +192,7 @@ void AGraphRenderer::UpdateSection(
 	const TArray<int32_t> &Triangles,
 	const TArray<FColor> &Colors
 ) const {
+	SCOPE_CYCLE_COUNTER(STAT_AGraphRenderer_UpdateSection);
 	if (ProcMesh->GetProcMeshSection(SectionIdx)->ProcIndexBuffer.Num() == Triangles.Num()) {
 		ProcMesh->UpdateMeshSection(
 			SectionIdx,

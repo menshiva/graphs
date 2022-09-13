@@ -21,11 +21,14 @@ EdgeCommands::Create::Create(
 	);
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Create"), STAT_EdgeCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 bool EdgeCommands::Create::CreateImpl(
 	EntityStorage &Storage,
 	const EntityId& GraphId, EntityId* NewEdgeId,
 	const EntityId &FromVertexId, const EntityId &ToVertexId
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Create);
+
 	const auto EdgeId = Storage.NewEntity<EdgeEntity>();
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 
@@ -61,7 +64,9 @@ bool EdgeCommands::Create::CreateImpl(
 	return true;
 }
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Remove"), STAT_EdgeCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Remove);
 	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
 
 	// remove from associated parent graph
@@ -79,10 +84,13 @@ EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([&] (EntityStorag
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Reserve"), STAT_EdgeCommands_Reserve, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Reserve::Reserve(
 	const EntityId &GraphId,
 	const uint32_t NewEdgesNum
 ) : Command([&, NewEdgesNum] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Reserve);
+
 	auto &EdgesStorage = Storage.GetStorageMut<EdgeEntity>().Data;
 	EdgesStorage.Reserve(EdgesStorage.Num() + NewEdgesNum);
 
@@ -93,10 +101,12 @@ EdgeCommands::Reserve::Reserve(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetHit"), STAT_EdgeCommands_SetHit, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::SetHit::SetHit(
 	const EntityId &EdgeId,
 	const bool IsHit
 ) : Command([&, IsHit] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_SetHit);
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 
 	if (Edge.IsHit == IsHit)
@@ -106,10 +116,12 @@ EdgeCommands::SetHit::SetHit(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetOverrideColor"), STAT_EdgeCommands_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::SetOverrideColor::SetOverrideColor(
 	const EntityId &EdgeId,
 	const FColor &OverrideColor
 ) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_SetOverrideColor);
 	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
 
 	if (Edge.OverrideColor == OverrideColor)
@@ -119,10 +131,12 @@ EdgeCommands::SetOverrideColor::SetOverrideColor(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Move"), STAT_EdgeCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Move::Move(
 	const EntityId &EdgeId,
 	const FVector &Delta
 ) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Move);
 	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
 
 	for (const auto &VertexId : Edge.VerticesIds)
@@ -131,11 +145,14 @@ EdgeCommands::Move::Move(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::ConstFuncs::Serialize"), STAT_EdgeCommands_ConstFuncs_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 void EdgeCommands::ConstFuncs::Serialize(
 	const EntityStorage &Storage,
 	const EntityId &EdgeId,
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_ConstFuncs_Serialize);
+
 	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
 	const auto &FromVertex = Storage.GetEntity<VertexEntity>(Edge.VerticesIds[0]);
 	const auto &ToVertex = Storage.GetEntity<VertexEntity>(Edge.VerticesIds[1]);
@@ -151,6 +168,7 @@ void EdgeCommands::ConstFuncs::Serialize(
 	Writer.EndObject();
 }
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::ConstFuncs::Deserialize"), STAT_EdgeCommands_ConstFuncs_Deserialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 bool EdgeCommands::ConstFuncs::Deserialize(
 	const EntityStorage &Storage,
 	const EntityId &GraphId,
@@ -158,6 +176,8 @@ bool EdgeCommands::ConstFuncs::Deserialize(
 	FString &ErrorMessage,
 	EdgeEntity &NewEdge
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_ConstFuncs_Deserialize);
+
 	if (!DomEdge.IsObject()) {
 		ErrorMessage = "Edge error: Should be an object.";
 		return false;
@@ -202,9 +222,13 @@ bool EdgeCommands::ConstFuncs::Deserialize(
 	return true;
 }
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::ConstFuncs::ComputeHash"), STAT_EdgeCommands_ConstFuncs_ComputeHash, STATGROUP_GRAPHS_PERF_COMMANDS);
 uint32_t EdgeCommands::ConstFuncs::ComputeHash(const EdgeEntity &Edge, const bool ReverseVerticesIds) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_ConstFuncs_ComputeHash);
+
 	check(Edge.VerticesIds[0] != EntityId::NONE());
 	check(Edge.VerticesIds[1] != EntityId::NONE());
+
 	return Utils::CantorPair(
 		EntityId::GetHash(Edge.VerticesIds[!ReverseVerticesIds ? 0 : 1]),
 		EntityId::GetHash(Edge.VerticesIds[!ReverseVerticesIds ? 1 : 0])

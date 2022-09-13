@@ -3,10 +3,12 @@
 #include "EdgeCommands.h"
 #include "ThirdParty/rapidjson/error/en.h"
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Create"), STAT_GraphCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Create::Create(
 	EntityId *NewGraphId,
 	const bool UseDefaultColors
 ) : Command([&, NewGraphId, UseDefaultColors] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Create);
 	const auto GraphId = Storage.NewEntity<GraphEntity>();
 
 	auto &Graph = Storage.GetEntityMut<GraphEntity>(GraphId);
@@ -18,7 +20,9 @@ GraphCommands::Create::Create(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Remove"), STAT_GraphCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Remove::Remove(const EntityId &GraphId) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Remove);
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 
 	for (const auto &VertexId : Graph.VerticesIds)
@@ -30,10 +34,13 @@ GraphCommands::Remove::Remove(const EntityId &GraphId) : Command([&] (EntityStor
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::SetHit"), STAT_GraphCommands_SetHit, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::SetHit::SetHit(
 	const EntityId &GraphId,
 	const bool IsHit
 ) : Command([&, IsHit] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetHit);
+
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 	bool ChangesProvided = false;
 
@@ -52,10 +59,13 @@ GraphCommands::SetHit::SetHit(
 	return ChangesProvided;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::SetOverrideColor"), STAT_GraphCommands_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::SetOverrideColor::SetOverrideColor(
 	const EntityId &GraphId,
 	const FColor &OverrideColor
 ) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetOverrideColor);
+
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 	bool ChangesProvided = false;
 
@@ -74,10 +84,12 @@ GraphCommands::SetOverrideColor::SetOverrideColor(
 	return ChangesProvided;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Move"), STAT_GraphCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Move::Move(
 	const EntityId &GraphId,
 	const FVector &Delta
 ) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Move);
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 
 	for (const auto &VertexId : Graph.VerticesIds)
@@ -86,11 +98,13 @@ GraphCommands::Move::Move(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Rotate"), STAT_GraphCommands_Rotate, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Rotate::Rotate(
 	const EntityId &GraphId,
 	const FVector &Origin,
 	const float Angle
 ) : Command([&, Angle] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Rotate);
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 
 	for (const auto &VertexId : Graph.VerticesIds) {
@@ -102,16 +116,23 @@ GraphCommands::Rotate::Rotate(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Deserialize"), STAT_GraphCommands_Deserialize, STATGROUP_GRAPHS_PERF_COMMANDS);
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Deserialize::ParseDom"), STAT_GraphCommands_Deserialize_ParseDom, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Deserialize::Deserialize(
 	const FString &JsonStr,
 	FString &ErrorMessage
 ) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Deserialize);
+
 	const FTCHARToUTF8 JsonStrUTF(*JsonStr);
 	rapidjson::Document DomGraph;
 
-	if (DomGraph.Parse(JsonStrUTF.Get()).HasParseError()) {
-		ErrorMessage = GetParseError_En(DomGraph.GetParseError());
-		return false;
+	{
+		SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Deserialize_ParseDom);
+		if (DomGraph.Parse(JsonStrUTF.Get()).HasParseError()) {
+			ErrorMessage = GetParseError_En(DomGraph.GetParseError());
+			return false;
+		}
 	}
 
 	if (!DomGraph.IsObject()) {
@@ -196,11 +217,13 @@ GraphCommands::Deserialize::Deserialize(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::ConstFuncs::Serialize"), STAT_GraphCommands_ConstFuncs_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 void GraphCommands::ConstFuncs::Serialize(
 	const EntityStorage &Storage,
 	const EntityId &GraphId,
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_ConstFuncs_Serialize);
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 
 	Writer.StartObject();
@@ -226,7 +249,10 @@ void GraphCommands::ConstFuncs::Serialize(
 	Writer.EndObject();
 }
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::ConstFuncs::ComputeCenterPosition"), STAT_GraphCommands_ConstFuncs_ComputeCenterPosition, STATGROUP_GRAPHS_PERF_COMMANDS);
 FVector GraphCommands::ConstFuncs::ComputeCenterPosition(const EntityStorage &Storage, const EntityId &GraphId) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_ConstFuncs_ComputeCenterPosition);
+
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 	check(Graph.VerticesIds.Num() > 0);
 
@@ -238,11 +264,13 @@ FVector GraphCommands::ConstFuncs::ComputeCenterPosition(const EntityStorage &St
 	return Center;
 }
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::ConstFuncs::IsSetContainsGraphChildrenEntities"), STAT_GraphCommands_ConstFuncs_IsSetContainsGraphChildrenEntities, STATGROUP_GRAPHS_PERF_COMMANDS);
 bool GraphCommands::ConstFuncs::IsSetContainsGraphChildrenEntities(
 	const EntityStorage &Storage,
 	const EntityId &GraphId,
 	const TSet<EntityId> &InSet
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_ConstFuncs_IsSetContainsGraphChildrenEntities);
 	const auto &Graph = Storage.GetEntity<GraphEntity>(GraphId);
 
 	if (InSet.Num() < Graph.VerticesIds.Num() + Graph.EdgesIds.Num())

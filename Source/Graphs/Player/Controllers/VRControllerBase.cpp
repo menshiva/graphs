@@ -4,7 +4,6 @@
 #include "Graphs/Player/Pawn/VRPawn.h"
 #include "Graphs/Utils/Utils.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
-#include "Graphs/Utils/Consts.h"
 
 DECLARE_CYCLE_STAT(TEXT("UVRControllerBase::Tick"), STAT_UVRControllerBase_Tick, STATGROUP_GRAPHS_PERF);
 

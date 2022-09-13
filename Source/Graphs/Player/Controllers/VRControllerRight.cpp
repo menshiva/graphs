@@ -3,7 +3,6 @@
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
 #include "Graphs/UI/OptionSelector/OptionSelectorWidget.h"
-#include "Graphs/Utils/Utils.h"
 
 DECLARE_CYCLE_STAT(TEXT("UVRControllerRight::Tick"), STAT_UVRControllerRight_Tick, STATGROUP_GRAPHS_PERF);
 

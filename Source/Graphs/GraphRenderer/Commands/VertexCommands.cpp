@@ -2,12 +2,15 @@
 #include "EdgeCommands.h"
 #include "GraphCommands.h"
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Create"), STAT_VertexCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::Create::Create(
 	const EntityId &GraphId, EntityId *NewVertexId,
 	const uint32_t UserId,
 	const FVector &Position,
 	const FColor &Color
 ) : Command([&, NewVertexId, UserId] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Create);
+
 	const auto VertexId = Storage.NewEntity<VertexEntity>();
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
 
@@ -31,7 +34,9 @@ VertexCommands::Create::Create(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Remove"), STAT_VertexCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::Remove::Remove(const EntityId &VertexId) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Remove);
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
 
 	// remove from associated parent graph
@@ -57,10 +62,13 @@ VertexCommands::Remove::Remove(const EntityId &VertexId) : Command([&] (EntitySt
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Reserve"), STAT_VertexCommands_Reserve, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::Reserve::Reserve(
 	const EntityId &GraphId,
 	const uint32_t NewVerticesNum
 ) : Command([&, NewVerticesNum] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Reserve);
+
 	auto &VerticesStorage = Storage.GetStorageMut<VertexEntity>().Data;
 	VerticesStorage.Reserve(VerticesStorage.Num() + NewVerticesNum);
 
@@ -71,10 +79,12 @@ VertexCommands::Reserve::Reserve(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::SetHit"), STAT_VertexCommands_SetHit, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::SetHit::SetHit(
 	const EntityId &VertexId,
 	const bool IsHit
 ) : Command([&, IsHit] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_SetHit);
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
 
 	if (Vertex.IsHit == IsHit)
@@ -84,10 +94,12 @@ VertexCommands::SetHit::SetHit(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::SetOverrideColor"), STAT_VertexCommands_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::SetOverrideColor::SetOverrideColor(
 	const EntityId &VertexId,
 	const FColor &OverrideColor
 ) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_SetOverrideColor);
 	auto &Vertex = Storage.GetEntityMut<VertexEntity>(VertexId);
 
 	if (Vertex.OverrideColor == OverrideColor)
@@ -97,19 +109,24 @@ VertexCommands::SetOverrideColor::SetOverrideColor(
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Move"), STAT_VertexCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::Move::Move(
 	const EntityId &VertexId,
 	const FVector &Delta
 ) : Command([&] (EntityStorage &Storage) -> bool {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Move);
 	Storage.GetEntityMut<VertexEntity>(VertexId).Position += Delta;
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::ConstFuncs::Serialize"), STAT_VertexCommands_ConstFuncs_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 void VertexCommands::ConstFuncs::Serialize(
 	const EntityStorage &Storage,
 	const EntityId &VertexId,
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_ConstFuncs_Serialize);
+
 	const auto &Vertex = Storage.GetEntity<VertexEntity>(VertexId);
 	Writer.StartObject();
 
@@ -130,6 +147,7 @@ void VertexCommands::ConstFuncs::Serialize(
 	Writer.EndObject();
 }
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::ConstFuncs::Deserialize"), STAT_VertexCommands_ConstFuncs_Deserialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 bool VertexCommands::ConstFuncs::Deserialize(
 	const EntityStorage &Storage,
 	const EntityId &GraphId,
@@ -137,6 +155,8 @@ bool VertexCommands::ConstFuncs::Deserialize(
 	FString &ErrorMessage,
 	VertexEntity &NewVertex
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_ConstFuncs_Deserialize);
+
 	if (!DomVertex.IsObject()) {
 		ErrorMessage = "Vertex error: Should be an object.";
 		return false;
