@@ -12,3 +12,6 @@ namespace ColorConsts {
 	constexpr static FLinearColor GreenColor = FLinearColor(0.033345f, 0.161458f, 0.128114f);
 	constexpr static FLinearColor RedColor = FLinearColor(0.161458f, 0.007046f, 0.007046f);
 }
+
+DECLARE_STATS_GROUP(TEXT("GRAPHS_PRERF"), STATGROUP_GRAPHS_PERF, STATCAT_Advanced); 
+DECLARE_STATS_GROUP(TEXT("GRAPHS_PRERF_COMMANDS"), STATGROUP_GRAPHS_PERF_COMMANDS, STATCAT_Advanced); 

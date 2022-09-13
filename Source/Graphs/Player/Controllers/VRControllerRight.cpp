@@ -5,6 +5,8 @@
 #include "Graphs/UI/OptionSelector/OptionSelectorWidget.h"
 #include "Graphs/Utils/Consts.h"
 
+DECLARE_CYCLE_STAT(TEXT("UVRControllerRight::Tick"), STAT_UVRControllerRight_Tick, STATGROUP_GRAPHS_PERF);
+
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Right) {
@@ -67,7 +69,9 @@ void UVRControllerRight::TickComponent(
 	const ELevelTick TickType,
 	FActorComponentTickFunction *ThisTickFunction
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_UVRControllerRight_Tick);
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
 	if (State == ControllerState::UI) {
 		const auto &UiHitResult = UiInteractor->GetLastHitResult();
 		if (const auto Menu = Cast<UMenuWidgetComponent>(UiHitResult.Component.Get()))

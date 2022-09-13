@@ -9,6 +9,8 @@
 #include "Tools/Manipulator/ToolManipulator.h"
 #include "Tools/Remover/ToolRemover.h"
 
+DECLARE_CYCLE_STAT(TEXT("UToolProvider::Tick"), STAT_UToolProvider_Tick, STATGROUP_GRAPHS_PERF);
+
 UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UActorComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
 
@@ -78,6 +80,7 @@ void UToolProvider::TickComponent(
 	const ELevelTick TickType,
 	FActorComponentTickFunction *ThisTickFunction
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_UToolProvider_Tick);
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 	if (ActiveTool.IsValid())
 		ActiveTool->TickTool();

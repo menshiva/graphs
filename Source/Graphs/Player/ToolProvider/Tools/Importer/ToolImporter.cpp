@@ -4,6 +4,8 @@
 #include "Graphs/Utils/Consts.h"
 #include "ThirdParty/rapidjson/error/en.h"
 
+DECLARE_CYCLE_STAT(TEXT("UToolImporter::ImportGraphFromFile"), STAT_UToolImporter_ImportGraphFromFile, STATGROUP_GRAPHS_PERF);
+
 UToolImporter::UToolImporter() : UTool(
 	"Import",
 	TEXT("/Game/Graphs/UI/Icons/Import"),
@@ -33,6 +35,8 @@ void UToolImporter::RefreshFileList() const {
 }
 
 bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage) const {
+	SCOPE_CYCLE_COUNTER(STAT_UToolImporter_ImportGraphFromFile);
+
 	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 	check(FilePath.EndsWith(".json"));
 
@@ -41,35 +45,34 @@ bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorM
 		return false;
 	}
 
-	// Open selected file for reading.
-	const TUniquePtr<IFileHandle> InputFileHandler(FileManager.OpenRead(*FilePath));
-	if (!InputFileHandler.IsValid()) {
-		ErrorMessage = "Failed to open file.";
-		return false;
-	}
-
-	// Read all bytes from file.
-	TArray<uint8> InputBuffer;
-	InputBuffer.AddUninitialized(InputFileHandler->Size());
-	if (!InputFileHandler->Read(InputBuffer.GetData(), InputFileHandler->Size())) {
+	FString InputStr;
+	if (!FFileHelper::LoadFileToString(InputStr, &FileManager, *FilePath)) {
 		ErrorMessage = "Failed to read from file.";
 		return false;
 	}
 
-	// Parse json with DOM style API.
-	// https://rapidjson.org/md_doc_features.html#:~:text=DOM%20(Document%20Object%20Model)%20style%20API
-	rapidjson::Document JsonDom;
-	const auto Input = reinterpret_cast<char*>(InputBuffer.GetData());
-	const rapidjson::ParseResult &ParseResult = JsonDom.Parse(Input);
-	if (!ParseResult) {
-		ErrorMessage =
-			"JSON parse error: " + FString(GetParseError_En(ParseResult.Code()))
-			+ " (" + FString::FromInt(ParseResult.Offset()) + ")";
-		return false;
-	}
+	const FTCHARToUTF8 Convert(*InputStr);
+	rapidjson::StringStream JsonStringStream(Convert.Get());
+	rapidjson::Reader Reader;
+	Reader.IterativeParseInit();
 
 	// Deserialize graph.
 	EntityId NewGraphId = ENTITY_NONE;
-	GetGraphProvider()->ExecuteCommand(GraphCommands::Deserialize(&NewGraphId, JsonDom, ErrorMessage));
+	GetGraphProvider()->ExecuteCommand(GraphCommands::Deserialize(
+		&NewGraphId,
+		JsonStringStream,
+		Reader,
+		ErrorMessage
+	));
+
+	if (NewGraphId == ENTITY_NONE) {
+		if (ErrorMessage.Len() == 0) {
+			ErrorMessage =
+				"JSON parse error: " + FString(GetParseError_En(Reader.GetParseErrorCode()))
+				+ " (" + FString::FromInt(Reader.GetErrorOffset()) + ")";
+		}
+		return false;
+	}
+
 	return NewGraphId != ENTITY_NONE;
 }
