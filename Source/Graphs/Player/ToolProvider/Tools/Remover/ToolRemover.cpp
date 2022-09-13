@@ -4,6 +4,8 @@
 #include "Graphs/GraphRenderer/Commands/GraphCommands.h"
 #include "Graphs/GraphRenderer/Commands/VertexCommands.h"
 
+DECLARE_CYCLE_STAT(TEXT("UToolRemover::OnRightTriggerAction"), STAT_UToolRemover_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
+
 UToolRemover::UToolRemover() : UTool(
 	"Remove",
 	TEXT("/Game/Graphs/UI/Icons/Remove"),
@@ -26,6 +28,8 @@ void UToolRemover::OnDetach() {
 // TODO: test on multiple graphs
 
 bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
+	SCOPE_CYCLE_COUNTER(STAT_UToolRemover_OnRightTriggerAction);
+
 	if (IsPressed && GetHitEntityId() != EntityId::NONE()) {
 		if (!GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId())) {
 			const auto RemovedEntNum = SelectedEntitiesToRemove.Remove(GetHitEntityId());
@@ -87,6 +91,7 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 		GetToolPanel<UToolRemoverPanelWidget>()->SetButtonsEnabled(SelectedEntitiesToRemove.Num() > 0);
 		return true;
 	}
+
 	return Super::OnRightTriggerAction(IsPressed);
 }
 

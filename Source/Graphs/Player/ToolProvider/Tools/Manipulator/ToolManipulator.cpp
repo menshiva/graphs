@@ -4,6 +4,11 @@
 #include "Graphs/GraphRenderer/Commands/GraphCommands.h"
 #include "Graphs/GraphRenderer/Commands/VertexCommands.h"
 
+DECLARE_CYCLE_STAT(TEXT("UToolManipulator::TickTool"), STAT_UToolManipulator_TickTool, STATGROUP_GRAPHS_PERF);
+DECLARE_CYCLE_STAT(TEXT("UToolManipulator::OnRightTriggerAction"), STAT_UToolManipulator_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
+DECLARE_CYCLE_STAT(TEXT("UToolManipulator::OnRightThumbstickY"), STAT_UToolManipulator_OnRightThumbstickY, STATGROUP_GRAPHS_PERF);
+DECLARE_CYCLE_STAT(TEXT("UToolManipulator::OnRightThumbstickX"), STAT_UToolManipulator_OnRightThumbstickX, STATGROUP_GRAPHS_PERF);
+
 UToolManipulator::UToolManipulator() : UTool(
 	"Manipulate",
 	TEXT("/Game/Graphs/UI/Icons/Move"),
@@ -31,6 +36,7 @@ void UToolManipulator::OnDetach() {
 }
 
 void UToolManipulator::TickTool() {
+	SCOPE_CYCLE_COUNTER(STAT_UToolManipulator_TickTool);
 	Super::TickTool();
 	if (Mode == ManipulationMode::MOVE && GetVrRightController()->IsInToolState()) {
 		const auto NewLaserPosition = GetVrRightController()->GetLaserEndPosition();
@@ -53,6 +59,8 @@ void UToolManipulator::TickTool() {
 }
 
 bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
+	SCOPE_CYCLE_COUNTER(STAT_UToolManipulator_OnRightTriggerAction);
+
 	if (IsPressed) {
 		if (GetHitEntityId() != EntityId::NONE()) {
 			if (Mode == ManipulationMode::MOVE) {
@@ -77,18 +85,25 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 		GetVrRightController()->SetToolStateEnabled(false);
 		GetToolPanel<UToolManipulatorPanelWidget>()->SetTextSelectEntity();
 	}
+
 	return Super::OnRightTriggerAction(IsPressed);
 }
 
 bool UToolManipulator::OnRightThumbstickY(const float Value) {
+	SCOPE_CYCLE_COUNTER(STAT_UToolManipulator_OnRightThumbstickY);
+
 	if (Mode == ManipulationMode::MOVE && GetVrRightController()->IsInToolState()) {
 		GetVrRightController()->SetLaserLengthDelta(Value);
 		return true;
 	}
+
 	return Super::OnRightThumbstickY(Value);
 }
 
 bool UToolManipulator::OnRightThumbstickX(const float Value) {
+	SCOPE_CYCLE_COUNTER(STAT_UToolManipulator_OnRightThumbstickX);
+
+	// TODO: do nothing if value is 0.0f
 	if (Mode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
 		check(GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId()));
 		GetGraphRenderer()->ExecuteCommand(GraphCommands::Rotate(
@@ -98,5 +113,6 @@ bool UToolManipulator::OnRightThumbstickX(const float Value) {
 		), true);
 		return true;
 	}
+
 	return Super::OnRightThumbstickX(Value);
 }

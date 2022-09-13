@@ -4,6 +4,9 @@
 #include "Graphs/Player/Pawn/VRPawn.h"
 #include "Graphs/Utils/Utils.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
+#include "Graphs/Utils/Consts.h"
+
+DECLARE_CYCLE_STAT(TEXT("UVRControllerBase::Tick"), STAT_UVRControllerBase_Tick, STATGROUP_GRAPHS_PERF);
 
 UVRControllerBase::UVRControllerBase(
 	const FObjectInitializer &ObjectInitializer,
@@ -85,6 +88,7 @@ void UVRControllerBase::TickComponent(
 	FActorComponentTickFunction* ThisTickFunction
 ) {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+	SCOPE_CYCLE_COUNTER(STAT_UVRControllerBase_Tick);
 
 	LaserStartPosition = FMath::Lerp(LaserStartPosition, MotionControllerAim->GetComponentLocation(), 0.5f);
 	LaserDirection = FMath::Lerp(LaserDirection, MotionControllerAim->GetForwardVector(), 0.25f);

@@ -3,6 +3,8 @@
 #include "Graphs/Player/Pawn/VRPawn.h"
 #include "Graphs/Utils/Utils.h"
 
+DECLARE_CYCLE_STAT(TEXT("UVRControllerLeft::Tick"), STAT_UVRControllerLeft_Tick, STATGROUP_GRAPHS_PERF);
+
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
@@ -90,7 +92,9 @@ void UVRControllerLeft::TickComponent(
 	const ELevelTick TickType,
 	FActorComponentTickFunction* ThisTickFunction
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_UVRControllerLeft_Tick);
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+
 	if (IsLaserActive()) {
 		auto TeleportLocation = GetLaserEndPosition();
 		TeleportPreviewMesh->SetWorldLocation(TeleportLocation);

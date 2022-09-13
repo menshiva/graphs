@@ -2,6 +2,9 @@
 #include "ToolExporterPanelWidget.h"
 #include "Graphs/GraphRenderer/Commands/GraphCommands.h"
 
+DECLARE_CYCLE_STAT(TEXT("UToolExporter::OnRightTriggerAction"), STAT_UToolExporter_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
+DECLARE_CYCLE_STAT(TEXT("UToolExporter::ExportGraph"), STAT_UToolExporter_ExportGraph, STATGROUP_GRAPHS_PERF);
+
 UToolExporter::UToolExporter() : UTool(
 	"Export",
 	TEXT("/Game/Graphs/UI/Icons/Export"),
@@ -22,6 +25,8 @@ void UToolExporter::OnDetach() {
 }
 
 bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
+	SCOPE_CYCLE_COUNTER(STAT_UToolExporter_OnRightTriggerAction);
+
 	if (IsPressed && GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId())) {
 		auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
@@ -51,6 +56,7 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 
 		return true;
 	}
+
 	return Super::OnRightTriggerAction(IsPressed);
 }
 
@@ -82,6 +88,8 @@ bool UToolExporter::ExportGraph(
 	const FString &OutputPath,
 	FString &ErrorMessage
 ) const {
+	SCOPE_CYCLE_COUNTER(STAT_UToolExporter_ExportGraph);
+
 	const TUniquePtr<IFileHandle> OutputFileHandler(FileManager.OpenWrite(*OutputPath, false, false));
 	if (!OutputFileHandler.IsValid()) {
 		ErrorMessage = "Failed to create a new file.";
