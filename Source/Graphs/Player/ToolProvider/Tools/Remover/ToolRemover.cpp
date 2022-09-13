@@ -3,6 +3,9 @@
 #include "Graphs/GraphProvider/Commands/GraphCommands.h"
 #include "Graphs/GraphProvider/Commands/VertexCommands.h"
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
+#include "Graphs/Utils/Consts.h"
+
+DECLARE_CYCLE_STAT(TEXT("UToolRemover::OnRightTriggerAction"), STAT_UToolRemover_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
 
 UToolRemover::UToolRemover() : UTool(
 	"Remove",
@@ -23,6 +26,8 @@ void UToolRemover::OnDetach() {
 }
 
 bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
+	SCOPE_CYCLE_COUNTER(STAT_UToolRemover_OnRightTriggerAction);
+
 	if (IsPressed && GetHitEntityId() != ENTITY_NONE) {
 		const auto HitEntityType = GetGraphProvider()->GetEntityType(GetHitEntityId());
 		if (HitEntityType == EntityType::VERTEX)
@@ -35,5 +40,6 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 		}
 		return true;
 	}
+
 	return Super::OnRightTriggerAction(IsPressed);
 }

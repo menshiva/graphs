@@ -5,15 +5,19 @@
 #include "Graphs/GraphProvider/Entities/GraphEntity.h"
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Create"), STAT_GraphCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Create::Create(
 	EntityId *NewGraphId
 ) : Command([NewGraphId] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Create);
 	const auto NewNode = CreateEntity<GraphEntity>(Provider);
 	if (NewGraphId)
 		*NewGraphId = NewNode->GetEntityId();
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Remove"), STAT_GraphCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Remove);
 	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
 
 	for (const auto VertexId : Graph->VerticesIds)
@@ -24,10 +28,12 @@ GraphCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provi
 	RemoveEntity(Provider, Id);
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::SetColor"), STAT_GraphCommands_SetColor, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::SetColor::SetColor(
 	EntityId Id,
 	const FLinearColor &Color
 ) : Command([Id, &Color] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetColor);
 	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
 
 	for (const auto VertexId : Graph->VerticesIds)
@@ -37,10 +43,12 @@ GraphCommands::SetColor::SetColor(
 		Provider.ExecuteCommand(EdgeCommands::SetColor(EdgeId, Color));
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::SetSelectionType"), STAT_GraphCommands_SetSelectionType, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::SetSelectionType::SetSelectionType(
 	EntityId Id,
 	SelectionType NewType
 ) : Command([Id, NewType] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetSelectionType);
 	const auto Graph = GetEntity<GraphEntity>(Provider, Id);
 
 	for (const auto VertexId : Graph->VerticesIds)
@@ -50,10 +58,12 @@ GraphCommands::SetSelectionType::SetSelectionType(
 		Provider.ExecuteCommand(EdgeCommands::SetSelectionType(EdgeId, NewType));
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Move"), STAT_GraphCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Move::Move(
 	EntityId Id,
 	const FVector &Delta
 ) : Command([Id, &Delta] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Move);
 	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
 
 	for (const auto VertexId : Graph->VerticesIds)
@@ -63,10 +73,12 @@ GraphCommands::Move::Move(
 		Provider.ExecuteCommand(EdgeCommands::Move(EdgeId, Delta, false));
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::ComputeCenterPosition"), STAT_GraphCommands_ComputeCenterPosition, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::ComputeCenterPosition::ComputeCenterPosition(
 	EntityId Id,
 	FVector &Center
 ) : Command([Id, &Center] (const AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_ComputeCenterPosition);
 	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
 	check(Graph->VerticesIds.Num() > 0);
 
@@ -76,11 +88,13 @@ GraphCommands::ComputeCenterPosition::ComputeCenterPosition(
 	Center /= Graph->VerticesIds.Num();
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Rotate"), STAT_GraphCommands_Rotate, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Rotate::Rotate(
 	EntityId Id,
 	const FVector &Center,
 	const float Angle
 ) : Command([Id, &Center, Angle] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Rotate);
 	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
 
 	for (const auto VertexId : Graph->VerticesIds) {
@@ -97,10 +111,12 @@ GraphCommands::Rotate::Rotate(
 		Provider.ExecuteCommand(EdgeCommands::UpdateTransform(EdgeId));
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Serialize"), STAT_GraphCommands_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Serialize::Serialize(
 	EntityId Id,
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
 ) : Command([Id, &Writer] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Serialize);
 	const auto Graph = GetEntity<const GraphEntity>(Provider, Id);
 
 	Writer.StartObject();
@@ -213,12 +229,15 @@ struct GraphSAXDeserializationHandler {
 	State CurrentState = State::UNDEF;
 };
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Deserialize"), STAT_GraphCommands_Deserialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Deserialize::Deserialize(
 	EntityId *NewGraphId,
 	rapidjson::StringStream &JsonStringStream,
 	rapidjson::Reader &Reader,
 	FString &ErrorMessage
 ) : Command([NewGraphId, &JsonStringStream, &Reader, &ErrorMessage] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Deserialize);
+
 	Provider.ExecuteCommand(Create(NewGraphId));
 	check(*NewGraphId != ENTITY_NONE);
 

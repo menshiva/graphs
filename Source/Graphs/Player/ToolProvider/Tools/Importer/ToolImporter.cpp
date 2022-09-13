@@ -4,6 +4,8 @@
 #include "Graphs/Utils/Consts.h"
 #include "ThirdParty/rapidjson/error/en.h"
 
+DECLARE_CYCLE_STAT(TEXT("UToolImporter::ImportGraphFromFile"), STAT_UToolImporter_ImportGraphFromFile, STATGROUP_GRAPHS_PERF);
+
 UToolImporter::UToolImporter() : UTool(
 	"Import",
 	TEXT("/Game/Graphs/UI/Icons/Import"),
@@ -33,6 +35,8 @@ void UToolImporter::RefreshFileList() const {
 }
 
 bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage) const {
+	SCOPE_CYCLE_COUNTER(STAT_UToolImporter_ImportGraphFromFile);
+
 	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 	check(FilePath.EndsWith(".json"));
 

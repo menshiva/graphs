@@ -4,12 +4,14 @@
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Graphs/Utils/Consts.h"
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Create"), STAT_VertexCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::Create::Create(
 	EntityId GraphId,
 	EntityId *NewVertexId,
 	uint32_t VertexDisplayId,
 	const FVector &Position
 ) : Command([GraphId, NewVertexId, VertexDisplayId, &Position] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Create);
 	const auto NewVertex = CreateEntity<VertexEntity>(Provider);
 
 	const auto Graph = GetEntity<GraphEntity>(Provider, GraphId);
@@ -25,7 +27,9 @@ VertexCommands::Create::Create(
 		*NewVertexId = NewVertex->GetEntityId();
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Remove"), STAT_VertexCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Remove);
 	const auto Vertex = GetEntity<VertexEntity>(Provider, Id);
 
 	// EdgeCommands::Remove command will remove entities from Vertex->EdgesIds TArray.
@@ -41,25 +45,30 @@ VertexCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Prov
 	RemoveEntity(Provider, Id);
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::GetGraphId"), STAT_VertexCommands_GetGraphId, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::GetGraphId::GetGraphId(
 	EntityId Id,
 	EntityId &GraphId
 ) : Command([Id, &GraphId] (const AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_GetGraphId);
 	GraphId = GetEntity<const VertexEntity>(Provider, Id)->GraphId;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::SetColor"), STAT_VertexCommands_SetColor, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::SetColor::SetColor(
 	EntityId Id,
 	const FLinearColor &Color
 ) : Command([Id, &Color] (const AGraphProvider &Provider) {
-	const auto Vertex = GetEntity<VertexEntity>(Provider, Id);
-	Vertex->SetActorColor(Color);
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_SetColor);
+	GetEntity<VertexEntity>(Provider, Id)->SetActorColor(Color);
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::SetSelectionType"), STAT_VertexCommands_SetSelectionType, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::SetSelectionType::SetSelectionType(
 	EntityId Id,
 	SelectionType NewType
 ) : Command([Id, NewType] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_SetSelectionType);
 	const auto Vertex = GetEntity<VertexEntity>(Provider, Id);
 	Vertex->Selection = NewType;
 
@@ -75,11 +84,13 @@ VertexCommands::SetSelectionType::SetSelectionType(
 	}
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Move"), STAT_VertexCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::Move::Move(
 	EntityId Id,
 	const FVector &Delta,
 	bool UpdateConnectedEdges
 ) : Command([Id, &Delta, UpdateConnectedEdges] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Move);
 	const auto Vertex = GetEntity<const VertexEntity>(Provider, Id);
 
 	Vertex->Actor->SetActorLocation(Vertex->Actor->GetActorLocation() + Delta);
@@ -89,10 +100,12 @@ VertexCommands::Move::Move(
 			Provider.ExecuteCommand(EdgeCommands::UpdateTransform(EdgeId));
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Serialize"), STAT_VertexCommands_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::Serialize::Serialize(
 	EntityId Id,
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
 ) : Command([Id, &Writer] (const AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Serialize);
 	const auto Vertex = GetEntity<const VertexEntity>(Provider, Id);
 	const auto Pos = Vertex->Actor->GetActorLocation();
 
@@ -196,12 +209,14 @@ struct VertexSAXDeserializationHandler {
 	FVector Pos = FVector(NAN);
 };
 
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Deserialize"), STAT_VertexCommands_Deserialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::Deserialize::Deserialize(
 	EntityId GraphId,
 	EntityId *NewVertexId,
 	rapidjson::StringStream &JsonStringStream,
 	rapidjson::Reader &Reader
 ) : Command([GraphId, NewVertexId, &JsonStringStream, &Reader] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Deserialize);
 	*NewVertexId = ENTITY_NONE;
 
 	VertexSAXDeserializationHandler Handler;

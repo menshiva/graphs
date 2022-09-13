@@ -5,11 +5,14 @@
 #include "Graphs/GraphProvider/Entities/VertexEntity.h"
 #include "Graphs/Utils/Consts.h"
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Create"), STAT_EdgeCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Create::Create(
 	EntityId GraphId,
 	EntityId *NewEdgeId,
 	EntityId FromVertexId, EntityId ToVertexId
 ) : Command([GraphId, NewEdgeId, FromVertexId, ToVertexId] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Create);
+
 	const auto NewEdge = CreateEntity<EdgeEntity>(Provider);
 
 	const auto Graph = GetEntity<GraphEntity>(Provider, GraphId);
@@ -33,7 +36,9 @@ EdgeCommands::Create::Create(
 		*NewEdgeId = NewEdge->GetEntityId();
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Remove"), STAT_EdgeCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Remove);
 	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
 
 	for (const auto VertexId : Edge->VerticesIds) {
@@ -49,14 +54,19 @@ EdgeCommands::Remove::Remove(EntityId Id) : Command([Id] (AGraphProvider &Provid
 	RemoveEntity(Provider, Id);
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::GetGraphId"), STAT_EdgeCommands_GetGraphId, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::GetGraphId::GetGraphId(
 	EntityId Id,
 	EntityId &GraphId
 ) : Command([Id, &GraphId] (const AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_GetGraphId);
 	GraphId = GetEntity<const EdgeEntity>(Provider, Id)->GraphId;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::UpdateTransform"), STAT_EdgeCommands_UpdateTransform, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::UpdateTransform::UpdateTransform(EntityId Id) : Command([Id] (const AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_UpdateTransform);
+
 	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
 	const auto FirstVertexPos = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[0])->Actor->GetActorLocation();
 	const auto SecondVertexPos = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[1])->Actor->GetActorLocation();
@@ -72,18 +82,22 @@ EdgeCommands::UpdateTransform::UpdateTransform(EntityId Id) : Command([Id] (cons
 	Edge->Actor->SetActorScale3D(Scale);
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetColor"), STAT_EdgeCommands_SetColor, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::SetColor::SetColor(
 	EntityId Id,
 	const FLinearColor &Color
 ) : Command([Id, &Color] (const AGraphProvider &Provider) {
-	const auto Edge = GetEntity<EdgeEntity>(Provider, Id);
-	Edge->SetActorColor(Color);
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_SetColor);
+	GetEntity<EdgeEntity>(Provider, Id)->SetActorColor(Color);
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetSelectionType"), STAT_EdgeCommands_SetSelectionType, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::SetSelectionType::SetSelectionType(
 	EntityId Id,
 	SelectionType NewType
 ) : Command([Id, NewType] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_SetSelectionType);
+
 	const auto Edge = GetEntity<EdgeEntity>(Provider, Id);
 	Edge->Selection = NewType;
 
@@ -99,11 +113,13 @@ EdgeCommands::SetSelectionType::SetSelectionType(
 	}
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Move"), STAT_EdgeCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Move::Move(
 	EntityId Id,
 	const FVector& Delta,
 	bool UpdateConnectedVertices
 ) : Command([Id, &Delta, UpdateConnectedVertices] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Move);
 	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
 
 	if (UpdateConnectedVertices)
@@ -113,10 +129,13 @@ EdgeCommands::Move::Move(
 		Edge->Actor->SetActorLocation(Edge->Actor->GetActorLocation() + Delta);
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Serialize"), STAT_EdgeCommands_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Serialize::Serialize(
 	EntityId Id,
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
 ) : Command([Id, &Writer] (const AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Serialize);
+
 	const auto Edge = GetEntity<const EdgeEntity>(Provider, Id);
 	const auto FromVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[0]);
 	const auto ToVertex = GetEntity<const VertexEntity>(Provider, Edge->VerticesIds[1]);
@@ -193,6 +212,7 @@ struct EdgeSAXDeserializationHandler {
 	uint32_t FromVertexId = -1, ToVertexId = -1;
 };
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Deserialize"), STAT_EdgeCommands_Deserialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Deserialize::Deserialize(
 	EntityId GraphId,
 	EntityId *NewEdgeId,
@@ -201,6 +221,8 @@ EdgeCommands::Deserialize::Deserialize(
 	const TMap<uint32_t, EntityId> &VerticesIdsMapping,
 	FString &ErrorMessage
 ) : Command([GraphId, NewEdgeId, &JsonStringStream, &Reader, &VerticesIdsMapping, &ErrorMessage] (AGraphProvider &Provider) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Deserialize);
+
 	*NewEdgeId = ENTITY_NONE;
 
 	EdgeSAXDeserializationHandler Handler;
