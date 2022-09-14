@@ -29,10 +29,17 @@ void AVRGameMode::ToggleUnit() {
 	SaveConfig();
 }
 
+void AVRGameMode::ToggleShowingCollisions() {
+	ShowCollisions = !ShowCollisions;
+	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), "pxvis collision");
+}
+
 void AVRGameMode::UpdateStats() const {
 	const auto World = GetWorld();
 	if (FpsEnabled)
 		UKismetSystemLibrary::ExecuteConsoleCommand(World, "stat fps");
 	if (UnitEnabled)
 		UKismetSystemLibrary::ExecuteConsoleCommand(World, "stat Unit");
+	if (ShowCollisions)
+		UKismetSystemLibrary::ExecuteConsoleCommand(World, "pxvis collision");
 }

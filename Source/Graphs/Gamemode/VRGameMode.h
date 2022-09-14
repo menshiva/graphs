@@ -14,9 +14,11 @@ public:
 
 	FORCEINLINE bool IsFpsEnabled() const { return FpsEnabled; }
 	FORCEINLINE bool IsUnitEnabled() const { return UnitEnabled; }
+	FORCEINLINE bool IsShowingCollisions() const { return ShowCollisions; }
 
 	void ToggleFPS();
 	void ToggleUnit();
+	void ToggleShowingCollisions();
 private:
 	void UpdateStats() const;
 
@@ -25,4 +27,6 @@ private:
 
 	UPROPERTY(Config)
 	bool UnitEnabled = false;
+
+	bool ShowCollisions = false;
 };

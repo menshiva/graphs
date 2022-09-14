@@ -6,21 +6,14 @@
 
 void USettingsPanelWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
-	if (CameraFadeAnimationTick) {
-		CameraFadeAnimationTick->SetOnClickEvent([&] {
-			Pawn->ToggleCameraFadeAnimation();
-		});
-	}
-	if (FpsStatsTick) {
-		FpsStatsTick->SetOnClickEvent([&] {
-			Gamemode->ToggleFPS();
-		});
-	}
-	if (UnitStatsTick) {
-		UnitStatsTick->SetOnClickEvent([&] {
-			Gamemode->ToggleUnit();
-		});
-	}
+	if (CameraFadeAnimationTick)
+		CameraFadeAnimationTick->SetOnClickEvent([&] { Pawn->ToggleCameraFadeAnimation(); });
+	if (FpsStatsTick)
+		FpsStatsTick->SetOnClickEvent([&] { Gamemode->ToggleFPS(); });
+	if (UnitStatsTick)
+		UnitStatsTick->SetOnClickEvent([&] { Gamemode->ToggleUnit(); });
+	if (CollisionStatsTick)
+		CollisionStatsTick->SetOnClickEvent([&] { Gamemode->ToggleShowingCollisions(); });
 }
 
 void USettingsPanelWidget::NativeConstruct() {
@@ -33,4 +26,6 @@ void USettingsPanelWidget::NativeConstruct() {
 		FpsStatsTick->SetTicked(Gamemode->IsFpsEnabled());
 	if (UnitStatsTick)
 		UnitStatsTick->SetTicked(Gamemode->IsUnitEnabled());
+	if (CollisionStatsTick)
+		CollisionStatsTick->SetTicked(Gamemode->IsShowingCollisions());
 }

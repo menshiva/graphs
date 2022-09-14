@@ -19,6 +19,9 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UCheckboxWidget *UnitStatsTick;
+
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	UCheckboxWidget *CollisionStatsTick;
 private:
 	TWeakObjectPtr<class AVRPawn> Pawn;
 	TWeakObjectPtr<class AVRGameMode> Gamemode;
