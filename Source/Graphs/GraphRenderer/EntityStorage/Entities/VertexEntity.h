@@ -3,7 +3,7 @@
 #include "EntityId.h"
 
 struct VertexEntity {
-	constexpr static EntitySignature Signature = EntitySignature::VERTEX;
+	constexpr static EntitySignature Signature = VERTEX;
 
 	EntityId GraphId;
 	bool IsHit;

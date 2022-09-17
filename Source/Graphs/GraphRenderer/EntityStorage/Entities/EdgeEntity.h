@@ -3,7 +3,7 @@
 #include "EntityId.h"
 
 struct EdgeEntity {
-	constexpr static EntitySignature Signature = EntitySignature::EDGE;
+	constexpr static EntitySignature Signature = EDGE;
 
 	EntityId GraphId;
 	bool IsHit;

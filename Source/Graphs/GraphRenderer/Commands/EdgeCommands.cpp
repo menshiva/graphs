@@ -2,35 +2,35 @@
 #include "VertexCommands.h"
 
 EdgeCommands::Create::Create(
-	const EntityId &GraphId, EntityId *NewEdgeId,
-	const EntityId &FromVertexId, const EntityId &ToVertexId
-) : Command([&, NewEdgeId] (EntityStorage &Storage) -> bool {
-	return CreateImpl(Storage, GraphId, NewEdgeId, FromVertexId, ToVertexId);
+	const EntityId GraphId, EntityId *NewEdgeId,
+	const EntityId FromVertexId, const EntityId ToVertexId
+) : GraphsRendererCommand([GraphId, NewEdgeId, FromVertexId, ToVertexId] (AGraphsRenderer &Renderer) {
+	return CreateImpl(Renderer, GraphId, NewEdgeId, FromVertexId, ToVertexId);
 }) {}
 
 EdgeCommands::Create::Create(
-	const EntityId &GraphId, EntityId *NewEdgeId,
+	const EntityId GraphId, EntityId *NewEdgeId,
 	const uint32_t FromVertexUserId, const uint32_t ToVertexUserId
-) : Command([&, NewEdgeId, FromVertexUserId, ToVertexUserId] (EntityStorage &Storage) -> bool {
-	auto &ParentGraph = Storage.GetEntityMut<GraphEntity>(GraphId);
+) : GraphsRendererCommand([GraphId, NewEdgeId, FromVertexUserId, ToVertexUserId] (AGraphsRenderer &Renderer) {
+	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 	return CreateImpl(
-		Storage,
+		Renderer,
 		GraphId, NewEdgeId,
-		ParentGraph.VertexUserIdToEntityId.FindChecked(FromVertexUserId),
-		ParentGraph.VertexUserIdToEntityId.FindChecked(ToVertexUserId)
+		Graph.VertexUserIdToEntityId.FindChecked(FromVertexUserId),
+		Graph.VertexUserIdToEntityId.FindChecked(ToVertexUserId)
 	);
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Create"), STAT_EdgeCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 bool EdgeCommands::Create::CreateImpl(
-	EntityStorage &Storage,
-	const EntityId& GraphId, EntityId* NewEdgeId,
-	const EntityId &FromVertexId, const EntityId &ToVertexId
+	AGraphsRenderer &Renderer,
+	const EntityId GraphId, EntityId* NewEdgeId,
+	const EntityId FromVertexId, const EntityId ToVertexId
 ) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Create);
 
-	const auto EdgeId = Storage.NewEntity<EdgeEntity>();
-	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
+	const auto EdgeId = ESMut().NewEntity<EdgeEntity>();
+	auto &Edge = ESMut().GetEntityMut<EdgeEntity>(EdgeId);
 
 	Edge.GraphId = GraphId;
 	Edge.IsHit = false;
@@ -40,7 +40,7 @@ bool EdgeCommands::Create::CreateImpl(
 	Edge.VerticesIds[1] = ToVertexId;
 
 	bool AlreadyInSet = false;
-	auto &ParentGraph = Storage.GetEntityMut<GraphEntity>(GraphId);
+	auto &ParentGraph = ESMut().GetEntityMut<GraphEntity>(GraphId);
 
 	check(!ParentGraph.EdgesIds.Contains(EdgeId));
 	ParentGraph.EdgesIds.Push(EdgeId);
@@ -52,25 +52,26 @@ bool EdgeCommands::Create::CreateImpl(
 		check(!ParentGraph.EdgeHashes.Contains(ConstFuncs::ComputeHash(Edge, true)));
 	}
 
-	Storage.GetEntityMut<VertexEntity>(FromVertexId).EdgesIds.Add(EdgeId, &AlreadyInSet);
+	ESMut().GetEntityMut<VertexEntity>(FromVertexId).EdgesIds.Add(EdgeId, &AlreadyInSet);
 	check(!AlreadyInSet);
 
-	Storage.GetEntityMut<VertexEntity>(ToVertexId).EdgesIds.Add(EdgeId, &AlreadyInSet);
+	ESMut().GetEntityMut<VertexEntity>(ToVertexId).EdgesIds.Add(EdgeId, &AlreadyInSet);
 	check(!AlreadyInSet);
 
 	if (NewEdgeId)
 		*NewEdgeId = EdgeId;
 
+	MarkRendererComponentDirty(Renderer, {EDGE, true});
 	return true;
 }
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Remove"), STAT_EdgeCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
-EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([&] (EntityStorage &Storage) -> bool {
+EdgeCommands::Remove::Remove(const EntityId EdgeId) : GraphsRendererCommand([EdgeId] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Remove);
-	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
+	const auto &Edge = ES::GetEntity<EdgeEntity>(EdgeId);
 
 	// remove from associated parent graph
-	auto &Graph = Storage.GetEntityMut<GraphEntity>(Edge.GraphId);
+	auto &Graph = ESMut().GetEntityMut<GraphEntity>(Edge.GraphId);
 	auto CheckNum = Graph.EdgesIds.Remove(EdgeId);
 	check(CheckNum == 1);
 	CheckNum = Graph.EdgeHashes.Remove(ConstFuncs::ComputeHash(Edge, false));
@@ -78,23 +79,24 @@ EdgeCommands::Remove::Remove(const EntityId &EdgeId) : Command([&] (EntityStorag
 
 	// remove connected edges
 	for (const auto &VertexId : Edge.VerticesIds)
-		Storage.GetEntityMut<VertexEntity>(VertexId).EdgesIds.Remove(EdgeId);
+		ESMut().GetEntityMut<VertexEntity>(VertexId).EdgesIds.Remove(EdgeId);
 
-	Storage.RemoveEntity<EdgeEntity>(EdgeId);
+	ESMut().RemoveEntity<EdgeEntity>(EdgeId);
+
+	MarkRendererComponentDirty(Renderer, {EDGE, true});
 	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Reserve"), STAT_EdgeCommands_Reserve, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Reserve::Reserve(
-	const EntityId &GraphId,
+	const EntityId GraphId,
 	const uint32_t NewEdgesNum
-) : Command([&, NewEdgesNum] (EntityStorage &Storage) -> bool {
+) : GraphsRendererCommand([GraphId, NewEdgesNum] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Reserve);
-
-	auto &EdgesStorage = Storage.GetStorageMut<EdgeEntity>().Data;
+	auto &EdgesStorage = ESMut().GetStorageMut<EdgeEntity>();
 	EdgesStorage.Reserve(EdgesStorage.Num() + NewEdgesNum);
 
-	auto &Graph = Storage.GetEntityMut<GraphEntity>(GraphId);
+	auto &Graph = ESMut().GetEntityMut<GraphEntity>(GraphId);
 	Graph.EdgesIds.Reserve(Graph.EdgesIds.Num() + NewEdgesNum);
 	Graph.EdgeHashes.Reserve(Graph.EdgeHashes.Num() + NewEdgesNum);
 
@@ -103,59 +105,60 @@ EdgeCommands::Reserve::Reserve(
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetHit"), STAT_EdgeCommands_SetHit, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::SetHit::SetHit(
-	const EntityId &EdgeId,
+	const EntityId EdgeId,
 	const bool IsHit
-) : Command([&, IsHit] (EntityStorage &Storage) -> bool {
+) : GraphsRendererCommand([EdgeId, IsHit] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_SetHit);
-	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
+	auto &Edge = ESMut().GetEntityMut<EdgeEntity>(EdgeId);
 
 	if (Edge.IsHit == IsHit)
 		return false;
 	Edge.IsHit = IsHit;
 
+	MarkRendererComponentDirty(Renderer, {EDGE, false});
 	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetOverrideColor"), STAT_EdgeCommands_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::SetOverrideColor::SetOverrideColor(
-	const EntityId &EdgeId,
+	const EntityId EdgeId,
 	const FColor &OverrideColor
-) : Command([&] (EntityStorage &Storage) -> bool {
+) : GraphsRendererCommand([EdgeId, &OverrideColor] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_SetOverrideColor);
-	auto &Edge = Storage.GetEntityMut<EdgeEntity>(EdgeId);
+	auto &Edge = ESMut().GetEntityMut<EdgeEntity>(EdgeId);
 
 	if (Edge.OverrideColor == OverrideColor)
 		return false;
 	Edge.OverrideColor = OverrideColor;
 
+	MarkRendererComponentDirty(Renderer, {EDGE, false});
 	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Move"), STAT_EdgeCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Move::Move(
-	const EntityId &EdgeId,
+	const EntityId EdgeId,
 	const FVector &Delta
-) : Command([&] (EntityStorage &Storage) -> bool {
+) : GraphsRendererCommand([EdgeId, &Delta] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Move);
-	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
+	const auto &Edge = ESMut().GetEntity<EdgeEntity>(EdgeId);
 
 	for (const auto &VertexId : Edge.VerticesIds)
-		ExecuteSubCommand(VertexCommands::Move(VertexId, Delta), Storage);
+		Renderer.ExecuteCommand(VertexCommands::Move(VertexId, Delta));
 
 	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::ConstFuncs::Serialize"), STAT_EdgeCommands_ConstFuncs_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 void EdgeCommands::ConstFuncs::Serialize(
-	const EntityStorage &Storage,
-	const EntityId &EdgeId,
+	const EntityId EdgeId,
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
 ) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_ConstFuncs_Serialize);
 
-	const auto &Edge = Storage.GetEntity<EdgeEntity>(EdgeId);
-	const auto &FromVertex = Storage.GetEntity<VertexEntity>(Edge.VerticesIds[0]);
-	const auto &ToVertex = Storage.GetEntity<VertexEntity>(Edge.VerticesIds[1]);
+	const auto &Edge = ES::GetEntity<EdgeEntity>(EdgeId);
+	const auto &FromVertex = ES::GetEntity<VertexEntity>(Edge.VerticesIds[0]);
+	const auto &ToVertex = ES::GetEntity<VertexEntity>(Edge.VerticesIds[1]);
 
 	Writer.StartObject();
 
@@ -170,8 +173,7 @@ void EdgeCommands::ConstFuncs::Serialize(
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::ConstFuncs::Deserialize"), STAT_EdgeCommands_ConstFuncs_Deserialize, STATGROUP_GRAPHS_PERF_COMMANDS);
 bool EdgeCommands::ConstFuncs::Deserialize(
-	const EntityStorage &Storage,
-	const EntityId &GraphId,
+	const EntityId GraphId,
 	const rapidjson::Value &DomEdge,
 	FString &ErrorMessage,
 	EdgeEntity &NewEdge
@@ -183,7 +185,7 @@ bool EdgeCommands::ConstFuncs::Deserialize(
 		return false;
 	}
 
-	const auto &ParentGraph = Storage.GetEntity<GraphEntity>(GraphId);
+	const auto &ParentGraph = ES::GetEntity<GraphEntity>(GraphId);
 
 	int i = 0;
 	TStaticArray<uint32_t, 2> VertexUserIds;
@@ -230,7 +232,7 @@ uint32_t EdgeCommands::ConstFuncs::ComputeHash(const EdgeEntity &Edge, const boo
 	check(Edge.VerticesIds[1] != EntityId::NONE());
 
 	return Utils::CantorPair(
-		EntityId::GetHash(Edge.VerticesIds[!ReverseVerticesIds ? 0 : 1]),
-		EntityId::GetHash(Edge.VerticesIds[!ReverseVerticesIds ? 1 : 0])
+		EntityId::Hash(Edge.VerticesIds[!ReverseVerticesIds ? 0 : 1]),
+		EntityId::Hash(Edge.VerticesIds[!ReverseVerticesIds ? 1 : 0])
 	);
 }

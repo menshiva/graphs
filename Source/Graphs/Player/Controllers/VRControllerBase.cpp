@@ -13,7 +13,7 @@ UVRControllerBase::UVRControllerBase(
 ) : Type(aControllerType) {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	FString ControllerName = StaticEnum<EControllerHand>()->GetNameStringByValue(Utils::EnumUnderlyingType(aControllerType));
+	FString ControllerName = StaticEnum<EControllerHand>()->GetNameStringByValue(Utils::EnumUnderlyingValue(aControllerType));
 
 	MotionController = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
 		this,

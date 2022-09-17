@@ -2,10 +2,10 @@
 
 #include "Graphs/Utils/Utils.h"
 
-enum class EntitySignature : uint8_t {
-	GRAPH = 0,
-	VERTEX,
+enum EntitySignature : uint8_t {
+	VERTEX = 0,
 	EDGE,
+	GRAPH,
 	SIZE
 };
 
@@ -15,7 +15,7 @@ struct EntityId {
 		return NoneId;
 	}
 
-	EntityId() : Index(-1), Signature(EntitySignature::SIZE) {}
+	EntityId() : EntityId(-1, SIZE) {}
 	EntityId(const uint32_t Index, const EntitySignature Signature) : Index(Index), Signature(Signature) {}
 
 	bool operator==(const EntityId &OtherId) const {
@@ -26,17 +26,17 @@ struct EntityId {
 		return !(*this == OtherId);
 	}
 
-	FORCEINLINE static uint32 GetHash(const EntityId &Id) {
-		return Utils::CantorPair(Id.Index, Utils::EnumUnderlyingType(Id.Signature));
+	FORCEINLINE static uint32 Hash(const EntityId &Id) {
+		return Utils::CantorPair(Id.Index, Id.Signature);
 	}
 private:
 	uint32_t Index;
 	EntitySignature Signature;
 
 	friend class UTool;
-	friend class EntityStorage;
+	friend class ES;
 };
 
 FORCEINLINE uint32 GetTypeHash(const EntityId &Id) {
-	return EntityId::GetHash(Id);
+	return EntityId::Hash(Id);
 }

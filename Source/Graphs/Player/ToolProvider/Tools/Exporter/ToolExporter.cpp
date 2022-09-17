@@ -10,7 +10,7 @@ UToolExporter::UToolExporter() : UTool(
 	TEXT("/Game/Graphs/UI/Icons/Export"),
 	TEXT("/Game/Graphs/UI/Blueprints/Tools/ToolExporterPanel")
 ) {
-	SetSupportedEntities({EntitySignature::GRAPH});
+	SetSupportedEntities({GRAPH});
 }
 
 void UToolExporter::OnAttach() {
@@ -27,7 +27,7 @@ void UToolExporter::OnDetach() {
 bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolExporter_OnRightTriggerAction);
 
-	if (IsPressed && GetEntityStorage().IsValid<GraphEntity>(GetHitEntityId())) {
+	if (IsPressed) {
 		auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 		const auto &GameDirPath = FPaths::LaunchDir();
@@ -83,11 +83,11 @@ FString UToolExporter::GenerateJsonFileNameInDirectory(
 }
 
 bool UToolExporter::ExportGraph(
-	const EntityId &GraphId,
+	const EntityId GraphId,
 	IPlatformFile &FileManager,
 	const FString &OutputPath,
 	FString &ErrorMessage
-) const {
+) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolExporter_ExportGraph);
 
 	const TUniquePtr<IFileHandle> OutputFileHandler(FileManager.OpenWrite(*OutputPath, false, false));
@@ -99,7 +99,9 @@ bool UToolExporter::ExportGraph(
 	rapidjson::StringBuffer SBuffer;
 	rapidjson::PrettyWriter Writer(SBuffer);
 	Writer.SetIndent('\t', 1);
-	GraphCommands::ConstFuncs::Serialize(GetEntityStorage(), GraphId, Writer);
+
+	GraphCommands::ConstFuncs::Serialize(GraphId, Writer);
+
 	if (!OutputFileHandler->Write(reinterpret_cast<const uint8*>(SBuffer.GetString()), SBuffer.GetSize())) {
 		ErrorMessage = "Failed to write data to a new file.";
 		return false;

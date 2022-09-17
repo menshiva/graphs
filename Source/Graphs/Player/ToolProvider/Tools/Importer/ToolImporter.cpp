@@ -49,5 +49,5 @@ bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorM
 		return false;
 	}
 
-	return GetGraphRenderer()->ExecuteCommand(GraphCommands::Deserialize(JsonStr, ErrorMessage), true);
+	return GetGraphsRenderer()->ExecuteCommand(GraphCommands::Deserialize(JsonStr, ErrorMessage), true);
 }

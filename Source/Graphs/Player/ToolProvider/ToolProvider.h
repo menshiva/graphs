@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/GraphRenderer/GraphRenderer.h"
+#include "Graphs/GraphRenderer/GraphsRenderer.h"
 #include "ToolProvider.generated.h"
 
 UCLASS()
@@ -13,10 +13,9 @@ public:
 	FORCEINLINE void SetupPawn(AVRPawn *Pawn) { VrPawn = Pawn; }
 
 	FORCEINLINE AVRPawn *GetVrPawn() const { return VrPawn.Get(); }
-	FORCEINLINE AGraphRenderer *GetGraphRenderer() const { return GraphRenderer.Get(); }
-	FORCEINLINE const EntityStorage &GetEntityStorage() const { return GraphRenderer->GetEntityStorage(); }
+	FORCEINLINE AGraphsRenderer *GetGraphsRenderer() const { return GraphsRenderer.Get(); }
 
-	FORCEINLINE const EntityId &GetHitEntityId() const { return HitEntityId; }
+	FORCEINLINE EntityId GetHitEntityId() const { return HitEntityId; }
 	FORCEINLINE const FHitResult &GetHitResult() const { return HitResult; }
 	void SetHitResult(const FHitResult &NewHitResult);
 	FORCEINLINE void ResetHitResult() { SetHitResult(FHitResult()); }
@@ -31,6 +30,8 @@ public:
 	void SetActiveTool(class UTool *NewTool);
 
 	FORCEINLINE const TArray<UTool*> &GetTools() const { return Tools; }
+
+	void ExecuteHitCommandBasedOnHitEntity(bool IsHit) const;
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -41,12 +42,10 @@ private:
 		Tools.Push(Tool);
 	}
 
-	bool SetEntityHit(bool IsHit) const;
-
 	TWeakObjectPtr<AVRPawn> VrPawn;
-	TWeakObjectPtr<AGraphRenderer> GraphRenderer;
+	TWeakObjectPtr<AGraphsRenderer> GraphsRenderer;
 
-	EntityId HitEntityId;
+	EntityId HitEntityId = EntityId::NONE();
 	FHitResult HitResult;
 
 	UPROPERTY()

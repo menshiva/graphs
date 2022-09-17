@@ -27,8 +27,11 @@ public:
 private:
 	ManipulationMode Mode = ManipulationMode::MOVE;
 
+	EntityId ManipulationEntity = EntityId::NONE();
+
 	FVector PreviousLaserEndPosition;
 	FVector GraphCenterPosition;
+	float LastThumbstickXValue = 0.0f;
 
 	constexpr static float DefaultRotationSpeed = 2.5f;
 };

@@ -1,8 +1,6 @@
 ﻿#pragma once
 
-#include <bitset>
 #include "../ToolProvider.h"
-#include "Graphs/Utils/Utils.h"
 #include "Tool.generated.h"
 
 UCLASS(Abstract)
@@ -21,18 +19,18 @@ public:
 	void SetToolPanel(UToolWidget *Panel);
 
 	FORCEINLINE bool SupportsEntity(const EntityId &Id) const {
-		return SupportedEntitiesMask[Utils::EnumUnderlyingType(Id.Signature)];
+		return SupportedEntitiesMask[Id.Signature];
 	}
 
 	virtual void OnAttach() {}
 	virtual void OnDetach() {}
 	virtual void TickTool() {}
 protected:
-	FORCEINLINE AGraphRenderer *GetGraphRenderer() const { return ToolProvider->GetGraphRenderer(); }
-	FORCEINLINE const EntityStorage &GetEntityStorage() const { return ToolProvider->GetEntityStorage(); }
 	FORCEINLINE UVRControllerRight *GetVrRightController() const { return ToolProvider->GetVrPawn()->GetRightVrController(); }
+	FORCEINLINE const UToolProvider *GetToolProvider() const { return ToolProvider.Get(); }
+	FORCEINLINE AGraphsRenderer *GetGraphsRenderer() const { return ToolProvider->GetGraphsRenderer(); }
 
-	FORCEINLINE const EntityId &GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
+	FORCEINLINE EntityId GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
 
 	template <class WidgetClass>
 	FORCEINLINE WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
@@ -47,8 +45,7 @@ private:
 	UTexture2D *ToolImage;
 
 	TSubclassOf<UToolWidget> ToolPanelClass;
-
 	TWeakObjectPtr<UToolWidget> ToolPanel;
 
-	std::bitset<Utils::EnumUnderlyingType(EntitySignature::SIZE)> SupportedEntitiesMask;
+	std::bitset<SIZE> SupportedEntitiesMask;
 };

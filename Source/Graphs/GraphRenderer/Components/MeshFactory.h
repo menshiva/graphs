@@ -4,9 +4,6 @@
 #include <vector>
 
 namespace VertexMeshFactory {
-	constexpr static uint32_t QUALITY = 1;
-	constexpr static float SCALE = 50.0f;
-
 	// simple constexpr pow function that returns 4^Exp
     constexpr static uint32_t Pow4(const uint32_t Exp) {
         uint32_t Res = 1;
@@ -175,34 +172,6 @@ namespace VertexMeshFactory {
             7, 6, 8
         }};
     }
-
-	constexpr static size_t VERTICES_NUM = GetVerticesNum(QUALITY);
-	constexpr static size_t TRIANGLES_INDICES_NUM = GetIndicesNum(QUALITY);
-
-	static void GenerateMesh(
-		const FVector &Origin, const FColor &Color,
-		TArray<FVector> &OutVertices, TArray<int32_t> &OutTriangles, TArray<FColor> &OutColors
-	) {
-		constexpr static auto Icosahedron = GenerateUnit<QUALITY>();
-		static_assert(Icosahedron.Vertices[0].X == -0.525731087f);
-		static_assert(Icosahedron.Vertices[0].Y == 0.850650787f);
-		static_assert(Icosahedron.Vertices[0].Z == 0.0f);
-
-		const auto VerticesOffset = OutVertices.Num();
-		check(OutVertices.Num() + Icosahedron.Vertices.size() <= OutVertices.Max());
-		check(OutColors.Num() + Icosahedron.Vertices.size() <= OutColors.Max());
-		OutColors.AddUninitialized(Icosahedron.Vertices.size());
-		for (size_t i = 0; i < Icosahedron.Vertices.size(); ++i) {
-			OutVertices.Push(Origin + *reinterpret_cast<const FVector*>(&Icosahedron.Vertices[i]) * SCALE);
-			OutColors[VerticesOffset + i] = Color;
-		}
-
-		const auto TrianglesOffset = OutTriangles.Num();
-		check(OutTriangles.Num() + Icosahedron.Indices.size() <= OutTriangles.Max());
-		OutTriangles.Append(&Icosahedron.Indices[0], Icosahedron.Indices.size());
-		for (size_t i = TrianglesOffset; i < OutTriangles.Num(); ++i)
-			OutTriangles[i] += VerticesOffset;
-	}
 }
 
 namespace EdgeMeshFactory {
@@ -219,7 +188,8 @@ namespace EdgeMeshFactory {
 		TArray<FVector> &OutVertices, TArray<int32_t> &OutTriangles, TArray<FColor> &OutColors
 	) {
 		// do not generate edge if vertices have intersection
-		if (FVector::DistSquared(FirstVertexPos, SecondVertexPos) <= 4 * VertexMeshFactory::SCALE * VertexMeshFactory::SCALE)
+		// TODO
+		/*if (FVector::DistSquared(FirstVertexPos, SecondVertexPos) <= 4 * VertexMeshFactory::SCALE * VertexMeshFactory::SCALE)
 			return;
 
 		const auto ForwardDir = (SecondVertexPos - FirstVertexPos).GetSafeNormal();
@@ -271,6 +241,6 @@ namespace EdgeMeshFactory {
 				VerticesOffset + SecondFaceNextI,
 				VerticesOffset + FirstFaceNextI
 			});
-		}
+		}*/
 	}
 }

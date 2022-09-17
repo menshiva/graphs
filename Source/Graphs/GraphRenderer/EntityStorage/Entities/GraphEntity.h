@@ -3,7 +3,7 @@
 #include "EntityId.h"
 
 struct GraphEntity {
-	constexpr static EntitySignature Signature = EntitySignature::GRAPH;
+	constexpr static EntitySignature Signature = GRAPH;
 
 	// TODO: maybe handle oriented graphs
 	const bool IsOriented = false;

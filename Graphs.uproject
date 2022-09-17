@@ -11,8 +11,7 @@
 			"AdditionalDependencies": [
 				"Engine",
 				"Niagara",
-				"UMG",
-				"ProceduralMeshComponent"
+				"UMG"
 			]
 		}
 	],

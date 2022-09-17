@@ -1,49 +1,44 @@
 ﻿#pragma once
 
-#include "../GraphRenderer.h"
+#include "../GraphsRenderer.h"
 #include "ThirdParty/rapidjson/document.h"
 #include "ThirdParty/rapidjson/prettywriter.h"
 
 namespace VertexCommands {
-	struct Create final : AGraphRenderer::Command {
+	struct Create final : GraphsRendererCommand {
 		Create(
-			const EntityId &GraphId, EntityId *NewVertexId,
+			EntityId GraphId, EntityId *NewVertexId,
 			uint32_t UserId,
 			const FVector &Position,
 			const FColor &Color
 		);
 	};
 
-	struct Remove final : AGraphRenderer::Command {
-		explicit Remove(const EntityId &VertexId);
+	struct Remove final : GraphsRendererCommand {
+		explicit Remove(EntityId VertexId);
 	};
 
-	struct Reserve final : AGraphRenderer::Command {
-		Reserve(const EntityId &GraphId, uint32_t NewVerticesNum);
+	struct Reserve final : GraphsRendererCommand {
+		Reserve(EntityId GraphId, uint32_t NewVerticesNum);
 	};
 
-	struct SetHit final : AGraphRenderer::Command {
-		SetHit(const EntityId &VertexId, bool IsHit);
+	struct SetHit final : GraphsRendererCommand {
+		SetHit(EntityId VertexId, bool IsHit);
 	};
 
-	struct SetOverrideColor final : AGraphRenderer::Command {
-		SetOverrideColor(const EntityId &VertexId, const FColor &OverrideColor);
+	struct SetOverrideColor final : GraphsRendererCommand {
+		SetOverrideColor(EntityId VertexId, const FColor &OverrideColor);
 	};
 
-	struct Move final : AGraphRenderer::Command {
-		Move(const EntityId &VertexId, const FVector &Delta);
+	struct Move final : GraphsRendererCommand {
+		Move(EntityId VertexId, const FVector &Delta);
 	};
 
 	namespace ConstFuncs {
-		void Serialize(
-			const EntityStorage &Storage,
-			const EntityId &VertexId,
-			rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer
-		);
+		void Serialize(EntityId VertexId, rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer);
 
 		bool Deserialize(
-			const EntityStorage &Storage,
-			const EntityId &GraphId,
+			EntityId GraphId,
 			const rapidjson::Value &DomVertex,
 			FString &ErrorMessage,
 			VertexEntity &NewVertex

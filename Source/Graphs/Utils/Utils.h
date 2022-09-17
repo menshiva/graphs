@@ -2,7 +2,7 @@
 
 namespace Utils {
 	template <typename E>
-	constexpr static std::underlying_type_t<E> EnumUnderlyingType(E e) noexcept {
+	constexpr static std::underlying_type_t<E> EnumUnderlyingValue(E e) noexcept {
 		return static_cast<std::underlying_type_t<E>>(e);
 	}
 
