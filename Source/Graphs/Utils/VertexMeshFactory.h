@@ -51,6 +51,11 @@ namespace VertexMeshFactory {
             return {X / Value, Y / Value, Z / Value};
         }
 
+        constexpr Vec &operator*=(const float Value) {
+            X *= Value; Y *= Value; Z *= Value;
+            return *this;
+        }
+
         // simple constexpr vector normalization
         constexpr void Normalize() {
             constexpr float Tolerance = 1.e-8f;
@@ -90,7 +95,7 @@ namespace VertexMeshFactory {
         for (int32 i = 0; i < NewVerticesSize; ++i)
             NewSphere.Vertices[i] = PrevSphere.Vertices[i];
 
-        std::vector<std::pair<uint32_t, int32>> EdgesLookup;
+        std::vector<std::pair<uint32, int32>> EdgesLookup;
 
         auto AddMidVertex = [&] (const uint32_t A, const uint32_t B) -> int32 {
             // Cantor's pairing function
@@ -171,5 +176,13 @@ namespace VertexMeshFactory {
             10, 2, 6,
             7, 6, 8
         }};
+    }
+
+    template <uint32_t Quality, float Scale>
+    constexpr SphereMesh<Quality> GenerateScaled() {
+        auto Scaled = GenerateUnit<Quality>();
+        for (auto &P : Scaled.Vertices)
+            P *= Scale;
+        return Scaled;
     }
 }

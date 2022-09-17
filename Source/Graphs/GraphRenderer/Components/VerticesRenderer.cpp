@@ -25,41 +25,48 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 
 	check(TmpData.StorageIndices.Num() == TmpData.Positions.Num());
 	check(TmpData.Positions.Num() == TmpData.Colors.Num());
+	check(MeshData.Positions.Num() == 0);
+	check(MeshData.Triangles.Num() == 0);
 
-	constexpr static auto Icosahedron = VertexMeshFactory::GenerateUnit<MeshQuality>();
-	static_assert(Icosahedron.Vertices[0].X == -0.525731087f);
-	static_assert(Icosahedron.Vertices[0].Y == 0.850650787f);
-	static_assert(Icosahedron.Vertices[0].Z == 0.0f);
+	constexpr static auto IcosahedronScaled = VertexMeshFactory::GenerateScaled<MeshQuality, MeshScale>();
+	static_assert(IcosahedronScaled.Vertices[0].X == -0.525731087f * MeshScale);
+	static_assert(IcosahedronScaled.Vertices[0].Y == 0.850650787f * MeshScale);
+	static_assert(IcosahedronScaled.Vertices[0].Z == 0.0f * MeshScale);
 
-	const size_t VerticesNum = MeshData.Positions.Num() + Icosahedron.Vertices.size() * TmpData.Positions.Num();
-	const size_t IndicesNum = MeshData.Triangles.Num() + Icosahedron.Indices.size() * TmpData.Positions.Num();
+	const size_t VerticesNum = IcosahedronScaled.Vertices.size() * TmpData.Positions.Num();
+	const size_t IndicesNum = IcosahedronScaled.Indices.size() * TmpData.Positions.Num();
 
-	MeshData.ReserveVertices(VerticesNum);
-	MeshData.Triangles.Reserve(IndicesNum);
+	TArray<FVector> TmpVertices;
+	TmpVertices.SetNumUninitialized(VerticesNum);
+	TArray<FColor> TmpColors;
+	TmpColors.SetNumUninitialized(VerticesNum);
+	TArray<int32> TmpIndices;
+	TmpIndices.SetNumUninitialized(IndicesNum);
+
+	const auto IcosahedronFVecVertices = reinterpret_cast<const FVector*>(IcosahedronScaled.Vertices.data());
 
 	for (size_t RdataI = 0; RdataI < TmpData.Positions.Num(); ++RdataI) {
 		const auto &VertexPos = TmpData.Positions[RdataI];
 		const auto &VertexColor = TmpData.Colors[RdataI];
 
-		const auto VerticesOffset = MeshData.Positions.Num();
-		for (size_t i = 0; i < Icosahedron.Vertices.size(); ++i) {
-			const auto &ConvertedUnitVec = *reinterpret_cast<const FVector*>(&Icosahedron.Vertices[i]);
-			MeshData.Positions.Add(VertexPos + ConvertedUnitVec * MeshScale);
-			MeshData.Tangents.Add(FVector::UpVector, FVector::RightVector);
-			MeshData.TexCoords.Add(FVector2D::UnitVector);
-			MeshData.Colors.Add(VertexColor);
+		const size_t PrevVerticesNum = RdataI * IcosahedronScaled.Vertices.size();
+		const size_t CurrVerticesNum = (RdataI + 1) * IcosahedronScaled.Vertices.size();
+		for (size_t i = PrevVerticesNum; i < CurrVerticesNum; ++i) {
+			TmpVertices[i] = IcosahedronFVecVertices[i - PrevVerticesNum] + VertexPos;
+			TmpColors[i] = VertexColor;
 		}
 
-		check(Icosahedron.Indices.size() % 3 == 0);
-		for (const auto Idx : Icosahedron.Indices)
-			MeshData.Triangles.Add(Idx + VerticesOffset);
+		const size_t PrevIndicesNum = RdataI * IcosahedronScaled.Indices.size();
+		const size_t CurrIndicesNum = (RdataI + 1) * IcosahedronScaled.Indices.size();
+		for (size_t i = PrevIndicesNum; i < CurrIndicesNum; ++i)
+			TmpIndices[i] = IcosahedronScaled.Indices[i - PrevIndicesNum] + PrevVerticesNum;
 	}
 
-	check(MeshData.Positions.Num() == VerticesNum);
-	check(MeshData.Tangents.Num() == VerticesNum);
-	check(MeshData.TexCoords.Num() == VerticesNum);
-	check(MeshData.Colors.Num() == VerticesNum);
-	check(MeshData.Triangles.Num() == IndicesNum);
+	MeshData.Positions.Append(TmpVertices);
+	MeshData.Tangents.SetNum(VerticesNum, false);
+	MeshData.TexCoords.SetNum(VerticesNum, false);
+	MeshData.Colors.Append(TmpColors);
+	MeshData.Triangles.Append(TmpIndices);
 
 	return true;
 }
@@ -69,6 +76,9 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 
 	check(Data.StorageIndices.Num() == Data.Positions.Num());
 	check(Data.Positions.Num() == Data.Colors.Num());
+	check(CollisionData.Vertices.Num() == 0);
+	check(CollisionData.Triangles.Num() == 0);
+	check(CollisionData.CollisionSources.Num() == 0);
 
 	if (Data.Positions.Num() == 0) {
 		// hides collision if no data was provided
@@ -76,36 +86,36 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 		return true;
 	}
 
-	constexpr static auto Icosahedron = VertexMeshFactory::GenerateUnit<CollisionQuality>();
-	static_assert(Icosahedron.Vertices[0].X == -0.525731087f);
-	static_assert(Icosahedron.Vertices[0].Y == 0.850650787f);
-	static_assert(Icosahedron.Vertices[0].Z == 0.0f);
+	constexpr static auto IcosahedronScaled = VertexMeshFactory::GenerateScaled<CollisionQuality, MeshScale>();
+	static_assert(IcosahedronScaled.Vertices[0].X == -0.525731087f * MeshScale);
+	static_assert(IcosahedronScaled.Vertices[0].Y == 0.850650787f * MeshScale);
+	static_assert(IcosahedronScaled.Vertices[0].Z == 0.0f * MeshScale);
 
-	const size_t VerticesNum = CollisionData.Vertices.Num() + Icosahedron.Vertices.size() * Data.Positions.Num();
-	const size_t TrianglesNum = CollisionData.Triangles.Num() + Icosahedron.Indices.size() / 3 * Data.Positions.Num();
-	const size_t SourcesNum = CollisionData.CollisionSources.Num() + Data.Positions.Num();
+	const size_t VerticesNum = IcosahedronScaled.Vertices.size() * Data.Positions.Num();
+	const size_t TrianglesNum = IcosahedronScaled.Indices.size() / 3 * Data.Positions.Num();
+	const size_t SourcesNum = Data.Positions.Num();
 
 	CollisionData.Vertices.Reserve(VerticesNum);
 	CollisionData.Triangles.Reserve(TrianglesNum);
 	CollisionData.CollisionSources.Reserve(SourcesNum);
 
+	const auto IcosahedronFVecVertices = reinterpret_cast<const FVector*>(IcosahedronScaled.Vertices.data());
+
 	for (size_t RdataI = 0; RdataI < Data.Positions.Num(); ++RdataI) {
 		const auto VertexIdx = Data.StorageIndices[RdataI];
 		const auto &VertexPos = Data.Positions[RdataI];
 
-		const auto VerticesOffset = CollisionData.Vertices.Num();
-		for (size_t i = 0; i < Icosahedron.Vertices.size(); ++i) {
-			const auto &ConvertedUnitVec = *reinterpret_cast<const FVector*>(&Icosahedron.Vertices[i]);
-			CollisionData.Vertices.Add(VertexPos + ConvertedUnitVec * MeshScale);
-		}
+		const auto PrevVerticesNum = CollisionData.Vertices.Num();
+		for (size_t i = 0; i < IcosahedronScaled.Vertices.size(); ++i)
+			CollisionData.Vertices.Add(VertexPos + IcosahedronFVecVertices[i]);
 
 		const int32_t TrianglesStart = CollisionData.Triangles.Num();
-		check(Icosahedron.Indices.size() % 3 == 0);
-		for (size_t i = 0; i < Icosahedron.Indices.size(); i += 3) {
+		check(IcosahedronScaled.Indices.size() % 3 == 0);
+		for (size_t i = 0; i < IcosahedronScaled.Indices.size(); i += 3) {
 			CollisionData.Triangles.Add(
-				Icosahedron.Indices[i + 0] + VerticesOffset,
-				Icosahedron.Indices[i + 1] + VerticesOffset,
-				Icosahedron.Indices[i + 2] + VerticesOffset
+				IcosahedronScaled.Indices[i + 0] + PrevVerticesNum,
+				IcosahedronScaled.Indices[i + 1] + PrevVerticesNum,
+				IcosahedronScaled.Indices[i + 2] + PrevVerticesNum
 			);
 		}
 		const int32_t TrianglesEnd = CollisionData.Triangles.Num();
