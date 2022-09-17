@@ -1,11 +1,17 @@
 ﻿#include "EdgesRenderer.h"
 #include "VerticesRenderer.h"
+#include "Graphs/Utils/Utils.h"
+
+DECLARE_CYCLE_STAT(TEXT("UEdgesRenderer::GenerateStartEndFaces"), STAT_UEdgesRenderer_GenerateStartEndFaces, GRAPHS_PERF_EDGES_RENDERER);
+DECLARE_CYCLE_STAT(TEXT("UEdgesRenderer::GetSectionMeshForLOD"), STAT_UEdgesRenderer_GetSectionMeshForLOD, GRAPHS_PERF_EDGES_RENDERER);
+DECLARE_CYCLE_STAT(TEXT("UEdgesRenderer::GetCollisionMesh"), STAT_UEdgesRenderer_GetCollisionMesh, GRAPHS_PERF_EDGES_RENDERER);
 
 // TODO: check performance with TArray and TArray with inline allocator
 template <size_t FacePointsNum>
 TStaticArray<FVector, FacePointsNum * 2> GenerateStartEndFaces(FVector FirstVertexPos, FVector SecondVertexPos) {
-	constexpr static float StepAngle = 360.0f / static_cast<float>(FacePointsNum);
+	SCOPE_CYCLE_COUNTER(STAT_UEdgesRenderer_GenerateStartEndFaces);
 
+	constexpr static float StepAngle = 360.0f / static_cast<float>(FacePointsNum);
 	const auto ForwardDir = (SecondVertexPos - FirstVertexPos).GetSafeNormal();
 
 	// generate unit vector that is perpendicular to ForwardDir
@@ -46,6 +52,7 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 	const int32 SectionId,
 	FRuntimeMeshRenderableMeshData &MeshData
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_UEdgesRenderer_GetSectionMeshForLOD);
 	check(LODIndex == 0 && SectionId == 0);
 
 	RenderData TmpData;
@@ -125,6 +132,8 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 }
 
 bool UEdgesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) {
+	SCOPE_CYCLE_COUNTER(STAT_UEdgesRenderer_GetCollisionMesh);
+
 	check(Data.Positions.Num() % 2 == 0);
 	check(Data.StorageIndices.Num() == Data.Positions.Num() / 2);
 	check(Data.Positions.Num() == Data.Colors.Num());

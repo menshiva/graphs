@@ -1,17 +1,21 @@
 ﻿#include "EdgeCommands.h"
 #include "VertexCommands.h"
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Create"), STAT_EdgeCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Create::Create(
 	const EntityId GraphId, EntityId *NewEdgeId,
 	const EntityId FromVertexId, const EntityId ToVertexId
 ) : GraphsRendererCommand([GraphId, NewEdgeId, FromVertexId, ToVertexId] (AGraphsRenderer &Renderer) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Create);
 	return CreateImpl(Renderer, GraphId, NewEdgeId, FromVertexId, ToVertexId);
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::CreateWithUserIds"), STAT_EdgeCommands_CreateWithUserIds, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::Create::Create(
 	const EntityId GraphId, EntityId *NewEdgeId,
 	const uint32_t FromVertexUserId, const uint32_t ToVertexUserId
 ) : GraphsRendererCommand([GraphId, NewEdgeId, FromVertexUserId, ToVertexUserId] (AGraphsRenderer &Renderer) {
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_CreateWithUserIds);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 	return CreateImpl(
 		Renderer,
@@ -21,13 +25,13 @@ EdgeCommands::Create::Create(
 	);
 }) {}
 
-DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Create"), STAT_EdgeCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
+DECLARE_CYCLE_STAT(TEXT("EdgeCommands::CreateImpl"), STAT_EdgeCommands_CreateImpl, STATGROUP_GRAPHS_PERF_COMMANDS);
 bool EdgeCommands::Create::CreateImpl(
 	AGraphsRenderer &Renderer,
 	const EntityId GraphId, EntityId* NewEdgeId,
 	const EntityId FromVertexId, const EntityId ToVertexId
 ) {
-	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Create);
+	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_CreateImpl);
 
 	const auto EdgeId = ESMut().NewEntity<EdgeEntity>();
 	auto &Edge = ESMut().GetEntityMut<EdgeEntity>(EdgeId);

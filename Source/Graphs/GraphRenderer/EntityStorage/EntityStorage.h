@@ -4,10 +4,8 @@
 #include "Entities/VertexEntity.h"
 #include "Entities/EdgeEntity.h"
 
-// TODO
 DECLARE_CYCLE_STAT(TEXT("EntityStorage::GetStorage"), STAT_EntityStorage_GetStorage, STATGROUP_GRAPHS_PERF_ENTITY_STORAGE);
 DECLARE_CYCLE_STAT(TEXT("EntityStorage::IsValidTemplate"), STAT_EntityStorage_IsValidTemplate, STATGROUP_GRAPHS_PERF_ENTITY_STORAGE);
-DECLARE_CYCLE_STAT(TEXT("EntityStorage::IsValid"), STAT_EntityStorage_IsValid, STATGROUP_GRAPHS_PERF_ENTITY_STORAGE);
 DECLARE_CYCLE_STAT(TEXT("EntityStorage::GetEntity"), STAT_EntityStorage_GetEntity, STATGROUP_GRAPHS_PERF_ENTITY_STORAGE);
 DECLARE_CYCLE_STAT(TEXT("EntityStorage::GetStorageMut"), STAT_EntityStorage_GetStorageMut, STATGROUP_GRAPHS_PERF_ENTITY_STORAGE);
 DECLARE_CYCLE_STAT(TEXT("EntityStorage::GetEntityMut"), STAT_EntityStorage_GetEntityMut, STATGROUP_GRAPHS_PERF_ENTITY_STORAGE);

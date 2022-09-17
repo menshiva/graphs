@@ -1,5 +1,9 @@
 ﻿#include "VerticesRenderer.h"
-#include "MeshFactory.h"
+#include "Graphs/Utils/Utils.h"
+#include "Graphs/Utils/VertexMeshFactory.h"
+
+DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetSectionMeshForLOD"), STAT_UVerticesRenderer_GetSectionMeshForLOD, GRAPHS_PERF_VERTICES_RENDERER);
+DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetCollisionMesh"), STAT_UVerticesRenderer_GetCollisionMesh, GRAPHS_PERF_VERTICES_RENDERER);
 
 UVerticesRenderer::UVerticesRenderer() : URendererBase() {}
 
@@ -8,6 +12,7 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 	const int32 SectionId,
 	FRuntimeMeshRenderableMeshData &MeshData
 ) {
+	SCOPE_CYCLE_COUNTER(STAT_UVerticesRenderer_GetSectionMeshForLOD);
 	check(LODIndex == 0 && SectionId == 0);
 
 	RenderData TmpData;
@@ -60,6 +65,8 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 }
 
 bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) {
+	SCOPE_CYCLE_COUNTER(STAT_UVerticesRenderer_GetCollisionMesh);
+
 	check(Data.StorageIndices.Num() == Data.Positions.Num());
 	check(Data.Positions.Num() == Data.Colors.Num());
 
