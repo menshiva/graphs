@@ -175,12 +175,13 @@ namespace VertexMeshFactory {
 }
 
 namespace EdgeMeshFactory {
-	constexpr static uint32_t QUALITY = 6;
-	constexpr static float STEP_ANGLE = 360.0f / static_cast<float>(QUALITY);
-	constexpr static float SCALE = 10.0f;
+	constexpr static uint32_t GetVerticesNum(const uint32_t Quality) {
+		return Quality * 2;
+	}
 
-	constexpr static size_t MESH_VERTICES_NUM = QUALITY * 2;
-	constexpr static size_t MESH_TRIANGLES_INDICES_NUM = QUALITY * 2 * 3;
+	constexpr static uint32_t GetIndicesNum(const uint32_t Quality) {
+		return Quality * 2 * 3;
+	}
 
 	static void GenerateMesh(
 		FVector FirstVertexPos, FVector SecondVertexPos,

@@ -49,7 +49,7 @@ GraphCommands::UpdateCollisions::UpdateCollisions() : GraphsRendererCommand([] (
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_UpdateCollisions);
 	// TODO: fix: here we are updating not only collisions, but mesh too
 	MarkRendererComponentDirty(Renderer, {VERTEX, true});
-	// TODO: edges
+	MarkRendererComponentDirty(Renderer, {EDGE, true});
 	return true;
 }) {}
 

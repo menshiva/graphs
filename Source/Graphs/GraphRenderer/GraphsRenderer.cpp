@@ -1,6 +1,6 @@
 ﻿#include "GraphsRenderer.h"
-
 #include "Commands/GraphCommands.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 // TODO
 DECLARE_CYCLE_STAT(TEXT("AGraphsRenderer::GetEntityIdFromCollisionData"), STAT_AGraphsRenderer_GetEntityIdFromCollisionData, STATGROUP_GRAPHS_PERF_RENDERER);
@@ -24,13 +24,27 @@ AGraphsRenderer::AGraphsRenderer(const FObjectInitializer &ObjectInitializer) {
 	VerticesRuntimeMeshComponent->CanCharacterStepUpOn = ECB_No;
 	VerticesRuntimeMeshComponent->SetCollisionProfileName("Graph");
 	VerticesRuntimeMeshComponent->SetCastShadow(false);
+
+	EdgesRuntimeMeshComponent = ObjectInitializer.CreateDefaultSubobject<URuntimeMeshComponent>(
+		this,
+		TEXT("EdgesRuntimeMeshComponent")
+	);
+	EdgesRuntimeMeshComponent->PrimaryComponentTick.bCanEverTick = false;
+	EdgesRuntimeMeshComponent->SetMobility(EComponentMobility::Static);
+	EdgesRuntimeMeshComponent->SetRuntimeMeshMobility(ERuntimeMeshMobility::Static);
+	EdgesRuntimeMeshComponent->SetEnableGravity(false);
+	EdgesRuntimeMeshComponent->CanCharacterStepUpOn = ECB_No;
+	EdgesRuntimeMeshComponent->SetCollisionProfileName("Graph");
+	EdgesRuntimeMeshComponent->SetCastShadow(false);
 }
 
 void AGraphsRenderer::OnConstruction(const FTransform &Transform) {
 	Super::OnConstruction(Transform);
 	VerticesProvider = NewObject<UVerticesRenderer>(this);
 	VerticesRuntimeMeshComponent->Initialize(VerticesProvider);
-	// TODO: edges
+
+	EdgesProvider = NewObject<UEdgesRenderer>(this);
+	EdgesRuntimeMeshComponent->Initialize(EdgesProvider);
 }
 
 void AGraphsRenderer::EndPlay(const EEndPlayReason::Type EndPlayReason) {
@@ -53,7 +67,14 @@ EntityId AGraphsRenderer::GetEntityIdFromHitResult(const FHitResult &HitResult) 
 			if (!ES::IsValid<VertexEntity>(HitEntityId))
 				HitEntityId = EntityId::NONE();
 		}
-		// TODO: else if edges
+		else if (HitResult.Component == EdgesRuntimeMeshComponent) {
+			HitEntityId = EntityId(
+				EdgesRuntimeMeshComponent->GetHitSource(HitResult.FaceIndex).SectionId,
+				EDGE
+			);
+			if (!ES::IsValid<EdgeEntity>(HitEntityId))
+				HitEntityId = EntityId::NONE();
+		}
 	}
 
 	return HitEntityId;
@@ -75,8 +96,13 @@ void AGraphsRenderer::MarkDirty() {
 	ComponentsMeshDirty[VERTEX] = false;
 	ComponentsCollisionDirty[VERTEX] = false;
 
-	if (UpdateVerticesLODs || UpdateVerticesCollision)
+	if (UpdateVerticesLODs || UpdateVerticesCollision) {
 		VerticesProvider->SetRenderData(GenerateVerticesRenderData(), UpdateVerticesLODs, UpdateVerticesCollision);
+		if (UpdateVerticesLODs)
+			UKismetSystemLibrary::PrintString(GetWorld(), "UVertexProvider::GetSectionMeshForLOD", true, true, FLinearColor::Red);
+		if (UpdateVerticesCollision)
+			UKismetSystemLibrary::PrintString(GetWorld(), "UVertexProvider::GetCollisionMesh", true, true, FLinearColor::Green);
+	}
 
 	const bool UpdateEdgesLODs = ComponentsMeshDirty[EDGE];
 	const bool UpdateEdgesCollision = ComponentsCollisionDirty[EDGE];
@@ -84,14 +110,28 @@ void AGraphsRenderer::MarkDirty() {
 	ComponentsCollisionDirty[EDGE] = false;
 
 	if (UpdateEdgesLODs || UpdateEdgesCollision) {
-		// TODO: edges section
+		EdgesProvider->SetRenderData(GenerateEdgesRenderData(), UpdateEdgesLODs, UpdateEdgesCollision);
+		if (UpdateEdgesLODs)
+			UKismetSystemLibrary::PrintString(GetWorld(), "UEdgesRenderer::GetSectionMeshForLOD", true, true, FLinearColor::Red);
+		if (UpdateEdgesCollision)
+			UKismetSystemLibrary::PrintString(GetWorld(), "UEdgesRenderer::GetCollisionMesh", true, true, FLinearColor::Green);
 	}
 }
 
-VerticesRenderData AGraphsRenderer::GenerateVerticesRenderData() const {
-	const auto &VertexStorage = ES::GetStorage<VertexEntity>();
-	VerticesRenderData RenderData;
+void AGraphsRenderer::AddVertexColor(const VertexEntity &Vertex, TArray<FColor> &Out) {
+	if (Vertex.IsHit)
+		Out.Push(ColorConsts::BlueColor);
+	else if (Vertex.OverrideColor != ColorConsts::OverrideColorNone)
+		Out.Push(Vertex.OverrideColor);
+	else
+		Out.Push(Vertex.Color);
+	// TODO: VertexDefaultColor if parent graph is not colorful
+}
 
+RenderData AGraphsRenderer::GenerateVerticesRenderData() const {
+	const auto &VertexStorage = ES::GetStorage<VertexEntity>();
+
+	RenderData RenderData;
 	RenderData.StorageIndices.Reserve(VertexStorage.Num());
 	RenderData.Positions.Reserve(VertexStorage.Num());
 	RenderData.Colors.Reserve(VertexStorage.Num());
@@ -99,14 +139,53 @@ VerticesRenderData AGraphsRenderer::GenerateVerticesRenderData() const {
 	for (auto VertexIter = VertexStorage.CreateConstIterator(); VertexIter; ++VertexIter) {
 		RenderData.StorageIndices.Push(VertexIter.GetIndex());
 		RenderData.Positions.Push(VertexIter->Position);
-		// TODO: VertexDefaultColor if parent graph is not colorful
-		RenderData.Colors.Push(VertexIter->IsHit
-			? ColorConsts::BlueColor
-			: VertexIter->OverrideColor != ColorConsts::OverrideColorNone
-				? VertexIter->OverrideColor
-				: VertexIter->Color
-		);
+		AddVertexColor(*VertexIter, RenderData.Colors);
 	}
+
+	return RenderData;
+}
+
+void AGraphsRenderer::AddEdgeColor(
+	const EdgeEntity &Edge,
+	const VertexEntity &FirstVertex,
+	const VertexEntity &SecondVertex,
+	TArray<FColor> &Out
+) {
+	if (Edge.IsHit) {
+		Out.Push(ColorConsts::BlueColor);
+		Out.Push(ColorConsts::BlueColor);
+	}
+	else if (Edge.OverrideColor != ColorConsts::OverrideColorNone) {
+		Out.Push(Edge.OverrideColor);
+		Out.Push(Edge.OverrideColor);
+	}
+	else {
+		// TODO: VertexDefaultColor if parent graph is not colorful
+		Out.Push(FirstVertex.Color);
+		Out.Push(SecondVertex.Color);
+	}
+}
+
+RenderData AGraphsRenderer::GenerateEdgesRenderData() const {
+	const auto &EdgesStorage = ES::GetStorage<EdgeEntity>();
+
+	RenderData RenderData;
+	RenderData.StorageIndices.Reserve(EdgesStorage.Num());
+	RenderData.Positions.Reserve(EdgesStorage.Num() * 2);
+	RenderData.Colors.Reserve(EdgesStorage.Num() * 2);
+
+	for (auto EdgeIter = EdgesStorage.CreateConstIterator(); EdgeIter; ++EdgeIter) {
+		RenderData.StorageIndices.Push(EdgeIter.GetIndex());
+
+		const auto &FirstVertex = ES::GetEntity<VertexEntity>(EdgeIter->VerticesIds[0]);
+		const auto &SecondVertex = ES::GetEntity<VertexEntity>(EdgeIter->VerticesIds[1]);
+
+		RenderData.Positions.Push(FirstVertex.Position);
+		RenderData.Positions.Push(SecondVertex.Position);
+
+		AddEdgeColor(*EdgeIter, FirstVertex, SecondVertex, RenderData.Colors);
+	}
+
 	return RenderData;
 }
 
