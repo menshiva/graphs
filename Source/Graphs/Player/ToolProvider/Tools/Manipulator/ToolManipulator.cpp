@@ -86,6 +86,9 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 		}
 	}
 	else if (ManipulationEntity != EntityId::NONE()) {
+		ManipulationEntity = EntityId::NONE();
+
+		GetToolProvider()->ExecuteHitCommandBasedOnHitEntity(true);
 		GetGraphsRenderer()->ExecuteCommand(GraphCommands::UpdateCollisions(), true);
 
 		GetVrRightController()->SetLaserActive(true);

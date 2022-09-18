@@ -6,9 +6,11 @@ DECLARE_CYCLE_STAT(TEXT("UEdgesRenderer::GenerateStartEndFaces"), STAT_UEdgesRen
 DECLARE_CYCLE_STAT(TEXT("UEdgesRenderer::GetSectionMeshForLOD"), STAT_UEdgesRenderer_GetSectionMeshForLOD, GRAPHS_PERF_EDGES_RENDERER);
 DECLARE_CYCLE_STAT(TEXT("UEdgesRenderer::GetCollisionMesh"), STAT_UEdgesRenderer_GetCollisionMesh, GRAPHS_PERF_EDGES_RENDERER);
 
-// TODO: check performance with TArray and TArray with inline allocator
-template <size_t FacePointsNum>
-TStaticArray<FVector, FacePointsNum * 2> GenerateStartEndFaces(FVector FirstVertexPos, FVector SecondVertexPos) {
+template <size_t FacePointsNum, typename Container>
+void GenerateEdgeFaces(
+	FVector FirstVertexPos, FVector SecondVertexPos,
+	Container &OutVertices
+) {
 	SCOPE_CYCLE_COUNTER(STAT_UEdgesRenderer_GenerateStartEndFaces);
 
 	constexpr static float StepAngle = 360.0f / static_cast<float>(FacePointsNum);
@@ -22,27 +24,18 @@ TStaticArray<FVector, FacePointsNum * 2> GenerateStartEndFaces(FVector FirstVert
 	auto RightDir = FVector::CrossProduct(v1, ForwardDir);
 	check(FVector::Orthogonal(ForwardDir, RightDir));
 
-	TStaticArray<FVector, FacePointsNum * 2> Out;
-
-	// generate first face
-	for (size_t i = 0; i < FacePointsNum; ++i) {
-		Out[i] = RightDir * UEdgesRenderer::MeshScale;
-		RightDir = RightDir.RotateAngleAxis(StepAngle, ForwardDir);
-	}
-
 	// offset vertex positions almost by vertex mesh scale
 	const auto Offset = ForwardDir * UVerticesRenderer::MeshScale * 0.7f;
 	FirstVertexPos += Offset;
 	SecondVertexPos -= Offset;
 
-	// copy to second face and apply offsets
-	for (size_t i = FacePointsNum; i < FacePointsNum * 2; ++i) {
-		Out[i] = Out[i - FacePointsNum];
-		Out[i - FacePointsNum] += FirstVertexPos;
-		Out[i] += SecondVertexPos;
+	// generate faces
+	for (size_t i = 0; i < FacePointsNum; ++i) {
+		const auto RotatedScaledVec = RightDir * UEdgesRenderer::MeshScale;
+		OutVertices.Add(RotatedScaledVec + FirstVertexPos);
+		OutVertices.Add(RotatedScaledVec + SecondVertexPos);
+		RightDir = RightDir.RotateAngleAxis(StepAngle, ForwardDir);
 	}
-
-	return Out;
 }
 
 UEdgesRenderer::UEdgesRenderer() : URendererBase() {}
@@ -66,17 +59,23 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 	check(TmpData.Positions.Num() % 2 == 0);
 	check(TmpData.StorageIndices.Num() == TmpData.Positions.Num() / 2);
 	check(TmpData.Positions.Num() == TmpData.Colors.Num());
+	check(MeshData.Positions.Num() == 0);
+	check(MeshData.Triangles.Num() == 0);
 
-	const size_t VerticesNum = MeshData.Positions.Num() + MeshQuality * 2 * TmpData.StorageIndices.Num();
-	const size_t IndicesNum = MeshData.Triangles.Num() + MeshQuality * 2 * 3 * TmpData.StorageIndices.Num();
+	const size_t VerticesNum = MeshQuality * 2 * TmpData.StorageIndices.Num();
+	const size_t IndicesNum = MeshQuality * 2 * 3 * TmpData.StorageIndices.Num();
 
-	MeshData.ReserveVertices(VerticesNum);
-	MeshData.Triangles.Reserve(IndicesNum);
+	TArray<FVector> TmpVertices;
+	TmpVertices.Reserve(VerticesNum);
+	TArray<FColor> TmpColors;
+	TmpColors.Reserve(VerticesNum);
+	TArray<int32> TmpIndices;
+	TmpIndices.Reserve(IndicesNum);
 
 	size_t SkippedEdges = 0;
-	for (size_t RdataI = 0; RdataI < TmpData.Positions.Num(); RdataI += 2) {
-		const auto &FirstVertexPos = TmpData.Positions[RdataI];
-		const auto &SecondVertexPos = TmpData.Positions[RdataI + 1];
+	for (size_t RdataI = 0; RdataI < TmpData.StorageIndices.Num(); ++RdataI) {
+		const auto &FirstVertexPos = TmpData.Positions[RdataI * 2];
+		const auto &SecondVertexPos = TmpData.Positions[RdataI * 2 + 1];
 
 		// do not generate edge if vertices have intersection
 		if (FVector::DistSquared(FirstVertexPos, SecondVertexPos)
@@ -86,47 +85,46 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 			continue;
 		}
 
-		const auto &FirstVertexColor = TmpData.Colors[RdataI];
-		const auto &SecondVertexColor = TmpData.Colors[RdataI + 1];
+		const auto &FirstVertexColor = TmpData.Colors[RdataI * 2];
+		const auto &SecondVertexColor = TmpData.Colors[RdataI * 2 + 1];
 
-		const auto VerticesOffset = MeshData.Positions.Num();
-		const auto FacesPoints = GenerateStartEndFaces<MeshQuality>(FirstVertexPos, SecondVertexPos);
-		for (const auto &P : FacesPoints)
-			MeshData.Positions.Add(P);
-		for (size_t i = 0; i < FacesPoints.Num(); ++i) {
-			MeshData.Tangents.Add(FVector::UpVector, FVector::RightVector);
-			MeshData.TexCoords.Add(FVector2D::UnitVector);
+		const auto PrevVerticesNum = TmpVertices.Num();
+		GenerateEdgeFaces<MeshQuality>(FirstVertexPos, SecondVertexPos, TmpVertices);
+
+		for (uint32_t i = 0; i < MeshQuality; ++i) {
+			TmpColors.Push(FirstVertexColor);
+			TmpColors.Push(SecondVertexColor);
 		}
-		for (size_t i = 0; i < FacesPoints.Num() / 2; ++i)
-			MeshData.Colors.Add(FirstVertexColor);
-		for (size_t i = FacesPoints.Num() / 2; i < FacesPoints.Num(); ++i)
-			MeshData.Colors.Add(SecondVertexColor);
 
-		for (int32 i = 0; i < MeshQuality; ++i) {
-			const int32 FirstFaceI = i;
-			const int32 FirstFaceNextI = (i + 1) % MeshQuality;
-			const int32 SecondFaceI = FirstFaceI + MeshQuality;
-			const int32 SecondFaceNextI = FirstFaceNextI + MeshQuality;
-			MeshData.Triangles.AddTriangle(
-				VerticesOffset + FirstFaceI,
-				VerticesOffset + SecondFaceI,
-				VerticesOffset + FirstFaceNextI
-			);
-			MeshData.Triangles.AddTriangle(
-				VerticesOffset + SecondFaceI,
-				VerticesOffset + SecondFaceNextI,
-				VerticesOffset + FirstFaceNextI
-			);
+		for (int32 i = 1; i < MeshQuality * 2; i += 2) {
+			TmpIndices.Append({
+				PrevVerticesNum + i - 1,
+				PrevVerticesNum + i,
+				PrevVerticesNum + (i + 1) % (MeshQuality * 2)
+			});
+			TmpIndices.Append({
+				PrevVerticesNum + (i + 1) % (MeshQuality * 2),
+				PrevVerticesNum + i,
+				PrevVerticesNum + (i + 2) % (MeshQuality * 2)
+			});
 		}
 	}
 
 	const size_t SkippedVerticesNum = MeshQuality * 2 * SkippedEdges;
 	const size_t SkippedIndicesNum = SkippedVerticesNum * 3;
-	check(MeshData.Positions.Num() == VerticesNum - SkippedVerticesNum);
-	check(MeshData.Tangents.Num() == VerticesNum - SkippedVerticesNum);
-	check(MeshData.TexCoords.Num() == VerticesNum - SkippedVerticesNum);
-	check(MeshData.Colors.Num() == VerticesNum - SkippedVerticesNum);
-	check(MeshData.Triangles.Num() == IndicesNum - SkippedIndicesNum);
+
+	const size_t GeneratedVerticesNum = VerticesNum - SkippedVerticesNum;
+	const size_t GeneratedIndicesNum = IndicesNum - SkippedIndicesNum;
+
+	check(TmpVertices.Num() == GeneratedVerticesNum);
+	check(TmpColors.Num() == GeneratedVerticesNum);
+	check(TmpIndices.Num() == GeneratedIndicesNum);
+
+	MeshData.Positions.Append(TmpVertices);
+	MeshData.Tangents.SetNum(GeneratedVerticesNum);
+	MeshData.TexCoords.SetNum(GeneratedVerticesNum);
+	MeshData.Colors.Append(TmpColors);
+	MeshData.Triangles.Append(TmpIndices);
 
 	return true;
 }
@@ -137,6 +135,9 @@ bool UEdgesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) 
 	check(Data.Positions.Num() % 2 == 0);
 	check(Data.StorageIndices.Num() == Data.Positions.Num() / 2);
 	check(Data.Positions.Num() == Data.Colors.Num());
+	check(CollisionData.Vertices.Num() == 0);
+	check(CollisionData.Triangles.Num() == 0);
+	check(CollisionData.CollisionSources.Num() == 0);
 
 	if (Data.Positions.Num() == 0) {
 		// hides collision if no data was provided
@@ -144,19 +145,19 @@ bool UEdgesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) 
 		return true;
 	}
 
-	const size_t VerticesNum = CollisionData.Vertices.Num() + CollisionQuality * 2 * Data.StorageIndices.Num();
-	const size_t TrianglesNum = CollisionData.Triangles.Num() + CollisionQuality * 2 * Data.StorageIndices.Num();
-	const size_t SourcesNum = CollisionData.CollisionSources.Num() + Data.StorageIndices.Num();
+	const size_t VerticesNum = CollisionQuality * 2 * Data.StorageIndices.Num();
+	const size_t TrianglesNum = VerticesNum;
+	const size_t SourcesNum = Data.StorageIndices.Num();
 
 	CollisionData.Vertices.Reserve(VerticesNum);
 	CollisionData.Triangles.Reserve(TrianglesNum);
 	CollisionData.CollisionSources.Reserve(SourcesNum);
 
 	size_t SkippedEdges = 0;
-	for (size_t RdataI = 0; RdataI < Data.Positions.Num(); RdataI += 2) {
-		const auto EdgeIdx = Data.StorageIndices[RdataI / 2];
-		const auto &FirstVertexPos = Data.Positions[RdataI];
-		const auto &SecondVertexPos = Data.Positions[RdataI + 1];
+	for (size_t RdataI = 0; RdataI < Data.StorageIndices.Num(); ++RdataI) {
+		const auto EdgeIdx = Data.StorageIndices[RdataI];
+		const auto &FirstVertexPos = Data.Positions[RdataI * 2];
+		const auto &SecondVertexPos = Data.Positions[RdataI * 2 + 1];
 
 		// do not generate edge if vertices have intersection
 		if (FVector::DistSquared(FirstVertexPos, SecondVertexPos)
@@ -166,29 +167,23 @@ bool UEdgesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) 
 			continue;
 		}
 
-		const auto VerticesOffset = CollisionData.Vertices.Num();
-		const auto FacesPoints = GenerateStartEndFaces<CollisionQuality>(FirstVertexPos, SecondVertexPos);
-		for (const auto &P : FacesPoints)
-			CollisionData.Vertices.Add(P);
+		const auto PrevVerticesNum = CollisionData.Vertices.Num();
+		GenerateEdgeFaces<CollisionQuality>(FirstVertexPos, SecondVertexPos, CollisionData.Vertices);
 
 		const int32_t TrianglesStart = CollisionData.Triangles.Num();
-		for (int32 i = 0; i < CollisionQuality; ++i) {
-			const int32 FirstFaceI = i;
-			const int32 FirstFaceNextI = (i + 1) % CollisionQuality;
-			const int32 SecondFaceI = FirstFaceI + CollisionQuality;
-			const int32 SecondFaceNextI = FirstFaceNextI + CollisionQuality;
+		for (int32 i = 1; i < CollisionQuality * 2; i += 2) {
 			CollisionData.Triangles.Add(
-				VerticesOffset + FirstFaceI,
-				VerticesOffset + SecondFaceI,
-				VerticesOffset + FirstFaceNextI
+				PrevVerticesNum + i - 1,
+				PrevVerticesNum + i,
+				PrevVerticesNum + (i + 1) % (CollisionQuality * 2)
 			);
 			CollisionData.Triangles.Add(
-				VerticesOffset + SecondFaceI,
-				VerticesOffset + SecondFaceNextI,
-				VerticesOffset + FirstFaceNextI
+				PrevVerticesNum + (i + 1) % (CollisionQuality * 2),
+				PrevVerticesNum + i,
+				PrevVerticesNum + (i + 2) % (CollisionQuality * 2)
 			);
 		}
-		const int32_t TrianglesEnd = CollisionData.Triangles.Num();
+		const int32_t TrianglesEnd = CollisionData.Triangles.Num() - 1;
 
 		CollisionData.CollisionSources.Emplace(
 			TrianglesStart, TrianglesEnd,

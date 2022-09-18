@@ -45,7 +45,7 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 
 	const auto IcosahedronFVecVertices = reinterpret_cast<const FVector*>(IcosahedronScaled.Vertices.data());
 
-	for (size_t RdataI = 0; RdataI < TmpData.Positions.Num(); ++RdataI) {
+	for (size_t RdataI = 0; RdataI < TmpData.StorageIndices.Num(); ++RdataI) {
 		const auto &VertexPos = TmpData.Positions[RdataI];
 		const auto &VertexColor = TmpData.Colors[RdataI];
 
@@ -63,8 +63,8 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 	}
 
 	MeshData.Positions.Append(TmpVertices);
-	MeshData.Tangents.SetNum(VerticesNum, false);
-	MeshData.TexCoords.SetNum(VerticesNum, false);
+	MeshData.Tangents.SetNum(VerticesNum);
+	MeshData.TexCoords.SetNum(VerticesNum);
 	MeshData.Colors.Append(TmpColors);
 	MeshData.Triangles.Append(TmpIndices);
 
@@ -101,7 +101,7 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 
 	const auto IcosahedronFVecVertices = reinterpret_cast<const FVector*>(IcosahedronScaled.Vertices.data());
 
-	for (size_t RdataI = 0; RdataI < Data.Positions.Num(); ++RdataI) {
+	for (size_t RdataI = 0; RdataI < Data.StorageIndices.Num(); ++RdataI) {
 		const auto VertexIdx = Data.StorageIndices[RdataI];
 		const auto &VertexPos = Data.Positions[RdataI];
 
@@ -118,7 +118,7 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 				IcosahedronScaled.Indices[i + 2] + PrevVerticesNum
 			);
 		}
-		const int32_t TrianglesEnd = CollisionData.Triangles.Num();
+		const int32_t TrianglesEnd = CollisionData.Triangles.Num() - 1;
 
 		CollisionData.CollisionSources.Emplace(
 			TrianglesStart, TrianglesEnd,
