@@ -12,7 +12,7 @@ struct GraphEntity {
 	TSet<uint32_t> EdgeHashes;
 
 	// Serializable data
-	bool UseDefaultColors;
+	bool Colorful;
 	TArray<EntityId> VerticesIds;
 	TArray<EntityId> EdgesIds;
 };

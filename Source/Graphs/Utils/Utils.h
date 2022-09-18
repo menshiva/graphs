@@ -25,8 +25,7 @@ namespace FileConsts {
 }
 
 namespace ColorConsts {
-    // TODO
-	// const static FColor VertexDefaultColor = FLinearColor(0.4375f, 0.4375f, 0.4375f).ToFColor(false);
+	const static FColor VertexDefaultColor = FLinearColor(0.4375f, 0.4375f, 0.4375f).ToFColor(false);
 
 	const static FColor BlueColor = FLinearColor(0.033345f, 0.066689f, 0.161458f).ToFColor(false);
 	const static FColor GreenColor = FLinearColor(0.033345f, 0.161458f, 0.128114f).ToFColor(false);

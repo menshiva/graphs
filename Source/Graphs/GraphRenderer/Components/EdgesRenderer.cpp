@@ -51,19 +51,21 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 	RenderData TmpData;
 	{
 		FScopeLock Lock(&DataSyncRoot);
-		if (Data.Positions.Num() == 0)
-			return false;
-		TmpData = Data;
+		TmpData.Positions = Data.Positions;
+		TmpData.Colors = Data.Colors;
 	}
 
+	if (TmpData.Positions.Num() == 0)
+		return false;
+
 	check(TmpData.Positions.Num() % 2 == 0);
-	check(TmpData.StorageIndices.Num() == TmpData.Positions.Num() / 2);
 	check(TmpData.Positions.Num() == TmpData.Colors.Num());
 	check(MeshData.Positions.Num() == 0);
 	check(MeshData.Triangles.Num() == 0);
 
-	const size_t VerticesNum = MeshQuality * 2 * TmpData.StorageIndices.Num();
-	const size_t IndicesNum = MeshQuality * 2 * 3 * TmpData.StorageIndices.Num();
+	const size_t EdgesNum = TmpData.Positions.Num() / 2;
+	const size_t VerticesNum = MeshQuality * 2 * EdgesNum;
+	const size_t IndicesNum = MeshQuality * 2 * 3 * EdgesNum;
 
 	TArray<FVector> TmpVertices;
 	TmpVertices.Reserve(VerticesNum);
@@ -73,7 +75,7 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 	TmpIndices.Reserve(IndicesNum);
 
 	size_t SkippedEdges = 0;
-	for (size_t RdataI = 0; RdataI < TmpData.StorageIndices.Num(); ++RdataI) {
+	for (size_t RdataI = 0; RdataI < EdgesNum; ++RdataI) {
 		const auto &FirstVertexPos = TmpData.Positions[RdataI * 2];
 		const auto &SecondVertexPos = TmpData.Positions[RdataI * 2 + 1];
 
@@ -134,7 +136,6 @@ bool UEdgesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) 
 
 	check(Data.Positions.Num() % 2 == 0);
 	check(Data.StorageIndices.Num() == Data.Positions.Num() / 2);
-	check(Data.Positions.Num() == Data.Colors.Num());
 	check(CollisionData.Vertices.Num() == 0);
 	check(CollisionData.Triangles.Num() == 0);
 	check(CollisionData.CollisionSources.Num() == 0);

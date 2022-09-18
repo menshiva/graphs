@@ -18,12 +18,13 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 	RenderData TmpData;
 	{
 		FScopeLock Lock(&DataSyncRoot);
-		if (Data.Positions.Num() == 0)
-			return false;
-		TmpData = Data;
+		TmpData.Positions = Data.Positions;
+		TmpData.Colors = Data.Colors;
 	}
 
-	check(TmpData.StorageIndices.Num() == TmpData.Positions.Num());
+	if (TmpData.Positions.Num() == 0)
+		return false;
+
 	check(TmpData.Positions.Num() == TmpData.Colors.Num());
 	check(MeshData.Positions.Num() == 0);
 	check(MeshData.Triangles.Num() == 0);
@@ -45,19 +46,19 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 
 	const auto IcosahedronFVecVertices = reinterpret_cast<const FVector*>(IcosahedronScaled.Vertices.data());
 
-	for (size_t RdataI = 0; RdataI < TmpData.StorageIndices.Num(); ++RdataI) {
+	for (size_t RdataI = 0; RdataI < TmpData.Positions.Num(); ++RdataI) {
 		const auto &VertexPos = TmpData.Positions[RdataI];
 		const auto &VertexColor = TmpData.Colors[RdataI];
 
 		const size_t PrevVerticesNum = RdataI * IcosahedronScaled.Vertices.size();
-		const size_t CurrVerticesNum = (RdataI + 1) * IcosahedronScaled.Vertices.size();
+		const size_t CurrVerticesNum = PrevVerticesNum + IcosahedronScaled.Vertices.size();
 		for (size_t i = PrevVerticesNum; i < CurrVerticesNum; ++i) {
 			TmpVertices[i] = IcosahedronFVecVertices[i - PrevVerticesNum] + VertexPos;
 			TmpColors[i] = VertexColor;
 		}
 
 		const size_t PrevIndicesNum = RdataI * IcosahedronScaled.Indices.size();
-		const size_t CurrIndicesNum = (RdataI + 1) * IcosahedronScaled.Indices.size();
+		const size_t CurrIndicesNum = PrevIndicesNum + IcosahedronScaled.Indices.size();
 		for (size_t i = PrevIndicesNum; i < CurrIndicesNum; ++i)
 			TmpIndices[i] = IcosahedronScaled.Indices[i - PrevIndicesNum] + PrevVerticesNum;
 	}
@@ -75,7 +76,7 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 	SCOPE_CYCLE_COUNTER(STAT_UVerticesRenderer_GetCollisionMesh);
 
 	check(Data.StorageIndices.Num() == Data.Positions.Num());
-	check(Data.Positions.Num() == Data.Colors.Num());
+	check(Data.Positions.Num() == Data.StorageIndices.Num());
 	check(CollisionData.Vertices.Num() == 0);
 	check(CollisionData.Triangles.Num() == 0);
 	check(CollisionData.CollisionSources.Num() == 0);

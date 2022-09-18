@@ -5,7 +5,7 @@
 
 namespace GraphCommands {
 	struct Create final : GraphsRendererCommand {
-		Create(EntityId *NewGraphId, bool UseDefaultColors);
+		Create(EntityId *NewGraphId, bool Colorful);
 	};
 
 	struct Remove final : GraphsRendererCommand {

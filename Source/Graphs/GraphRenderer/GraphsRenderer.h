@@ -21,15 +21,7 @@ public:
 	bool ExecuteCommand(GraphsRendererCommand &&Cmd, bool MarkDirty = false);
 	void MarkDirty();
 private:
-	static void AddVertexColor(const VertexEntity &Vertex, TArray<FColor> &Out);
 	RenderData GenerateVerticesRenderData() const;
-
-	static void AddEdgeColor(
-		const EdgeEntity &Edge,
-		const VertexEntity &FirstVertex,
-		const VertexEntity &SecondVertex,
-		TArray<FColor> &Out
-	);
 	RenderData GenerateEdgesRenderData() const;
 
 	// TODO: each graph on its own provider?

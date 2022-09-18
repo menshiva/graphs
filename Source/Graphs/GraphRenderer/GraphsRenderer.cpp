@@ -118,16 +118,6 @@ void AGraphsRenderer::MarkDirty() {
 	}
 }
 
-void AGraphsRenderer::AddVertexColor(const VertexEntity &Vertex, TArray<FColor> &Out) {
-	if (Vertex.IsHit)
-		Out.Push(ColorConsts::BlueColor);
-	else if (Vertex.OverrideColor != ColorConsts::OverrideColorNone)
-		Out.Push(Vertex.OverrideColor);
-	else
-		Out.Push(Vertex.Color);
-	// TODO: VertexDefaultColor if parent graph is not colorful
-}
-
 RenderData AGraphsRenderer::GenerateVerticesRenderData() const {
 	SCOPE_CYCLE_COUNTER(STAT_AGraphsRenderer_GenerateVerticesRenderData);
 	const auto &VertexStorage = ES::GetStorage<VertexEntity>();
@@ -140,31 +130,18 @@ RenderData AGraphsRenderer::GenerateVerticesRenderData() const {
 	for (auto VertexIter = VertexStorage.CreateConstIterator(); VertexIter; ++VertexIter) {
 		RenderData.StorageIndices.Push(VertexIter.GetIndex());
 		RenderData.Positions.Push(VertexIter->Position);
-		AddVertexColor(*VertexIter, RenderData.Colors);
+		RenderData.Colors.Push(
+			VertexIter->IsHit
+				? ColorConsts::BlueColor
+				: VertexIter->OverrideColor != ColorConsts::OverrideColorNone
+					? VertexIter->OverrideColor
+					: ES::GetEntity<GraphEntity>(VertexIter->GraphId).Colorful
+						? VertexIter->Color
+						: ColorConsts::VertexDefaultColor
+		);
 	}
 
 	return RenderData;
-}
-
-void AGraphsRenderer::AddEdgeColor(
-	const EdgeEntity &Edge,
-	const VertexEntity &FirstVertex,
-	const VertexEntity &SecondVertex,
-	TArray<FColor> &Out
-) {
-	if (Edge.IsHit) {
-		Out.Push(ColorConsts::BlueColor);
-		Out.Push(ColorConsts::BlueColor);
-	}
-	else if (Edge.OverrideColor != ColorConsts::OverrideColorNone) {
-		Out.Push(Edge.OverrideColor);
-		Out.Push(Edge.OverrideColor);
-	}
-	else {
-		// TODO: VertexDefaultColor if parent graph is not colorful
-		Out.Push(FirstVertex.Color);
-		Out.Push(SecondVertex.Color);
-	}
 }
 
 RenderData AGraphsRenderer::GenerateEdgesRenderData() const {
@@ -177,15 +154,34 @@ RenderData AGraphsRenderer::GenerateEdgesRenderData() const {
 	RenderData.Colors.Reserve(EdgesStorage.Num() * 2);
 
 	for (auto EdgeIter = EdgesStorage.CreateConstIterator(); EdgeIter; ++EdgeIter) {
-		RenderData.StorageIndices.Push(EdgeIter.GetIndex());
+		const auto &Graph = ES::GetEntity<GraphEntity>(EdgeIter->GraphId);
 
 		const auto &FirstVertex = ES::GetEntity<VertexEntity>(EdgeIter->VerticesIds[0]);
 		const auto &SecondVertex = ES::GetEntity<VertexEntity>(EdgeIter->VerticesIds[1]);
 
+		auto FirstColor = FirstVertex.Color;
+		auto SecondColor = SecondVertex.Color;
+
+		if (EdgeIter->IsHit) {
+			FirstColor = ColorConsts::BlueColor;
+			SecondColor = FirstColor;
+		}
+		else if (EdgeIter->OverrideColor != ColorConsts::OverrideColorNone) {
+			FirstColor = EdgeIter->OverrideColor;
+			SecondColor = FirstColor;
+		}
+		else if (!Graph.Colorful) {
+			FirstColor = ColorConsts::VertexDefaultColor;
+			SecondColor = FirstColor;
+		}
+
+		RenderData.StorageIndices.Push(EdgeIter.GetIndex());
+
 		RenderData.Positions.Push(FirstVertex.Position);
 		RenderData.Positions.Push(SecondVertex.Position);
 
-		AddEdgeColor(*EdgeIter, FirstVertex, SecondVertex, RenderData.Colors);
+		RenderData.Colors.Push(FirstColor);
+		RenderData.Colors.Push(SecondColor);
 	}
 
 	return RenderData;

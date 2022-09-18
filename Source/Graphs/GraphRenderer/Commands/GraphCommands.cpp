@@ -8,14 +8,14 @@
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Create"), STAT_GraphCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Create::Create(
 	EntityId *NewGraphId,
-	const bool UseDefaultColors
-) : GraphsRendererCommand([NewGraphId, UseDefaultColors] (AGraphsRenderer&) {
+	const bool Colorful
+) : GraphsRendererCommand([NewGraphId, Colorful] (AGraphsRenderer&) {
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Create);
 
 	const auto GraphId = ESMut().NewEntity<GraphEntity>();
 	auto &Graph = ESMut().GetEntityMut<GraphEntity>(GraphId);
 
-	Graph.UseDefaultColors = UseDefaultColors;
+	Graph.Colorful = Colorful;
 
 	if (NewGraphId)
 		*NewGraphId = GraphId;
@@ -231,7 +231,7 @@ void GraphCommands::ConstFuncs::Serialize(
 	Writer.StartObject();
 
 	Writer.Key("colorful");
-	Writer.Bool(Graph.UseDefaultColors);
+	Writer.Bool(Graph.Colorful);
 
 	check(Graph.VerticesIds.Num() > 0);
 	Writer.Key("vertices");

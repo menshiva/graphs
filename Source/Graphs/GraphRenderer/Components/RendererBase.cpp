@@ -38,10 +38,12 @@ FBoxSphereBounds URendererBase::GetBounds() {
 
 void URendererBase::SetRenderData(RenderData &&InRenderData, const bool MarkLODs, const bool MarkCollision) {
 	check(MarkLODs || MarkCollision);
-	FScopeLock Lock(&DataSyncRoot);
-	Data = MoveTemp(InRenderData);
+	{
+		FScopeLock Lock(&DataSyncRoot);
+		Data = MoveTemp(InRenderData);
+	}
 	if (MarkLODs)
-		MarkAllLODsDirty();
+		MarkSectionDirty(0, 0);
 	if (MarkCollision)
 		MarkCollisionDirty();
 }
