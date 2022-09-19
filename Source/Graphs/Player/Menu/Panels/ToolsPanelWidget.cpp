@@ -18,7 +18,7 @@ void UToolsPanelWidget::NativePreConstruct() {
 		CloseToolButton->SetOnClickEvent([&] {
 			ToolProvider->SetActiveTool(nullptr);
 			ToolPanelSwitcher->SetActiveWidgetIndex(0);
-			CloseToolButton->SetVisibility(ESlateVisibility::Collapsed);
+			SetCloseToolButtonVisible(false);
 		});
 	}
 }
@@ -47,7 +47,7 @@ void UToolsPanelWidget::NativeConstruct() {
 		ToolBtn->SetOnClickEvent([&, Tool, i] {
 			ToolProvider->SetActiveTool(Tool);
 			ToolPanelSwitcher->SetActiveWidgetIndex(i + 1);
-			CloseToolButton->SetVisibility(ESlateVisibility::Visible);
+			SetCloseToolButtonVisible(true);
 		});
 
 		const auto ToolPanel = Cast<UToolWidget>(CreateWidget(
@@ -55,9 +55,14 @@ void UToolsPanelWidget::NativeConstruct() {
 			Tool->GetToolPanelClass(),
 			FName(Tool->GetToolName().ToString() + "ToolPanel")
 		));
-		Tool->SetToolPanel(ToolPanel);
+		Tool->SetToolPanel(this, ToolPanel);
 		const auto ToolPanelSlot = Cast<UWidgetSwitcherSlot>(ToolPanelSwitcher->AddChild(ToolPanel));
 		ToolPanelSlot->SetHorizontalAlignment(HAlign_Fill);
 		ToolPanelSlot->SetVerticalAlignment(VAlign_Fill);
 	}
+}
+
+void UToolsPanelWidget::SetCloseToolButtonVisible(const bool Visible) const {
+	if (CloseToolButton)
+		CloseToolButton->SetVisibility(Visible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
 }

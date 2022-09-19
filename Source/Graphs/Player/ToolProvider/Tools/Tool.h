@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "../ToolProvider.h"
+#include "Graphs/Player/Menu/Panels/ToolsPanelWidget.h"
 #include "Tool.generated.h"
 
 UCLASS(Abstract)
@@ -16,7 +17,7 @@ public:
 	FORCEINLINE UTexture2D *GetToolImage() const { return ToolImage; }
 	FORCEINLINE const TSubclassOf<class UToolWidget> &GetToolPanelClass() const { return ToolPanelClass; }
 
-	void SetToolPanel(UToolWidget *Panel);
+	void SetToolPanel(UToolsPanelWidget *ParentToolsPanel, UToolWidget *Panel);
 
 	FORCEINLINE bool SupportsEntity(const EntityId &Id) const {
 		return SupportedEntitiesMask[Id.Signature];

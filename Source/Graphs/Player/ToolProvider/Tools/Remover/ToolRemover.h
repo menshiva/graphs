@@ -17,5 +17,10 @@ public:
 	void RemoveSelectedEntities();
 	void DeselectEntities();
 private:
-	TSet<EntityId> SelectedEntitiesToRemove;
+	struct GraphRemoveData {
+		TSet<EntityId> VerticesToRemove;
+		TSet<EntityId> EdgesToRemove;
+	};
+
+	TMap<EntityId, GraphRemoveData> GraphsRemoveData;
 };

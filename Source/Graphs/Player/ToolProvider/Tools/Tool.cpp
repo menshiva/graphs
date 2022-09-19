@@ -15,9 +15,9 @@ UTool::UTool(const FName &ToolName, const TCHAR *ToolImageAssetPath, const TCHAR
 	ToolPanelClass = ToolPanelAsset.Class;
 }
 
-void UTool::SetToolPanel(UToolWidget *Panel) {
+void UTool::SetToolPanel(UToolsPanelWidget *ParentToolsPanel, UToolWidget *Panel) {
 	ToolPanel = Panel;
-	ToolPanel->SetupTool(this);
+	ToolPanel->Init(ParentToolsPanel, this);
 }
 
 void UTool::SetSupportedEntities(std::initializer_list<EntitySignature> &&Signatures) {

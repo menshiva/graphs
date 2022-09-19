@@ -25,70 +25,86 @@ void UToolRemover::OnDetach() {
 	DeselectEntities();
 }
 
-// TODO: test on multiple graphs
-
 bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolRemover_OnRightTriggerAction);
 
 	if (IsPressed && GetHitEntityId() != EntityId::NONE()) {
-		if (!ES::IsValid<GraphEntity>(GetHitEntityId())) {
-			const auto RemovedEntNum = SelectedEntitiesToRemove.Remove(GetHitEntityId());
-			check(RemovedEntNum <= 1);
+		if (ES::IsValid<VertexEntity>(GetHitEntityId())) {
+			const auto &Vertex = ES::GetEntity<VertexEntity>(GetHitEntityId());
+			auto GraphRemoveData = GraphsRemoveData.Find(Vertex.GraphId);
 
-			if (RemovedEntNum == 0)
-				SelectedEntitiesToRemove.Add(GetHitEntityId());
-			const auto &NewOverrideColor = RemovedEntNum == 0
-				? ColorConsts::RedColor
-				: ColorConsts::OverrideColorNone;
-
-			if (ES::IsValid<VertexEntity>(GetHitEntityId())) {
+			if (GraphRemoveData && GraphRemoveData->VerticesToRemove.Contains(GetHitEntityId())) {
+				GraphRemoveData->VerticesToRemove.Remove(GetHitEntityId());
+				if (GraphRemoveData->VerticesToRemove.Num() == 0 && GraphRemoveData->EdgesToRemove.Num() == 0)
+					GraphsRemoveData.Remove(Vertex.GraphId);
 				GetGraphsRenderer()->ExecuteCommand(VertexCommands::SetOverrideColor(
 					GetHitEntityId(),
-					NewOverrideColor
+					ColorConsts::OverrideColorNone
 				));
 			}
 			else {
+				if (!GraphRemoveData)
+					GraphRemoveData = &GraphsRemoveData.Add(Vertex.GraphId);
+				GraphRemoveData->VerticesToRemove.Add(GetHitEntityId());
+				GetGraphsRenderer()->ExecuteCommand(VertexCommands::SetOverrideColor(
+					GetHitEntityId(),
+					ColorConsts::RedColor
+				));
+			}
+		}
+		else if (ES::IsValid<EdgeEntity>(GetHitEntityId())) {
+			const auto &Edge = ES::GetEntity<EdgeEntity>(GetHitEntityId());
+			auto GraphRemoveData = GraphsRemoveData.Find(Edge.GraphId);
+
+			if (GraphRemoveData && GraphRemoveData->EdgesToRemove.Contains(GetHitEntityId())) {
+				GraphRemoveData->EdgesToRemove.Remove(GetHitEntityId());
+				if (GraphRemoveData->VerticesToRemove.Num() == 0 && GraphRemoveData->EdgesToRemove.Num() == 0)
+					GraphsRemoveData.Remove(Edge.GraphId);
 				GetGraphsRenderer()->ExecuteCommand(EdgeCommands::SetOverrideColor(
 					GetHitEntityId(),
-					NewOverrideColor
+					ColorConsts::OverrideColorNone
+				));
+			}
+			else {
+				if (!GraphRemoveData)
+					GraphRemoveData = &GraphsRemoveData.Add(Edge.GraphId);
+				GraphRemoveData->EdgesToRemove.Add(GetHitEntityId());
+				GetGraphsRenderer()->ExecuteCommand(EdgeCommands::SetOverrideColor(
+					GetHitEntityId(),
+					ColorConsts::RedColor
 				));
 			}
 		}
 		else {
 			const auto &Graph = ES::GetEntity<GraphEntity>(GetHitEntityId());
-			if (!GraphCommands::ConstFuncs::IsSetContainsGraphChildrenEntities(
-				GetHitEntityId(),
-				SelectedEntitiesToRemove
-			)) {
-				SelectedEntitiesToRemove.Reserve(
-					SelectedEntitiesToRemove.Num() + Graph.VerticesIds.Num() + Graph.EdgesIds.Num()
-				);
-				for (const auto &VertexId : Graph.VerticesIds)
-					SelectedEntitiesToRemove.Add(VertexId);
-				for (const auto &EdgeId : Graph.EdgesIds)
-					SelectedEntitiesToRemove.Add(EdgeId);
-				GetGraphsRenderer()->ExecuteCommand(GraphCommands::SetOverrideColor(
-					GetHitEntityId(),
-					ColorConsts::RedColor
-				));
-			}
-			else {
-				for (const auto &VertexId : Graph.VerticesIds)
-					SelectedEntitiesToRemove.Remove(VertexId);
-				for (const auto &EdgeId : Graph.EdgesIds)
-					SelectedEntitiesToRemove.Remove(EdgeId);
+			auto GraphRemoveData = GraphsRemoveData.Find(GetHitEntityId());
+
+			if (GraphRemoveData
+				&& Graph.VerticesIds.Num() == GraphRemoveData->VerticesToRemove.Num()
+				&& Graph.EdgesIds.Num() == GraphRemoveData->EdgesToRemove.Num())
+			{
+				GraphsRemoveData.Remove(GetHitEntityId());
 				GetGraphsRenderer()->ExecuteCommand(GraphCommands::SetOverrideColor(
 					GetHitEntityId(),
 					ColorConsts::OverrideColorNone
 				));
 			}
+			else {
+				if (!GraphRemoveData)
+					GraphRemoveData = &GraphsRemoveData.Add(GetHitEntityId());
+				GraphRemoveData->VerticesToRemove.Append(Graph.VerticesIds);
+				GraphRemoveData->EdgesToRemove.Append(Graph.EdgesIds);
+				GetGraphsRenderer()->ExecuteCommand(GraphCommands::SetOverrideColor(
+					GetHitEntityId(),
+					ColorConsts::RedColor
+				));
+			}
 		}
 
-		// we don't need to mark renderer dirty here because we assume here that entity is hit
+		// we don't need to mark renderer dirty here because we assume that entity is hit
 		// so renderer will be marked dirty anyway when we unhit entity
-		// MarkGraphRendererDirty();
 
-		GetToolPanel<UToolRemoverPanelWidget>()->SetButtonsEnabled(SelectedEntitiesToRemove.Num() > 0);
+		GetToolPanel<UToolRemoverPanelWidget>()->SetButtonsEnabled(GraphsRemoveData.Num() > 0);
 		return true;
 	}
 
@@ -96,41 +112,39 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 }
 
 void UToolRemover::RemoveSelectedEntities() {
-	for (const auto &SelectedEntId : SelectedEntitiesToRemove) {
-		if (ES::IsValid<VertexEntity>(SelectedEntId)) {
-			GetGraphsRenderer()->ExecuteCommand(VertexCommands::Remove(SelectedEntId));
+	const auto RemoverToolPanel = GetToolPanel<UToolRemoverPanelWidget>();
+	GetVrRightController()->SetLaserActive(false);
+	RemoverToolPanel->SetLoadingStatus(true);
+	RemoverToolPanel->SetButtonsEnabled(false);
+
+	AsyncThread([&] {
+		for (const auto &P : GraphsRemoveData) {
+			const auto &Graph = ES::GetEntity<GraphEntity>(P.Key);
+			const auto &GraphRemoveData = P.Value;
+
+			if (GraphRemoveData.VerticesToRemove.Num() == Graph.VerticesIds.Num()) {
+				GetGraphsRenderer()->ExecuteCommand(GraphCommands::Remove(P.Key));
+			}
+			else {
+				for (const auto VertexId : GraphRemoveData.VerticesToRemove)
+					GetGraphsRenderer()->ExecuteCommand(VertexCommands::Remove(VertexId));
+				for (const auto EdgeId : GraphRemoveData.EdgesToRemove)
+					if (ES::IsValid<EdgeEntity>(EdgeId))
+						GetGraphsRenderer()->ExecuteCommand(EdgeCommands::Remove(EdgeId));
+			}
 		}
-		else if (ES::IsValid<EdgeEntity>(SelectedEntId)) {
-			GetGraphsRenderer()->ExecuteCommand(EdgeCommands::Remove(SelectedEntId));
-		}
-		else if (ES::IsValid<GraphEntity>(SelectedEntId)) {
-			check(false);
-		}
-	}
-	GetGraphsRenderer()->MarkDirty();
-	SelectedEntitiesToRemove.Reset();
-	GetToolPanel<UToolRemoverPanelWidget>()->SetButtonsEnabled(false);
+	}, 0, TPri_Normal, [&, RemoverToolPanel] {
+		GetGraphsRenderer()->MarkDirty();
+		GraphsRemoveData.Reset();
+		RemoverToolPanel->SetLoadingStatus(false);
+		GetVrRightController()->SetLaserActive(true);
+	});
 }
 
 void UToolRemover::DeselectEntities() {
-	for (const auto &SelectedEntId : SelectedEntitiesToRemove) {
-		if (ES::IsValid<VertexEntity>(SelectedEntId)) {
-			GetGraphsRenderer()->ExecuteCommand(VertexCommands::SetOverrideColor(
-				SelectedEntId,
-				ColorConsts::OverrideColorNone
-			));
-		}
-		else if (ES::IsValid<EdgeEntity>(SelectedEntId)) {
-			GetGraphsRenderer()->ExecuteCommand(EdgeCommands::SetOverrideColor(
-				SelectedEntId,
-				ColorConsts::OverrideColorNone
-			));
-		}
-		else if (ES::IsValid<GraphEntity>(SelectedEntId)) {
-			check(false);
-		}
-	}
+	for (const auto &P : GraphsRemoveData)
+		GetGraphsRenderer()->ExecuteCommand(GraphCommands::SetOverrideColor(P.Key, ColorConsts::OverrideColorNone));
 	GetGraphsRenderer()->MarkDirty();
-	SelectedEntitiesToRemove.Reset();
+	GraphsRemoveData.Reset();
 	GetToolPanel<UToolRemoverPanelWidget>()->SetButtonsEnabled(false);
 }
