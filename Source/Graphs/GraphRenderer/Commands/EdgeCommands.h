@@ -32,11 +32,11 @@ namespace EdgeCommands {
 	};
 
 	struct SetHit final : GraphsRendererCommand {
-		SetHit(EntityId EdgeId, bool IsHit);
+		SetHit(EntityId EdgeId, bool IsHit, bool MarkDirty = true);
 	};
 
 	struct SetOverrideColor final : GraphsRendererCommand {
-		SetOverrideColor(EntityId EdgeId, const FColor &OverrideColor);
+		SetOverrideColor(EntityId EdgeId, const FColor &OverrideColor, bool MarkDirty = true);
 	};
 
 	struct Move final : GraphsRendererCommand {

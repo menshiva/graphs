@@ -70,15 +70,23 @@ GraphCommands::SetHit::SetHit(
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetHit);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
+	bool VerticesSuccess = false;
 	check(Graph.VerticesIds.Num() > 0);
-	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, IsHit] (const int32_t Idx) {
-		Renderer.ExecuteCommand(VertexCommands::SetHit(Graph.VerticesIds[Idx], IsHit));
+	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, IsHit, &VerticesSuccess] (const int32_t Idx) {
+		if (Renderer.ExecuteCommand(VertexCommands::SetHit(Graph.VerticesIds[Idx], IsHit, false)))
+			VerticesSuccess = true; // we don't need mutex lock here
 	});
+	if (VerticesSuccess)
+		MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 
 	if (Graph.EdgesIds.Num() > 0) {
-		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, IsHit] (const int32_t Idx) {
-			Renderer.ExecuteCommand(EdgeCommands::SetHit(Graph.EdgesIds[Idx], IsHit));
+		bool EdgesSuccess = false;
+		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, IsHit, &EdgesSuccess] (const int32_t Idx) {
+			if (Renderer.ExecuteCommand(EdgeCommands::SetHit(Graph.EdgesIds[Idx], IsHit, false)))
+				EdgesSuccess = true; // we don't need mutex lock here
 		});
+		if (EdgesSuccess)
+			MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	}
 
 	return true;
@@ -92,15 +100,23 @@ GraphCommands::SetOverrideColor::SetOverrideColor(
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetOverrideColor);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
+	bool VerticesSuccess = false;
 	check(Graph.VerticesIds.Num() > 0);
-	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, &OverrideColor] (const int32_t Idx) {
-		Renderer.ExecuteCommand(VertexCommands::SetOverrideColor(Graph.VerticesIds[Idx], OverrideColor));
+	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, &OverrideColor, &VerticesSuccess] (const int32_t Idx) {
+		if (Renderer.ExecuteCommand(VertexCommands::SetOverrideColor(Graph.VerticesIds[Idx], OverrideColor, false)))
+			VerticesSuccess = true; // we don't need mutex lock here
 	});
+	if (VerticesSuccess)
+		MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 
 	if (Graph.EdgesIds.Num() > 0) {
-		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, &OverrideColor] (const int32_t Idx) {
-			Renderer.ExecuteCommand(EdgeCommands::SetOverrideColor(Graph.EdgesIds[Idx], OverrideColor));
+		bool EdgesSuccess = false;
+		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, &OverrideColor, &EdgesSuccess] (const int32_t Idx) {
+			if (Renderer.ExecuteCommand(EdgeCommands::SetOverrideColor(Graph.EdgesIds[Idx], OverrideColor, false)))
+				EdgesSuccess = true; // we don't need mutex lock here
 		});
+		if (EdgesSuccess)
+			MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	}
 
 	return true;
@@ -138,8 +154,7 @@ GraphCommands::Rotate::Rotate(
 	check(Graph.VerticesIds.Num() > 0);
 	ParallelFor(Graph.VerticesIds.Num(), [&Graph, &Origin, Angle] (const int32_t Idx) {
 		auto &Vertex = ESMut().GetEntityMut<VertexEntity>(Graph.VerticesIds[Idx]);
-		const auto RotatedPos = (Vertex.Position - Origin).RotateAngleAxis(Angle, FVector::DownVector) + Origin;
-		Vertex.Position = RotatedPos;
+		Vertex.Position = (Vertex.Position - Origin).RotateAngleAxis(Angle, FVector::DownVector) + Origin;
 	});
 
 	MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
@@ -168,24 +183,24 @@ GraphCommands::Deserialize::Deserialize(
 	}
 
 	if (!DomGraph.IsObject()) {
-		ErrorMessage = "Graph should be an object.";
+		ErrorMessage = "Graph error: Should be an object.";
 		return false;
 	}
 
 	const auto &ColorfulMember = DomGraph.FindMember("colorful");
 	if (ColorfulMember == DomGraph.MemberEnd() || !ColorfulMember->value.IsBool()) {
-		ErrorMessage = "Graph should have \"colorful\" boolean.";
+		ErrorMessage = "Graph error: Should have \"colorful\" boolean.";
 		return false;
 	}
 
 	const auto &VerticesMember = DomGraph.FindMember("vertices");
 	if (VerticesMember == DomGraph.MemberEnd() || !VerticesMember->value.IsArray()) {
-		ErrorMessage = "Graph should contain \"vertices\" array of objects.";
+		ErrorMessage = "Graph error: Should contain \"vertices\" array of objects.";
 		return false;
 	}
 	const auto &DomVerticesArray = VerticesMember->value.GetArray();
 	if (DomVerticesArray.Size() == 0) {
-		ErrorMessage = "\"vertices\" array should not be empty.";
+		ErrorMessage = "Graph error: \"vertices\" array should not be empty.";
 		return false;
 	}
 
@@ -218,7 +233,7 @@ GraphCommands::Deserialize::Deserialize(
 		return true;
 
 	if (!EdgesMember->value.IsArray()) {
-		ErrorMessage = "\"edges\" should be an array of objects.";
+		ErrorMessage = "Graph error: \"edges\" should be an array of objects.";
 		Renderer.ExecuteCommand(Remove(GraphId));
 		return false;
 	}
@@ -265,14 +280,14 @@ void GraphCommands::ConstFuncs::Serialize(
 	check(Graph.VerticesIds.Num() > 0);
 	Writer.Key("vertices");
 	Writer.StartArray();
-	for (const auto &VertexId : Graph.VerticesIds)
+	for (const auto VertexId : Graph.VerticesIds)
 		VertexCommands::ConstFuncs::Serialize(VertexId, Writer);
 	Writer.EndArray();
 
 	if (Graph.EdgesIds.Num() > 0) {
 		Writer.Key("edges");
 		Writer.StartArray();
-		for (const auto &EdgeId : Graph.EdgesIds)
+		for (const auto EdgeId : Graph.EdgesIds)
 			EdgeCommands::ConstFuncs::Serialize(EdgeId, Writer);
 		Writer.EndArray();
 	}
