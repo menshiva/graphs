@@ -56,11 +56,13 @@ protected:
 
 	static void MarkRendererComponentDirty(
 		AGraphsRenderer &Renderer,
-		std::pair<EntitySignature, bool> &&ComponentDirty
+		std::tuple<EntitySignature, bool, bool> &&ComponentDirty
 	) {
-		Renderer.ComponentsMeshDirty[ComponentDirty.first] = true;
-		Renderer.ComponentsCollisionDirty[ComponentDirty.first] =
-			Renderer.ComponentsCollisionDirty[ComponentDirty.first] | ComponentDirty.second;
+		const auto Signature = std::get<0>(ComponentDirty);
+		Renderer.ComponentsMeshDirty[Signature] =
+			Renderer.ComponentsMeshDirty[Signature] | std::get<1>(ComponentDirty);
+		Renderer.ComponentsCollisionDirty[Signature] =
+			Renderer.ComponentsCollisionDirty[Signature] | std::get<2>(ComponentDirty);
 	}
 private:
 	CommandImplementation Implementation;

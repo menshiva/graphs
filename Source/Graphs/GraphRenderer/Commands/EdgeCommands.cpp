@@ -65,7 +65,7 @@ bool EdgeCommands::Create::CreateImpl(
 	if (NewEdgeId)
 		*NewEdgeId = EdgeId;
 
-	MarkRendererComponentDirty(Renderer, {EDGE, true});
+	MarkRendererComponentDirty(Renderer, {EDGE, true, true});
 	return true;
 }
 
@@ -87,7 +87,7 @@ EdgeCommands::Remove::Remove(const EntityId EdgeId) : GraphsRendererCommand([Edg
 
 	ESMut().RemoveEntity<EdgeEntity>(EdgeId);
 
-	MarkRendererComponentDirty(Renderer, {EDGE, true});
+	MarkRendererComponentDirty(Renderer, {EDGE, true, true});
 	return true;
 }) {}
 
@@ -95,7 +95,7 @@ DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Reserve"), STAT_EdgeCommands_Reserve, STA
 EdgeCommands::Reserve::Reserve(
 	const EntityId GraphId,
 	const uint32_t NewEdgesNum
-) : GraphsRendererCommand([GraphId, NewEdgesNum] (AGraphsRenderer &Renderer) {
+) : GraphsRendererCommand([GraphId, NewEdgesNum] (AGraphsRenderer&) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Reserve);
 	ESMut().ReserveForNewEntities<EdgeEntity>(NewEdgesNum);
 
@@ -118,7 +118,7 @@ EdgeCommands::SetHit::SetHit(
 		return false;
 	Edge.IsHit = IsHit;
 
-	MarkRendererComponentDirty(Renderer, {EDGE, false});
+	MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	return true;
 }) {}
 
@@ -134,7 +134,7 @@ EdgeCommands::SetOverrideColor::SetOverrideColor(
 		return false;
 	Edge.OverrideColor = OverrideColor;
 
-	MarkRendererComponentDirty(Renderer, {EDGE, false});
+	MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	return true;
 }) {}
 

@@ -35,9 +35,9 @@ GraphCommands::Remove::Remove(const EntityId GraphId) : GraphsRendererCommand([G
 		ESMut().RemoveEntity<EdgeEntity>(EdgeId);
 	ESMut().RemoveEntity<GraphEntity>(GraphId);
 
-	MarkRendererComponentDirty(Renderer, {VERTEX, true});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, true});
 	if (HasEdges)
-		MarkRendererComponentDirty(Renderer, {EDGE, true});
+		MarkRendererComponentDirty(Renderer, {EDGE, true, true});
 	return true;
 }) {}
 
@@ -49,18 +49,16 @@ GraphCommands::RemoveAll::RemoveAll() : GraphsRendererCommand([] (AGraphsRendere
 	ESMut().Clear<VertexEntity>();
 	ESMut().Clear<EdgeEntity>();
 
-	MarkRendererComponentDirty(Renderer, {VERTEX, true});
-	MarkRendererComponentDirty(Renderer, {EDGE, true});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, true});
+	MarkRendererComponentDirty(Renderer, {EDGE, true, true});
 	return true;
 }) {}
 
-// TODO: make better command
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::UpdateCollisions"), STAT_GraphCommands_UpdateCollisions, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::UpdateCollisions::UpdateCollisions() : GraphsRendererCommand([] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_UpdateCollisions);
-	// TODO: fix: here we are updating not only collisions, but mesh too
-	MarkRendererComponentDirty(Renderer, {VERTEX, true});
-	MarkRendererComponentDirty(Renderer, {EDGE, true});
+	MarkRendererComponentDirty(Renderer, {VERTEX, false, true});
+	MarkRendererComponentDirty(Renderer, {EDGE, false, true});
 	return true;
 }) {}
 
@@ -122,9 +120,9 @@ GraphCommands::Move::Move(
 		Vertex.Position += Delta;
 	});
 
-	MarkRendererComponentDirty(Renderer, {VERTEX, false});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 	if (Graph.EdgesIds.Num() > 0)
-		MarkRendererComponentDirty(Renderer, {EDGE, false});
+		MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	return true;
 }) {}
 
@@ -144,9 +142,9 @@ GraphCommands::Rotate::Rotate(
 		Vertex.Position = RotatedPos;
 	});
 
-	MarkRendererComponentDirty(Renderer, {VERTEX, false});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 	if (Graph.EdgesIds.Num() > 0)
-		MarkRendererComponentDirty(Renderer, {EDGE, false});
+		MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	return true;
 }) {}
 

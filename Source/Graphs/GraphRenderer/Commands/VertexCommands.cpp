@@ -31,7 +31,7 @@ VertexCommands::Create::Create(
 	if (NewVertexId)
 		*NewVertexId = VertexId;
 
-	MarkRendererComponentDirty(Renderer, {VERTEX, true});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, true});
 	return true;
 }) {}
 
@@ -57,7 +57,7 @@ VertexCommands::Remove::Remove(const EntityId VertexId) : GraphsRendererCommand(
 			Renderer.ExecuteCommand(EdgeCommands::Remove(EdgeId));
 
 		ESMut().RemoveEntity<VertexEntity>(VertexId);
-		MarkRendererComponentDirty(Renderer, {VERTEX, true});
+		MarkRendererComponentDirty(Renderer, {VERTEX, true, true});
 		return true;
 	}
 
@@ -72,7 +72,7 @@ DECLARE_CYCLE_STAT(TEXT("VertexCommands::Reserve"), STAT_VertexCommands_Reserve,
 VertexCommands::Reserve::Reserve(
 	const EntityId GraphId,
 	const uint32_t NewVerticesNum
-) : GraphsRendererCommand([GraphId, NewVerticesNum] (AGraphsRenderer &Renderer) {
+) : GraphsRendererCommand([GraphId, NewVerticesNum] (AGraphsRenderer&) {
 	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Reserve);
 	ESMut().ReserveForNewEntities<VertexEntity>(NewVerticesNum);
 
@@ -95,7 +95,7 @@ VertexCommands::SetHit::SetHit(
 		return false;
 	Vertex.IsHit = IsHit;
 
-	MarkRendererComponentDirty(Renderer, {VERTEX, false});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 	return true;
 }) {}
 
@@ -111,7 +111,7 @@ VertexCommands::SetOverrideColor::SetOverrideColor(
 		return false;
 	Vertex.OverrideColor = OverrideColor;
 
-	MarkRendererComponentDirty(Renderer, {VERTEX, false});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 	return true;
 }) {}
 
@@ -125,9 +125,9 @@ VertexCommands::Move::Move(
 
 	Vertex.Position += Delta;
 
-	MarkRendererComponentDirty(Renderer, {VERTEX, false});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 	if (Vertex.EdgesIds.Num() > 0)
-		MarkRendererComponentDirty(Renderer, {EDGE, false});
+		MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	return true;
 }) {}
 
