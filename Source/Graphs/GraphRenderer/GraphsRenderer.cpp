@@ -1,6 +1,5 @@
 ﻿#include "GraphsRenderer.h"
 #include "Commands/GraphCommands.h"
-#include "Kismet/KismetSystemLibrary.h"
 
 DECLARE_CYCLE_STAT(TEXT("AGraphsRenderer::ExecuteCommand"), STAT_AGraphsRenderer_ExecuteCommand, GRAPHS_PERF_GRAPHS_RENDERER);
 DECLARE_CYCLE_STAT(TEXT("AGraphsRenderer::MarkDirty"), STAT_AGraphsRenderer_MarkDirty, GRAPHS_PERF_GRAPHS_RENDERER);
@@ -87,26 +86,16 @@ void AGraphsRenderer::MarkDirty() {
 	ComponentsMeshDirty[VERTEX] = false;
 	ComponentsCollisionDirty[VERTEX] = false;
 
-	if (UpdateVerticesLODs || UpdateVerticesCollision) {
+	if (UpdateVerticesLODs || UpdateVerticesCollision)
 		VerticesProvider->SetRenderData(GenerateVerticesRenderData(), UpdateVerticesLODs, UpdateVerticesCollision);
-		if (UpdateVerticesLODs)
-			UKismetSystemLibrary::PrintString(GetWorld(), "UVertexProvider::GetSectionMeshForLOD", true, true, FLinearColor::Red);
-		if (UpdateVerticesCollision)
-			UKismetSystemLibrary::PrintString(GetWorld(), "UVertexProvider::GetCollisionMesh", true, true, FLinearColor::Green);
-	}
 
 	const bool UpdateEdgesLODs = ComponentsMeshDirty[EDGE];
 	const bool UpdateEdgesCollision = ComponentsCollisionDirty[EDGE];
 	ComponentsMeshDirty[EDGE] = false;
 	ComponentsCollisionDirty[EDGE] = false;
 
-	if (UpdateEdgesLODs || UpdateEdgesCollision) {
+	if (UpdateEdgesLODs || UpdateEdgesCollision)
 		EdgesProvider->SetRenderData(GenerateEdgesRenderData(), UpdateEdgesLODs, UpdateEdgesCollision);
-		if (UpdateEdgesLODs)
-			UKismetSystemLibrary::PrintString(GetWorld(), "UEdgesRenderer::GetSectionMeshForLOD", true, true, FLinearColor::Red);
-		if (UpdateEdgesCollision)
-			UKismetSystemLibrary::PrintString(GetWorld(), "UEdgesRenderer::GetCollisionMesh", true, true, FLinearColor::Green);
-	}
 }
 
 RenderData AGraphsRenderer::GenerateVerticesRenderData() const {

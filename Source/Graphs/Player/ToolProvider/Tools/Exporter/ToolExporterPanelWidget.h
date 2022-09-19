@@ -29,7 +29,7 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextButtonWidget *ExporterConfirmButton;
-
+private:
 	PanelType CurrentPanelType = PanelType::NONE;
 	FString Message;
 };

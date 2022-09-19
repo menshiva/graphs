@@ -22,6 +22,6 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UTextButtonWidget *RemoverDeselectButton;
-	
+private:
 	bool IsLoading = false;
 };

@@ -18,7 +18,7 @@ void UToolExporterPanelWidget::NativeTick(const FGeometry &MyGeometry, const flo
 		switch (CurrentPanelType) {
 			case PanelType::SUCCESS: {
 				if (ExporterText)
-					ExporterText->SetText(FText::FromString(Message));
+					ExporterText->SetText(FText::FromString("Selected graph has been successfuly\nexported to:\n\n" + Message));
 				if (ExporterConfirmButton)
 					ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
 				ExporterPanelSwitcher->SetActiveWidgetIndex(1);
@@ -26,7 +26,7 @@ void UToolExporterPanelWidget::NativeTick(const FGeometry &MyGeometry, const flo
 			}
 			case PanelType::ERROR: {
 				if (ExporterText)
-					ExporterText->SetText(FText::FromString(Message));
+					ExporterText->SetText(FText::FromString("Error while exporting selected graph:\n\n" + Message));
 				if (ExporterConfirmButton)
 					ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
 				ExporterPanelSwitcher->SetActiveWidgetIndex(1);
@@ -40,6 +40,7 @@ void UToolExporterPanelWidget::NativeTick(const FGeometry &MyGeometry, const flo
 				ExporterPanelSwitcher->SetActiveWidgetIndex(0);
 			}
 		}
+		SetCloseToolButtonVisible(CurrentPanelType != PanelType::LOADING);
 	}
 	PrevPanelType = CurrentPanelType;
 }

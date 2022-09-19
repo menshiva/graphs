@@ -29,9 +29,6 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 
 	if (IsPressed) {
 		const auto ExporterToolPanel = GetToolPanel<UToolExporterPanelWidget>();
-		constexpr static auto SuccessMessageStart = "Selected graph has been successfuly\nexported to:\n\n";
-		constexpr static auto ErrorMessageStart = "Error while exporting selected graph:\n\n";
-
 		auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 		const auto &GameDirPath = FPaths::LaunchDir();
@@ -39,7 +36,7 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 		const auto ExportDirPath = GameDirPath + ExportDirName;
 
 		if (!FileManager.CreateDirectoryTree(*ExportDirPath)) {
-			ExporterToolPanel->SetMessage(ErrorMessageStart + FString("Failed to create export directory."));
+			ExporterToolPanel->SetMessage("Failed to create export directory.");
 			ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::ERROR);
 			return false;
 		}
@@ -62,14 +59,15 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 			[GraphId, OutputPath(MoveTemp(OutputPath)), OutputDisplayPath(MoveTemp(OutputDisplayPath)), ExporterToolPanel] {
 				FString ErrorMessage;
 				if (ExportGraph(GraphId, FPlatformFileManager::Get().GetPlatformFile(), OutputPath, ErrorMessage)) {
-					ExporterToolPanel->SetMessage(SuccessMessageStart + OutputDisplayPath);
+					ExporterToolPanel->SetMessage(OutputDisplayPath);
 					ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::SUCCESS);
 				}
 				else {
-					ExporterToolPanel->SetMessage(ErrorMessageStart + ErrorMessage);
+					ExporterToolPanel->SetMessage(ErrorMessage);
 					ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::ERROR);
 				}
-		});
+			}
+		);
 
 		return true;
 	}

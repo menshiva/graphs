@@ -16,11 +16,13 @@ void UToolImporter::OnAttach() {
 }
 
 void UToolImporter::RefreshFileList() const {
+	const auto ImporterToolPanel = GetToolPanel<UToolImporterPanelWidget>();
 	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 	const auto ExportDirPath = FPaths::LaunchDir() + FileConsts::ExportDirName;
 
 	if (!FileManager.CreateDirectoryTree(*ExportDirPath)) {
-		GetToolPanel<UToolImporterPanelWidget>()->ShowErrorPanel("Failed to create export directory.");
+		ImporterToolPanel->SetMessage("Failed to create export directory.");
+		ImporterToolPanel->SetPanelType(UToolImporterPanelWidget::PanelType::ERROR);
 		return;
 	}
 
@@ -29,7 +31,7 @@ void UToolImporter::RefreshFileList() const {
 
 	const auto ImporterUI = GetToolPanel<UToolImporterPanelWidget>();
 	ImporterUI->SetInputFiles(ImportFiles);
-	ImporterUI->ShowImportPanel();
+	ImporterToolPanel->SetPanelType(UToolImporterPanelWidget::PanelType::NONE);
 }
 
 bool UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage) const {
