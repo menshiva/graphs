@@ -11,25 +11,35 @@ void UToolExporterPanelWidget::NativePreConstruct() {
 		ExporterConfirmButton->SetOnClickEvent([&] { GetTool<UToolExporter>()->OnAttach(); });
 }
 
-void UToolExporterPanelWidget::ShowExportPanel() const {
-	if (ExporterPanelSwitcher)
-		ExporterPanelSwitcher->SetActiveWidgetIndex(0);
-}
-
-void UToolExporterPanelWidget::ShowSuccessPanel(const FString &ExportedFileDir) const {
-	if (ExporterText)
-		ExporterText->SetText(FText::FromString("Selected graph has been successfuly\nexported to:\n\n" + ExportedFileDir));
-	if (ExporterConfirmButton)
-		ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
-	if (ExporterPanelSwitcher)
-		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
-}
-
-void UToolExporterPanelWidget::ShowErrorPanel(const FString &ErrorMessage) const {
-	if (ExporterText)
-		ExporterText->SetText(FText::FromString("Error while exporting selected graph:\n\n" + ErrorMessage));
-	if (ExporterConfirmButton)
-		ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
-	if (ExporterPanelSwitcher)
-		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
+void UToolExporterPanelWidget::NativeTick(const FGeometry &MyGeometry, const float InDeltaTime) {
+	Super::NativeTick(MyGeometry, InDeltaTime);
+	static PanelType PrevPanelType = CurrentPanelType;
+	if (CurrentPanelType != PrevPanelType && ExporterPanelSwitcher) {
+		switch (CurrentPanelType) {
+			case PanelType::SUCCESS: {
+				if (ExporterText)
+					ExporterText->SetText(FText::FromString(Message));
+				if (ExporterConfirmButton)
+					ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
+				ExporterPanelSwitcher->SetActiveWidgetIndex(1);
+				break;
+			}
+			case PanelType::ERROR: {
+				if (ExporterText)
+					ExporterText->SetText(FText::FromString(Message));
+				if (ExporterConfirmButton)
+					ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
+				ExporterPanelSwitcher->SetActiveWidgetIndex(1);
+				break;
+			}
+			case PanelType::LOADING: {
+				ExporterPanelSwitcher->SetActiveWidgetIndex(2);
+				break;
+			}
+			default: {
+				ExporterPanelSwitcher->SetActiveWidgetIndex(0);
+			}
+		}
+	}
+	PrevPanelType = CurrentPanelType;
 }

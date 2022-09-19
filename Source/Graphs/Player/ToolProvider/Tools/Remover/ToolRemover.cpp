@@ -111,34 +111,40 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 	return Super::OnRightTriggerAction(IsPressed);
 }
 
+// ReSharper disable once CppMemberFunctionMayBeConst
 void UToolRemover::RemoveSelectedEntities() {
+	const auto GraphsRenderer = GetGraphsRenderer();
 	const auto RemoverToolPanel = GetToolPanel<UToolRemoverPanelWidget>();
-	GetVrRightController()->SetLaserActive(false);
+	const auto RightVrController = GetVrRightController();
+	RightVrController->SetLaserActive(false);
 	RemoverToolPanel->SetLoadingStatus(true);
 	RemoverToolPanel->SetButtonsEnabled(false);
 
-	AsyncThread([&] {
-		for (const auto &P : GraphsRemoveData) {
-			const auto &Graph = ES::GetEntity<GraphEntity>(P.Key);
-			const auto &GraphRemoveData = P.Value;
+	AsyncTask(
+		ENamedThreads::AnyBackgroundHiPriTask,
+		[GraphsRemoveData(MoveTemp(GraphsRemoveData)), GraphsRenderer, RemoverToolPanel, RightVrController] {
+			for (const auto &P : GraphsRemoveData) {
+				const auto &Graph = ES::GetEntity<GraphEntity>(P.Key);
+				const auto &GraphRemoveData = P.Value;
 
-			if (GraphRemoveData.VerticesToRemove.Num() == Graph.VerticesIds.Num()) {
-				GetGraphsRenderer()->ExecuteCommand(GraphCommands::Remove(P.Key));
+				if (GraphRemoveData.VerticesToRemove.Num() == Graph.VerticesIds.Num()) {
+					GraphsRenderer->ExecuteCommand(GraphCommands::Remove(P.Key));
+				}
+				else {
+					for (const auto VertexId : GraphRemoveData.VerticesToRemove)
+						GraphsRenderer->ExecuteCommand(VertexCommands::Remove(VertexId));
+					for (const auto EdgeId : GraphRemoveData.EdgesToRemove)
+						if (ES::IsValid<EdgeEntity>(EdgeId))
+							GraphsRenderer->ExecuteCommand(EdgeCommands::Remove(EdgeId));
+				}
 			}
-			else {
-				for (const auto VertexId : GraphRemoveData.VerticesToRemove)
-					GetGraphsRenderer()->ExecuteCommand(VertexCommands::Remove(VertexId));
-				for (const auto EdgeId : GraphRemoveData.EdgesToRemove)
-					if (ES::IsValid<EdgeEntity>(EdgeId))
-						GetGraphsRenderer()->ExecuteCommand(EdgeCommands::Remove(EdgeId));
-			}
+
+			GraphsRenderer->MarkDirty();
+			RemoverToolPanel->SetLoadingStatus(false);
+			RightVrController->SetLaserActive(true);
 		}
-	}, 0, TPri_Normal, [&, RemoverToolPanel] {
-		GetGraphsRenderer()->MarkDirty();
-		GraphsRemoveData.Reset();
-		RemoverToolPanel->SetLoadingStatus(false);
-		GetVrRightController()->SetLaserActive(true);
-	});
+	);
+	check(GraphsRemoveData.Num() == 0);
 }
 
 void UToolRemover::DeselectEntities() {

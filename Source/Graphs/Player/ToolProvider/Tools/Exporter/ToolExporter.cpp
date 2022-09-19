@@ -16,7 +16,7 @@ UToolExporter::UToolExporter() : UTool(
 void UToolExporter::OnAttach() {
 	Super::OnAttach();
 	GetVrRightController()->SetLaserActive(true);
-	GetToolPanel<UToolExporterPanelWidget>()->ShowExportPanel();
+	GetToolPanel<UToolExporterPanelWidget>()->SetPanelType(UToolExporterPanelWidget::PanelType::NONE);
 }
 
 void UToolExporter::OnDetach() {
@@ -28,6 +28,10 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolExporter_OnRightTriggerAction);
 
 	if (IsPressed) {
+		const auto ExporterToolPanel = GetToolPanel<UToolExporterPanelWidget>();
+		constexpr static auto SuccessMessageStart = "Selected graph has been successfuly\nexported to:\n\n";
+		constexpr static auto ErrorMessageStart = "Error while exporting selected graph:\n\n";
+
 		auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 		const auto &GameDirPath = FPaths::LaunchDir();
@@ -35,7 +39,8 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 		const auto ExportDirPath = GameDirPath + ExportDirName;
 
 		if (!FileManager.CreateDirectoryTree(*ExportDirPath)) {
-			GetToolPanel<UToolExporterPanelWidget>()->ShowErrorPanel("Failed to create export directory.");
+			ExporterToolPanel->SetMessage(ErrorMessageStart + FString("Failed to create export directory."));
+			ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::ERROR);
 			return false;
 		}
 
@@ -45,14 +50,26 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 			FileConsts::ExportFilePrefix
 		);
 
-		FString ErrorMessage;
-		if (!ExportGraph(GetHitEntityId(), FileManager, ExportDirPath + NewFileName, ErrorMessage)) {
-			GetToolPanel<UToolExporterPanelWidget>()->ShowErrorPanel(ErrorMessage);
-			return false;
-		}
+		auto OutputPath = ExportDirPath + NewFileName;
+		auto OutputDisplayPath = ExportDirName + NewFileName;
+		const auto GraphId = GetHitEntityId();
 
-		GetToolPanel<UToolExporterPanelWidget>()->ShowSuccessPanel(ExportDirName + NewFileName);
 		GetVrRightController()->SetLaserActive(false);
+		ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::LOADING);
+
+		AsyncTask(
+			ENamedThreads::AnyBackgroundHiPriTask,
+			[GraphId, OutputPath(MoveTemp(OutputPath)), OutputDisplayPath(MoveTemp(OutputDisplayPath)), ExporterToolPanel] {
+				FString ErrorMessage;
+				if (ExportGraph(GraphId, FPlatformFileManager::Get().GetPlatformFile(), OutputPath, ErrorMessage)) {
+					ExporterToolPanel->SetMessage(SuccessMessageStart + OutputDisplayPath);
+					ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::SUCCESS);
+				}
+				else {
+					ExporterToolPanel->SetMessage(ErrorMessageStart + ErrorMessage);
+					ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::ERROR);
+				}
+		});
 
 		return true;
 	}
@@ -90,7 +107,7 @@ bool UToolExporter::ExportGraph(
 ) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolExporter_ExportGraph);
 
-	const TUniquePtr<IFileHandle> OutputFileHandler(FileManager.OpenWrite(*OutputPath, false, false));
+	TUniquePtr<IFileHandle> OutputFileHandler(FileManager.OpenWrite(*OutputPath, false, false));
 	if (!OutputFileHandler.IsValid()) {
 		ErrorMessage = "Failed to create a new file.";
 		return false;
@@ -103,6 +120,8 @@ bool UToolExporter::ExportGraph(
 	GraphCommands::ConstFuncs::Serialize(GraphId, Writer);
 
 	if (!OutputFileHandler->Write(reinterpret_cast<const uint8*>(SBuffer.GetString()), SBuffer.GetSize())) {
+		OutputFileHandler.Reset();
+		FileManager.DeleteFile(*OutputPath);
 		ErrorMessage = "Failed to write data to a new file.";
 		return false;
 	}

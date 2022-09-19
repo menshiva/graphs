@@ -18,7 +18,7 @@ public:
 	void ShowErrorPanel(const FString &ErrorMessage) const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UWidgetSwitcher *ImporterPanelSwitcher;
+	UWidgetSwitcher *ImporterPanelSwitcher;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UListView *ImporterList;
