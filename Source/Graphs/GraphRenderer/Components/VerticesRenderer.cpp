@@ -75,8 +75,8 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) {
 	SCOPE_CYCLE_COUNTER(STAT_UVerticesRenderer_GetCollisionMesh);
 
-	check(Data.StorageIndices.Num() == Data.Positions.Num());
-	check(Data.Positions.Num() == Data.StorageIndices.Num());
+	check(Data.StorageIds.Num() == Data.Positions.Num());
+	check(Data.Positions.Num() == Data.StorageIds.Num());
 	check(CollisionData.Vertices.Num() == 0);
 	check(CollisionData.Triangles.Num() == 0);
 	check(CollisionData.CollisionSources.Num() == 0);
@@ -102,8 +102,8 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 
 	const auto IcosahedronFVecVertices = reinterpret_cast<const FVector*>(IcosahedronScaled.Vertices.data());
 
-	for (size_t RdataI = 0; RdataI < Data.StorageIndices.Num(); ++RdataI) {
-		const auto VertexIdx = Data.StorageIndices[RdataI];
+	for (size_t RdataI = 0; RdataI < Data.StorageIds.Num(); ++RdataI) {
+		const auto VertexId = Data.StorageIds[RdataI];
 		const auto &VertexPos = Data.Positions[RdataI];
 
 		const auto PrevVerticesNum = CollisionData.Vertices.Num();
@@ -123,7 +123,7 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 
 		CollisionData.CollisionSources.Emplace(
 			TrianglesStart, TrianglesEnd,
-			this, VertexIdx,
+			this, EntityId::Hash(VertexId),
 			ERuntimeMeshCollisionFaceSourceType::Collision
 		);
 	}

@@ -97,8 +97,7 @@ EdgeCommands::Reserve::Reserve(
 	const uint32_t NewEdgesNum
 ) : GraphsRendererCommand([GraphId, NewEdgesNum] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Reserve);
-	auto &EdgesStorage = ESMut().GetStorageMut<EdgeEntity>();
-	EdgesStorage.Reserve(EdgesStorage.Num() + NewEdgesNum);
+	ESMut().ReserveForNewEntities<EdgeEntity>(NewEdgesNum);
 
 	auto &Graph = ESMut().GetEntityMut<GraphEntity>(GraphId);
 	Graph.EdgesIds.Reserve(Graph.EdgesIds.Num() + NewEdgesNum);

@@ -12,6 +12,10 @@ namespace GraphCommands {
 		explicit Remove(EntityId GraphId);
 	};
 
+	struct RemoveAll final : GraphsRendererCommand {
+		RemoveAll();
+	};
+
 	struct UpdateCollisions final : GraphsRendererCommand {
 		UpdateCollisions();
 	};

@@ -43,6 +43,19 @@ GraphCommands::Remove::Remove(const EntityId GraphId) : GraphsRendererCommand([G
 	return true;
 }) {}
 
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::RemoveAll"), STAT_GraphCommands_RemoveAll, STATGROUP_GRAPHS_PERF_COMMANDS);
+GraphCommands::RemoveAll::RemoveAll() : GraphsRendererCommand([] (AGraphsRenderer &Renderer) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_RemoveAll);
+
+	ESMut().Clear<GraphEntity>();
+	ESMut().Clear<VertexEntity>();
+	ESMut().Clear<EdgeEntity>();
+
+	MarkRendererComponentDirty(Renderer, {VERTEX, true});
+	MarkRendererComponentDirty(Renderer, {EDGE, true});
+	return true;
+}) {}
+
 // TODO: make better command
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::UpdateCollisions"), STAT_GraphCommands_UpdateCollisions, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::UpdateCollisions::UpdateCollisions() : GraphsRendererCommand([] (AGraphsRenderer &Renderer) {

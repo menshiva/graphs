@@ -45,10 +45,7 @@ void AGraphsRenderer::OnConstruction(const FTransform &Transform) {
 }
 
 void AGraphsRenderer::EndPlay(const EEndPlayReason::Type EndPlayReason) {
-	// cleanup entity storage
-	const auto &GraphStorage = ES::GetStorage<GraphEntity>();
-	for (auto GraphIter = GraphStorage.CreateConstIterator(); GraphIter; ++GraphIter)
-		ExecuteCommand(GraphCommands::Remove(EntityId(GraphIter.GetIndex(), GRAPH)));
+	ExecuteCommand(GraphCommands::RemoveAll());
 	Super::EndPlay(EndPlayReason);
 }
 
@@ -57,18 +54,12 @@ EntityId AGraphsRenderer::GetEntityIdFromHitResult(const FHitResult &HitResult) 
 
 	if (HitResult.bBlockingHit && HitResult.GetActor() == this) {
 		if (HitResult.Component == VerticesRuntimeMeshComponent) {
-			HitEntityId = EntityId(
-				VerticesRuntimeMeshComponent->GetHitSource(HitResult.FaceIndex).SectionId,
-				VERTEX
-			);
+			HitEntityId = EntityId::Unhash(VerticesRuntimeMeshComponent->GetHitSource(HitResult.FaceIndex).SectionId);
 			if (!ES::IsValid<VertexEntity>(HitEntityId))
 				HitEntityId = EntityId::NONE();
 		}
 		else if (HitResult.Component == EdgesRuntimeMeshComponent) {
-			HitEntityId = EntityId(
-				EdgesRuntimeMeshComponent->GetHitSource(HitResult.FaceIndex).SectionId,
-				EDGE
-			);
+			HitEntityId = EntityId::Unhash(EdgesRuntimeMeshComponent->GetHitSource(HitResult.FaceIndex).SectionId);
 			if (!ES::IsValid<EdgeEntity>(HitEntityId))
 				HitEntityId = EntityId::NONE();
 		}
@@ -120,54 +111,58 @@ void AGraphsRenderer::MarkDirty() {
 
 RenderData AGraphsRenderer::GenerateVerticesRenderData() const {
 	SCOPE_CYCLE_COUNTER(STAT_AGraphsRenderer_GenerateVerticesRenderData);
-	const auto &VertexStorage = ES::GetStorage<VertexEntity>();
+	const auto VerticesValidIds = ES::GetValidIndices<VertexEntity>();
 
 	RenderData RenderData;
-	RenderData.StorageIndices.Reserve(VertexStorage.Num());
-	RenderData.Positions.Reserve(VertexStorage.Num());
-	RenderData.Colors.Reserve(VertexStorage.Num());
+	RenderData.StorageIds.SetNumUninitialized(VerticesValidIds.Num());
+	RenderData.Positions.SetNumUninitialized(VerticesValidIds.Num());
+	RenderData.Colors.SetNumUninitialized(VerticesValidIds.Num());
 
-	for (auto VertexIter = VertexStorage.CreateConstIterator(); VertexIter; ++VertexIter) {
-		RenderData.StorageIndices.Push(VertexIter.GetIndex());
-		RenderData.Positions.Push(VertexIter->Position);
-		RenderData.Colors.Push(
-			VertexIter->IsHit
-				? ColorConsts::BlueColor
-				: VertexIter->OverrideColor != ColorConsts::OverrideColorNone
-					? VertexIter->OverrideColor
-					: ES::GetEntity<GraphEntity>(VertexIter->GraphId).Colorful
-						? VertexIter->Color
-						: ColorConsts::VertexDefaultColor
-		);
-	}
+	ParallelFor(VerticesValidIds.Num(), [&VerticesValidIds, &RenderData] (const int32 Idx) {
+		const auto ValidId = VerticesValidIds[Idx];
+
+		const auto &Vertex = ES::GetEntity<VertexEntity>(ValidId);
+		const auto &Graph = ES::GetEntity<GraphEntity>(Vertex.GraphId);
+
+		RenderData.StorageIds[Idx] = ValidId;
+		RenderData.Positions[Idx] = Vertex.Position;
+		RenderData.Colors[Idx] = Vertex.IsHit
+			? ColorConsts::BlueColor
+			: Vertex.OverrideColor != ColorConsts::OverrideColorNone
+				? Vertex.OverrideColor
+				: Graph.Colorful
+					? Vertex.Color
+					: ColorConsts::VertexDefaultColor;
+	});
 
 	return RenderData;
 }
 
 RenderData AGraphsRenderer::GenerateEdgesRenderData() const {
 	SCOPE_CYCLE_COUNTER(STAT_AGraphsRenderer_GenerateEdgesRenderData);
-	const auto &EdgesStorage = ES::GetStorage<EdgeEntity>();
+	const auto EdgesValidIds = ES::GetValidIndices<EdgeEntity>();
 
 	RenderData RenderData;
-	RenderData.StorageIndices.Reserve(EdgesStorage.Num());
-	RenderData.Positions.Reserve(EdgesStorage.Num() * 2);
-	RenderData.Colors.Reserve(EdgesStorage.Num() * 2);
+	RenderData.StorageIds.SetNumUninitialized(EdgesValidIds.Num());
+	RenderData.Positions.SetNumUninitialized(EdgesValidIds.Num() * 2);
+	RenderData.Colors.SetNumUninitialized(EdgesValidIds.Num() * 2);
 
-	for (auto EdgeIter = EdgesStorage.CreateConstIterator(); EdgeIter; ++EdgeIter) {
-		const auto &Graph = ES::GetEntity<GraphEntity>(EdgeIter->GraphId);
+	ParallelFor(EdgesValidIds.Num(), [&EdgesValidIds, &RenderData] (const int32 Idx) {
+		const auto ValidId = EdgesValidIds[Idx];
 
-		const auto &FirstVertex = ES::GetEntity<VertexEntity>(EdgeIter->VerticesIds[0]);
-		const auto &SecondVertex = ES::GetEntity<VertexEntity>(EdgeIter->VerticesIds[1]);
+		const auto &Edge = ES::GetEntity<EdgeEntity>(ValidId);
+		const auto &Graph = ES::GetEntity<GraphEntity>(Edge.GraphId);
+		const auto &FirstVertex = ES::GetEntity<VertexEntity>(Edge.VerticesIds[0]);
+		const auto &SecondVertex = ES::GetEntity<VertexEntity>(Edge.VerticesIds[1]);
 
 		auto FirstColor = FirstVertex.Color;
 		auto SecondColor = SecondVertex.Color;
-
-		if (EdgeIter->IsHit) {
+		if (Edge.IsHit) {
 			FirstColor = ColorConsts::BlueColor;
 			SecondColor = FirstColor;
 		}
-		else if (EdgeIter->OverrideColor != ColorConsts::OverrideColorNone) {
-			FirstColor = EdgeIter->OverrideColor;
+		else if (Edge.OverrideColor != ColorConsts::OverrideColorNone) {
+			FirstColor = Edge.OverrideColor;
 			SecondColor = FirstColor;
 		}
 		else if (!Graph.Colorful) {
@@ -175,14 +170,14 @@ RenderData AGraphsRenderer::GenerateEdgesRenderData() const {
 			SecondColor = FirstColor;
 		}
 
-		RenderData.StorageIndices.Push(EdgeIter.GetIndex());
+		RenderData.StorageIds[Idx] = ValidId;
 
-		RenderData.Positions.Push(FirstVertex.Position);
-		RenderData.Positions.Push(SecondVertex.Position);
+		RenderData.Positions[Idx * 2 + 0] = FirstVertex.Position;
+		RenderData.Positions[Idx * 2 + 1] = SecondVertex.Position;
 
-		RenderData.Colors.Push(FirstColor);
-		RenderData.Colors.Push(SecondColor);
-	}
+		RenderData.Colors[Idx * 2 + 0] = FirstColor;
+		RenderData.Colors[Idx * 2 + 1] = SecondColor;
+	});
 
 	return RenderData;
 }

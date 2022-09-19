@@ -74,9 +74,7 @@ VertexCommands::Reserve::Reserve(
 	const uint32_t NewVerticesNum
 ) : GraphsRendererCommand([GraphId, NewVerticesNum] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Reserve);
-
-	auto &VerticesStorage = ESMut().GetStorageMut<VertexEntity>();
-	VerticesStorage.Reserve(VerticesStorage.Num() + NewVerticesNum);
+	ESMut().ReserveForNewEntities<VertexEntity>(NewVerticesNum);
 
 	auto &Graph = ESMut().GetEntityMut<GraphEntity>(GraphId);
 	Graph.VertexUserIdToEntityId.Reserve(Graph.VertexUserIdToEntityId.Num() + NewVerticesNum);

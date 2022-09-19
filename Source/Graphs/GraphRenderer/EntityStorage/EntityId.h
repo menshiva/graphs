@@ -29,6 +29,11 @@ struct EntityId {
 	FORCEINLINE static uint32 Hash(const EntityId &Id) {
 		return Utils::CantorPair(Id.Index, Id.Signature);
 	}
+
+	FORCEINLINE static EntityId Unhash(const uint32 Hash) {
+		const auto P = Utils::CantorUnpair(Hash);
+		return EntityId(P.first, static_cast<EntitySignature>(P.second));
+	}
 private:
 	uint32_t Index;
 	EntitySignature Signature;

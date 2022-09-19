@@ -135,7 +135,7 @@ bool UEdgesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) 
 	SCOPE_CYCLE_COUNTER(STAT_UEdgesRenderer_GetCollisionMesh);
 
 	check(Data.Positions.Num() % 2 == 0);
-	check(Data.StorageIndices.Num() == Data.Positions.Num() / 2);
+	check(Data.StorageIds.Num() == Data.Positions.Num() / 2);
 	check(CollisionData.Vertices.Num() == 0);
 	check(CollisionData.Triangles.Num() == 0);
 	check(CollisionData.CollisionSources.Num() == 0);
@@ -146,17 +146,17 @@ bool UEdgesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) 
 		return true;
 	}
 
-	const size_t VerticesNum = CollisionQuality * 2 * Data.StorageIndices.Num();
+	const size_t VerticesNum = CollisionQuality * 2 * Data.StorageIds.Num();
 	const size_t TrianglesNum = VerticesNum;
-	const size_t SourcesNum = Data.StorageIndices.Num();
+	const size_t SourcesNum = Data.StorageIds.Num();
 
 	CollisionData.Vertices.Reserve(VerticesNum);
 	CollisionData.Triangles.Reserve(TrianglesNum);
 	CollisionData.CollisionSources.Reserve(SourcesNum);
 
 	size_t SkippedEdges = 0;
-	for (size_t RdataI = 0; RdataI < Data.StorageIndices.Num(); ++RdataI) {
-		const auto EdgeIdx = Data.StorageIndices[RdataI];
+	for (size_t RdataI = 0; RdataI < Data.StorageIds.Num(); ++RdataI) {
+		const auto EdgeId = Data.StorageIds[RdataI];
 		const auto &FirstVertexPos = Data.Positions[RdataI * 2];
 		const auto &SecondVertexPos = Data.Positions[RdataI * 2 + 1];
 
@@ -188,7 +188,7 @@ bool UEdgesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) 
 
 		CollisionData.CollisionSources.Emplace(
 			TrianglesStart, TrianglesEnd,
-			this, EdgeIdx,
+			this, EntityId::Hash(EdgeId),
 			ERuntimeMeshCollisionFaceSourceType::Collision
 		);
 	}
