@@ -3,8 +3,6 @@
 #include "EdgeCommands.h"
 #include "ThirdParty/rapidjson/error/en.h"
 
-// TODO: parallelize
-
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Create"), STAT_GraphCommands_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 GraphCommands::Create::Create(
 	EntityId *NewGraphId,
@@ -74,11 +72,16 @@ GraphCommands::SetHit::SetHit(
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetHit);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	for (const auto VertexId : Graph.VerticesIds)
-		Renderer.ExecuteCommand(VertexCommands::SetHit(VertexId, IsHit));
+	check(Graph.VerticesIds.Num() > 0);
+	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, IsHit] (const int32_t Idx) {
+		Renderer.ExecuteCommand(VertexCommands::SetHit(Graph.VerticesIds[Idx], IsHit));
+	});
 
-	for (const auto EdgeId : Graph.EdgesIds)
-		Renderer.ExecuteCommand(EdgeCommands::SetHit(EdgeId, IsHit));
+	if (Graph.EdgesIds.Num() > 0) {
+		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, IsHit] (const int32_t Idx) {
+			Renderer.ExecuteCommand(EdgeCommands::SetHit(Graph.EdgesIds[Idx], IsHit));
+		});
+	}
 
 	return true;
 }) {}
@@ -91,11 +94,16 @@ GraphCommands::SetOverrideColor::SetOverrideColor(
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetOverrideColor);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	for (const auto VertexId : Graph.VerticesIds)
-		Renderer.ExecuteCommand(VertexCommands::SetOverrideColor(VertexId, OverrideColor));
+	check(Graph.VerticesIds.Num() > 0);
+	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, &OverrideColor] (const int32_t Idx) {
+		Renderer.ExecuteCommand(VertexCommands::SetOverrideColor(Graph.VerticesIds[Idx], OverrideColor));
+	});
 
-	for (const auto EdgeId : Graph.EdgesIds)
-		Renderer.ExecuteCommand(EdgeCommands::SetOverrideColor(EdgeId, OverrideColor));
+	if (Graph.EdgesIds.Num() > 0) {
+		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, &OverrideColor] (const int32_t Idx) {
+			Renderer.ExecuteCommand(EdgeCommands::SetOverrideColor(Graph.EdgesIds[Idx], OverrideColor));
+		});
+	}
 
 	return true;
 }) {}
@@ -108,9 +116,15 @@ GraphCommands::Move::Move(
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Move);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	for (const auto VertexId : Graph.VerticesIds)
-		Renderer.ExecuteCommand(VertexCommands::Move(VertexId, Delta));
+	check(Graph.VerticesIds.Num() > 0);
+	ParallelFor(Graph.VerticesIds.Num(), [&Graph, &Delta] (const int32_t Idx) {
+		auto &Vertex = ESMut().GetEntityMut<VertexEntity>(Graph.VerticesIds[Idx]);
+		Vertex.Position += Delta;
+	});
 
+	MarkRendererComponentDirty(Renderer, {VERTEX, false});
+	if (Graph.EdgesIds.Num() > 0)
+		MarkRendererComponentDirty(Renderer, {EDGE, false});
 	return true;
 }) {}
 
@@ -123,12 +137,16 @@ GraphCommands::Rotate::Rotate(
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Rotate);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	for (const auto &VertexId : Graph.VerticesIds) {
-		const auto &VertexPos = ES::GetEntity<VertexEntity>(VertexId).Position;
-		const auto RotatedPos = (VertexPos - Origin).RotateAngleAxis(Angle, FVector::DownVector) + Origin;
-		Renderer.ExecuteCommand(VertexCommands::Move(VertexId, RotatedPos - VertexPos));
-	}
+	check(Graph.VerticesIds.Num() > 0);
+	ParallelFor(Graph.VerticesIds.Num(), [&Graph, &Origin, Angle] (const int32_t Idx) {
+		auto &Vertex = ESMut().GetEntityMut<VertexEntity>(Graph.VerticesIds[Idx]);
+		const auto RotatedPos = (Vertex.Position - Origin).RotateAngleAxis(Angle, FVector::DownVector) + Origin;
+		Vertex.Position = RotatedPos;
+	});
 
+	MarkRendererComponentDirty(Renderer, {VERTEX, false});
+	if (Graph.EdgesIds.Num() > 0)
+		MarkRendererComponentDirty(Renderer, {EDGE, false});
 	return true;
 }) {}
 
