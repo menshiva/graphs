@@ -23,11 +23,11 @@ namespace VertexCommands {
 	};
 
 	struct SetHit final : GraphsRendererCommand {
-		SetHit(EntityId VertexId, bool IsHit, bool MarkDirty = true);
+		SetHit(EntityId VertexId, bool IsHit);
 	};
 
 	struct SetOverrideColor final : GraphsRendererCommand {
-		SetOverrideColor(EntityId VertexId, const FColor &OverrideColor, bool MarkDirty = true);
+		SetOverrideColor(EntityId VertexId, const FColor &OverrideColor);
 	};
 
 	struct Move final : GraphsRendererCommand {

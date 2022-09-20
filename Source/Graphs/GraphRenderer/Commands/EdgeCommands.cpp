@@ -109,9 +109,8 @@ EdgeCommands::Reserve::Reserve(
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetHit"), STAT_EdgeCommands_SetHit, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::SetHit::SetHit(
 	const EntityId EdgeId,
-	const bool IsHit,
-	const bool MarkDirty
-) : GraphsRendererCommand([EdgeId, IsHit, MarkDirty] (AGraphsRenderer &Renderer) {
+	const bool IsHit
+) : GraphsRendererCommand([EdgeId, IsHit] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_SetHit);
 	auto &Edge = ESMut().GetEntityMut<EdgeEntity>(EdgeId);
 
@@ -119,17 +118,15 @@ EdgeCommands::SetHit::SetHit(
 		return false;
 	Edge.IsHit = IsHit;
 
-	if (MarkDirty)
-		MarkRendererComponentDirty(Renderer, {EDGE, true, false});
+	MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetOverrideColor"), STAT_EdgeCommands_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
 EdgeCommands::SetOverrideColor::SetOverrideColor(
 	const EntityId EdgeId,
-	const FColor &OverrideColor,
-	const bool MarkDirty
-) : GraphsRendererCommand([EdgeId, &OverrideColor, MarkDirty] (AGraphsRenderer &Renderer) {
+	const FColor &OverrideColor
+) : GraphsRendererCommand([EdgeId, &OverrideColor] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_SetOverrideColor);
 	auto &Edge = ESMut().GetEntityMut<EdgeEntity>(EdgeId);
 
@@ -137,8 +134,7 @@ EdgeCommands::SetOverrideColor::SetOverrideColor(
 		return false;
 	Edge.OverrideColor = OverrideColor;
 
-	if (MarkDirty)
-		MarkRendererComponentDirty(Renderer, {EDGE, true, false});
+	MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	return true;
 }) {}
 

@@ -86,9 +86,8 @@ VertexCommands::Reserve::Reserve(
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::SetHit"), STAT_VertexCommands_SetHit, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::SetHit::SetHit(
 	const EntityId VertexId,
-	const bool IsHit,
-	const bool MarkDirty
-) : GraphsRendererCommand([VertexId, IsHit, MarkDirty] (AGraphsRenderer &Renderer) {
+	const bool IsHit
+) : GraphsRendererCommand([VertexId, IsHit] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_SetHit);
 	auto &Vertex = ESMut().GetEntityMut<VertexEntity>(VertexId);
 
@@ -96,17 +95,15 @@ VertexCommands::SetHit::SetHit(
 		return false;
 	Vertex.IsHit = IsHit;
 
-	if (MarkDirty)
-		MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::SetOverrideColor"), STAT_VertexCommands_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
 VertexCommands::SetOverrideColor::SetOverrideColor(
 	const EntityId VertexId,
-	const FColor &OverrideColor,
-	const bool MarkDirty
-) : GraphsRendererCommand([VertexId, OverrideColor, MarkDirty] (AGraphsRenderer &Renderer) {
+	const FColor &OverrideColor
+) : GraphsRendererCommand([VertexId, OverrideColor] (AGraphsRenderer &Renderer) {
 	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_SetOverrideColor);
 	auto &Vertex = ESMut().GetEntityMut<VertexEntity>(VertexId);
 
@@ -114,8 +111,7 @@ VertexCommands::SetOverrideColor::SetOverrideColor(
 		return false;
 	Vertex.OverrideColor = OverrideColor;
 
-	if (MarkDirty)
-		MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
+	MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 	return true;
 }) {}
 

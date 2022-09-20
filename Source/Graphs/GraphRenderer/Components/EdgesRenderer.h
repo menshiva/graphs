@@ -12,7 +12,7 @@ public:
 	virtual bool GetSectionMeshForLOD(int32 LODIndex, int32 SectionId, FRuntimeMeshRenderableMeshData &MeshData) override;
 	virtual bool GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) override;
 
-	constexpr static int32 MeshQuality = 6;
+	constexpr static int32 MeshQuality = 4;
 	constexpr static float MeshScale = 10.0f;
 
 	constexpr static int32 CollisionQuality = 3;

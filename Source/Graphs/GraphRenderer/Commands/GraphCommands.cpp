@@ -70,22 +70,28 @@ GraphCommands::SetHit::SetHit(
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetHit);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	bool VerticesSuccess = false;
+	bool VerticesChanged = false;
 	check(Graph.VerticesIds.Num() > 0);
-	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, IsHit, &VerticesSuccess] (const int32_t Idx) {
-		if (Renderer.ExecuteCommand(VertexCommands::SetHit(Graph.VerticesIds[Idx], IsHit, false)))
-			VerticesSuccess = true; // we don't need mutex lock here
+	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, IsHit, &VerticesChanged] (const int32_t Idx) {
+		auto &Vertex = ESMut().GetEntityMut<VertexEntity>(Graph.VerticesIds[Idx]);
+		if (Vertex.IsHit != IsHit) {
+			Vertex.IsHit = IsHit;
+			VerticesChanged = true; // we don't need mutex lock here
+		}
 	});
-	if (VerticesSuccess)
+	if (VerticesChanged)
 		MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 
 	if (Graph.EdgesIds.Num() > 0) {
-		bool EdgesSuccess = false;
-		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, IsHit, &EdgesSuccess] (const int32_t Idx) {
-			if (Renderer.ExecuteCommand(EdgeCommands::SetHit(Graph.EdgesIds[Idx], IsHit, false)))
-				EdgesSuccess = true; // we don't need mutex lock here
+		bool EdgesChanged = false;
+		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, IsHit, &EdgesChanged] (const int32_t Idx) {
+			auto &Edge = ESMut().GetEntityMut<EdgeEntity>(Graph.EdgesIds[Idx]);
+			if (Edge.IsHit != IsHit) {
+				Edge.IsHit = IsHit;
+				EdgesChanged = true; // we don't need mutex lock here
+			}
 		});
-		if (EdgesSuccess)
+		if (EdgesChanged)
 			MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	}
 
@@ -100,22 +106,28 @@ GraphCommands::SetOverrideColor::SetOverrideColor(
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_SetOverrideColor);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	bool VerticesSuccess = false;
+	bool VerticesChanged = false;
 	check(Graph.VerticesIds.Num() > 0);
-	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, &OverrideColor, &VerticesSuccess] (const int32_t Idx) {
-		if (Renderer.ExecuteCommand(VertexCommands::SetOverrideColor(Graph.VerticesIds[Idx], OverrideColor, false)))
-			VerticesSuccess = true; // we don't need mutex lock here
+	ParallelFor(Graph.VerticesIds.Num(), [&Renderer, &Graph, &OverrideColor, &VerticesChanged] (const int32_t Idx) {
+		auto &Vertex = ESMut().GetEntityMut<VertexEntity>(Graph.VerticesIds[Idx]);
+		if (Vertex.OverrideColor != OverrideColor) {
+			Vertex.OverrideColor = OverrideColor;
+			VerticesChanged = true; // we don't need mutex lock here
+		}
 	});
-	if (VerticesSuccess)
+	if (VerticesChanged)
 		MarkRendererComponentDirty(Renderer, {VERTEX, true, false});
 
 	if (Graph.EdgesIds.Num() > 0) {
-		bool EdgesSuccess = false;
-		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, &OverrideColor, &EdgesSuccess] (const int32_t Idx) {
-			if (Renderer.ExecuteCommand(EdgeCommands::SetOverrideColor(Graph.EdgesIds[Idx], OverrideColor, false)))
-				EdgesSuccess = true; // we don't need mutex lock here
+		bool EdgesChanged = false;
+		ParallelFor(Graph.EdgesIds.Num(), [&Renderer, &Graph, &OverrideColor, &EdgesChanged] (const int32_t Idx) {
+			auto &Edge = ESMut().GetEntityMut<EdgeEntity>(Graph.EdgesIds[Idx]);
+			if (Edge.OverrideColor != OverrideColor) {
+				Edge.OverrideColor = OverrideColor;
+				EdgesChanged = true; // we don't need mutex lock here
+			}
 		});
-		if (EdgesSuccess)
+		if (EdgesChanged)
 			MarkRendererComponentDirty(Renderer, {EDGE, true, false});
 	}
 

@@ -30,6 +30,7 @@ void GenerateEdgeFaces(
 	SecondVertexPos -= Offset;
 
 	// generate faces
+	RightDir = RightDir.RotateAngleAxis(StepAngle / 2.0f, ForwardDir);
 	for (size_t i = 0; i < FacePointsNum; ++i) {
 		const auto RotatedScaledVec = RightDir * UEdgesRenderer::MeshScale;
 		OutVertices.Add(RotatedScaledVec + FirstVertexPos);
@@ -67,12 +68,9 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 	const size_t VerticesNum = MeshQuality * 2 * EdgesNum;
 	const size_t IndicesNum = MeshQuality * 2 * 3 * EdgesNum;
 
-	TArray<FVector> TmpVertices;
-	TmpVertices.Reserve(VerticesNum);
-	TArray<FColor> TmpColors;
-	TmpColors.Reserve(VerticesNum);
-	TArray<int32> TmpIndices;
-	TmpIndices.Reserve(IndicesNum);
+	MeshData.Positions.Reserve(VerticesNum);
+	MeshData.Colors.Reserve(VerticesNum);
+	MeshData.Triangles.Reserve(IndicesNum);
 
 	size_t SkippedEdges = 0;
 	for (size_t RdataI = 0; RdataI < EdgesNum; ++RdataI) {
@@ -90,25 +88,25 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 		const auto &FirstVertexColor = TmpData.Colors[RdataI * 2];
 		const auto &SecondVertexColor = TmpData.Colors[RdataI * 2 + 1];
 
-		const auto PrevVerticesNum = TmpVertices.Num();
-		GenerateEdgeFaces<MeshQuality>(FirstVertexPos, SecondVertexPos, TmpVertices);
+		const auto PrevVerticesNum = MeshData.Positions.Num();
+		GenerateEdgeFaces<MeshQuality>(FirstVertexPos, SecondVertexPos, MeshData.Positions);
 
 		for (uint32_t i = 0; i < MeshQuality; ++i) {
-			TmpColors.Push(FirstVertexColor);
-			TmpColors.Push(SecondVertexColor);
+			MeshData.Colors.Add(FirstVertexColor);
+			MeshData.Colors.Add(SecondVertexColor);
 		}
 
 		for (int32 i = 1; i < MeshQuality * 2; i += 2) {
-			TmpIndices.Append({
+			MeshData.Triangles.AddTriangle(
 				PrevVerticesNum + i - 1,
 				PrevVerticesNum + i,
 				PrevVerticesNum + (i + 1) % (MeshQuality * 2)
-			});
-			TmpIndices.Append({
+			);
+			MeshData.Triangles.AddTriangle(
 				PrevVerticesNum + (i + 1) % (MeshQuality * 2),
 				PrevVerticesNum + i,
 				PrevVerticesNum + (i + 2) % (MeshQuality * 2)
-			});
+			);
 		}
 	}
 
@@ -118,15 +116,11 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 	const size_t GeneratedVerticesNum = VerticesNum - SkippedVerticesNum;
 	const size_t GeneratedIndicesNum = IndicesNum - SkippedIndicesNum;
 
-	check(TmpVertices.Num() == GeneratedVerticesNum);
-	check(TmpColors.Num() == GeneratedVerticesNum);
-	check(TmpIndices.Num() == GeneratedIndicesNum);
-
-	MeshData.Positions.Append(TmpVertices);
 	MeshData.Tangents.SetNum(GeneratedVerticesNum);
 	MeshData.TexCoords.SetNum(GeneratedVerticesNum);
-	MeshData.Colors.Append(TmpColors);
-	MeshData.Triangles.Append(TmpIndices);
+	check(MeshData.Positions.Num() == GeneratedVerticesNum);
+	check(MeshData.Colors.Num() == GeneratedVerticesNum);
+	check(MeshData.Triangles.Num() == GeneratedIndicesNum);
 
 	return true;
 }
