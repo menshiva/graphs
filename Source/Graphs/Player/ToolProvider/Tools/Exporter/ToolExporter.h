@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Graphs/Player/ToolProvider/Tools/Tool.h"
+#include "../Tool.h"
 #include "ToolExporter.generated.h"
 
 UCLASS()
@@ -20,5 +20,10 @@ private:
 		const FString &FilePrefix
 	);
 
-	bool ExportGraph(EntityId GraphId, IPlatformFile &FileManager, const FString &OutputPath, FString &ErrorMessage) const;
+	static bool ExportGraph(
+		EntityId GraphId,
+		IPlatformFile &FileManager,
+		const FString &OutputPath,
+		FString &ErrorMessage
+	);
 };

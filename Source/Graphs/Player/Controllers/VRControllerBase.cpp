@@ -2,19 +2,18 @@
 #include "NiagaraComponent.h"
 #include "NiagaraDataInterfaceArrayFunctionLibrary.h"
 #include "Graphs/Player/Pawn/VRPawn.h"
+#include "Graphs/Utils/Utils.h"
 #include "Haptics/HapticFeedbackEffect_Base.h"
-#include "Graphs/Utils/Consts.h"
 
 DECLARE_CYCLE_STAT(TEXT("UVRControllerBase::Tick"), STAT_UVRControllerBase_Tick, STATGROUP_GRAPHS_PERF);
 
 UVRControllerBase::UVRControllerBase(
 	const FObjectInitializer &ObjectInitializer,
-	EControllerHand aControllerType
+	const EControllerHand aControllerType
 ) : Type(aControllerType) {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	const auto UndType = static_cast<__underlying_type(EControllerHand)>(aControllerType);
-	FString ControllerName = StaticEnum<EControllerHand>()->GetNameStringByValue(UndType);
+	FString ControllerName = StaticEnum<EControllerHand>()->GetNameStringByValue(Utils::EnumUnderlyingValue(aControllerType));
 
 	MotionController = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
 		this,

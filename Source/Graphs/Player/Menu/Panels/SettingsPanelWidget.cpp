@@ -6,27 +6,21 @@
 
 void USettingsPanelWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
-	if (CameraFadeAnimationTick) {
-		CameraFadeAnimationTick->SetOnClickEvent([&] {
-			Pawn->ToggleCameraFadeAnimation();
-		});
-	}
-	if (FpsStatsTick) {
-		FpsStatsTick->SetOnClickEvent([&] {
-			Gamemode->ToggleFPS();
-		});
-	}
-	if (UnitStatsTick) {
-		UnitStatsTick->SetOnClickEvent([&] {
-			Gamemode->ToggleUnit();
-		});
-	}
+
+	if (CameraFadeAnimationTick)
+		CameraFadeAnimationTick->SetOnClickEvent([&] { Pawn->ToggleCameraFadeAnimation(); });
+	if (FpsStatsTick)
+		FpsStatsTick->SetOnClickEvent([&] { Gamemode->ToggleFPS(); });
+	if (UnitStatsTick)
+		UnitStatsTick->SetOnClickEvent([&] { Gamemode->ToggleUnit(); });
 }
 
 void USettingsPanelWidget::NativeConstruct() {
 	Super::NativePreConstruct();
+
 	Pawn = Cast<AVRPawn>(GetOwningPlayerPawn());
 	Gamemode = Cast<AVRGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+
 	if (CameraFadeAnimationTick)
 		CameraFadeAnimationTick->SetTicked(Pawn->IsCameraFadeAnimationEnabled());
 	if (FpsStatsTick)

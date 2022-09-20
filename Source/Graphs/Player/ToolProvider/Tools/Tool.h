@@ -1,6 +1,7 @@
 ﻿#pragma once
 
-#include "Graphs/Player/ToolProvider/ToolProvider.h"
+#include "../ToolProvider.h"
+#include "Graphs/Player/Menu/Panels/ToolsPanelWidget.h"
 #include "Tool.generated.h"
 
 UCLASS(Abstract)
@@ -16,25 +17,26 @@ public:
 	FORCEINLINE UTexture2D *GetToolImage() const { return ToolImage; }
 	FORCEINLINE const TSubclassOf<class UToolWidget> &GetToolPanelClass() const { return ToolPanelClass; }
 
-	void SetToolPanel(UToolWidget *Panel);
+	void SetToolPanel(UToolsPanelWidget *ParentToolsPanel, UToolWidget *Panel);
 
-	FORCEINLINE bool SupportsType(const EntityType Type) const {
-		return SupportedEntityTypesMask & static_cast<std::underlying_type_t<EntityType>>(Type);
+	FORCEINLINE bool SupportsEntity(const EntityId &Id) const {
+		return SupportedEntitiesMask[Id.Signature];
 	}
 
 	virtual void OnAttach() {}
 	virtual void OnDetach() {}
 	virtual void TickTool() {}
 protected:
-	FORCEINLINE AGraphProvider *GetGraphProvider() const { return ToolProvider->GetGraphProvider(); }
 	FORCEINLINE UVRControllerRight *GetVrRightController() const { return ToolProvider->GetVrPawn()->GetRightVrController(); }
+	FORCEINLINE const UToolProvider *GetToolProvider() const { return ToolProvider.Get(); }
+	FORCEINLINE AGraphsRenderer *GetGraphsRenderer() const { return ToolProvider->GetGraphsRenderer(); }
 
 	FORCEINLINE EntityId GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
 
 	template <class WidgetClass>
 	FORCEINLINE WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
 
-	void SetSupportedEntityTypes(std::initializer_list<EntityType> &&Types);
+	void SetSupportedEntities(std::initializer_list<EntitySignature> &&Signatures);
 private:
 	TWeakObjectPtr<UToolProvider> ToolProvider;
 
@@ -44,8 +46,7 @@ private:
 	UTexture2D *ToolImage;
 
 	TSubclassOf<UToolWidget> ToolPanelClass;
-
 	TWeakObjectPtr<UToolWidget> ToolPanel;
 
-	std::underlying_type_t<EntityType> SupportedEntityTypesMask = 0;
+	std::bitset<SIZE> SupportedEntitiesMask;
 };

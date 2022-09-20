@@ -8,17 +8,23 @@ UCLASS(Abstract)
 class GRAPHS_API UToolImporterPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
+	enum class PanelType : uint8_t {
+		NONE,
+		LOADING,
+		SUCCESS,
+		ERROR
+	};
+
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
+	virtual void NativeTick(const FGeometry &MyGeometry, float InDeltaTime) override;
 
 	void SetInputFiles(TArray<FString> &InputFilesPaths) const;
-
-	void ShowImportPanel() const;
-	void ShowSuccessPanel() const;
-	void ShowErrorPanel(const FString &ErrorMessage) const;
+	FORCEINLINE void SetPanelType(const PanelType Type) { CurrentPanelType = Type; }
+	FORCEINLINE void SetMessage(const FString &Msg) { Message = Msg; }
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UWidgetSwitcher *ImporterPanelSwitcher;
+	UWidgetSwitcher *ImporterPanelSwitcher;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UListView *ImporterList;
@@ -31,4 +37,7 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UTextButtonWidget *ImporterConfirmButton;
+private:
+	PanelType CurrentPanelType = PanelType::NONE;
+	FString Message;
 };

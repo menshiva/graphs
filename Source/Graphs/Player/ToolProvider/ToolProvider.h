@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/GraphProvider/GraphProvider.h"
+#include "Graphs/GraphRenderer/GraphsRenderer.h"
 #include "ToolProvider.generated.h"
 
 UCLASS()
@@ -13,7 +13,7 @@ public:
 	FORCEINLINE void SetupPawn(AVRPawn *Pawn) { VrPawn = Pawn; }
 
 	FORCEINLINE AVRPawn *GetVrPawn() const { return VrPawn.Get(); }
-	FORCEINLINE AGraphProvider *GetGraphProvider() const { return GraphProvider.Get(); }
+	FORCEINLINE AGraphsRenderer *GetGraphsRenderer() const { return GraphsRenderer.Get(); }
 
 	FORCEINLINE EntityId GetHitEntityId() const { return HitEntityId; }
 	FORCEINLINE const FHitResult &GetHitResult() const { return HitResult; }
@@ -30,11 +30,11 @@ public:
 	void SetActiveTool(class UTool *NewTool);
 
 	FORCEINLINE const TArray<UTool*> &GetTools() const { return Tools; }
+
+	void ExecuteHitCommandBasedOnHitEntity(bool IsHit) const;
 protected:
 	virtual void BeginPlay() override;
 private:
-	void SetEntitySelectionType(SelectionType Selection) const;
-
 	template <class T>
 	void RegisterTool(const FObjectInitializer &ObjectInitializer, const FName &ToolObjectName) {
 		const auto Tool = ObjectInitializer.CreateDefaultSubobject<T>(this, ToolObjectName);
@@ -43,9 +43,9 @@ private:
 	}
 
 	TWeakObjectPtr<AVRPawn> VrPawn;
-	TWeakObjectPtr<AGraphProvider> GraphProvider;
+	TWeakObjectPtr<AGraphsRenderer> GraphsRenderer;
 
-	EntityId HitEntityId = ENTITY_NONE;
+	EntityId HitEntityId = EntityId::NONE();
 	FHitResult HitResult;
 
 	UPROPERTY()

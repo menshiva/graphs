@@ -12,27 +12,27 @@ void AVRGameMode::InitGame(const FString &MapName, const FString &Options, FStri
 	UpdateStats();
 }
 
-void AVRGameMode::Logout(AController* Exiting) {
+void AVRGameMode::Logout(AController *Exiting) {
 	Super::Logout(Exiting);
 	UpdateStats();
 }
 
 void AVRGameMode::ToggleFPS() {
 	FpsEnabled = !FpsEnabled;
-	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), "stat FPS");
+	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), "Stat FPS");
 	SaveConfig();
 }
 
 void AVRGameMode::ToggleUnit() {
 	UnitEnabled = !UnitEnabled;
-	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), "stat Unit");
+	UKismetSystemLibrary::ExecuteConsoleCommand(GetWorld(), "Stat Unit");
 	SaveConfig();
 }
 
 void AVRGameMode::UpdateStats() const {
 	const auto World = GetWorld();
 	if (FpsEnabled)
-		UKismetSystemLibrary::ExecuteConsoleCommand(World, "stat fps");
+		UKismetSystemLibrary::ExecuteConsoleCommand(World, "Stat FPS");
 	if (UnitEnabled)
-		UKismetSystemLibrary::ExecuteConsoleCommand(World, "stat Unit");
+		UKismetSystemLibrary::ExecuteConsoleCommand(World, "Stat Unit");
 }

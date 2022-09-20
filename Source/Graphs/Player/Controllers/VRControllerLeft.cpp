@@ -1,14 +1,14 @@
 #include "VRControllerLeft.h"
 #include "NiagaraComponent.h"
 #include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/Utils/Consts.h"
+#include "Graphs/Utils/Utils.h"
 
 DECLARE_CYCLE_STAT(TEXT("UVRControllerLeft::Tick"), STAT_UVRControllerLeft_Tick, STATGROUP_GRAPHS_PERF);
 
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
-	SetLaserNiagaraColor(ColorConsts::GreenColor);
+	SetLaserNiagaraColor(ColorConsts::GreenColor.ReinterpretAsLinear());
 	SetLaserLength(TeleportLaserDefaultLength);
 	UVRControllerBase::SetLaserActive(false);
 
@@ -28,14 +28,14 @@ UVRControllerLeft::UVRControllerLeft(
 		0,
 		TeleportPreviewMaterialAsset.Object
 	);
-	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", ColorConsts::GreenColor);
+	TeleportPreviewMaterialInst->SetVectorParameterValue("Color", ColorConsts::GreenColor.ReinterpretAsLinear());
 	TeleportPreviewMesh->SetMaterial(0, TeleportPreviewMaterialInst);
 	TeleportPreviewMesh->SetupAttachment(this);
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> TeleportRingAsset(TEXT("/Game/Graphs/VFX/TeleportRing"));
 	TeleportRing = ObjectInitializer.CreateDefaultSubobject<UNiagaraComponent>(this, "TeleportRing");
 	TeleportRing->SetAsset(TeleportRingAsset.Object);
-	TeleportRing->SetColorParameter("User.CustomColor", ColorConsts::GreenColor);
+	TeleportRing->SetColorParameter("User.CustomColor", ColorConsts::GreenColor.ReinterpretAsLinear());
 	TeleportRing->Deactivate();
 	TeleportRing->SetVisibility(false);
 	TeleportRing->SetupAttachment(this);

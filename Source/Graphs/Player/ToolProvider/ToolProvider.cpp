@@ -1,11 +1,10 @@
 #include "ToolProvider.h"
-#include "Graphs/GraphProvider/Commands/EdgeCommands.h"
-#include "Graphs/GraphProvider/Commands/GraphCommands.h"
-#include "Graphs/GraphProvider/Commands/VertexCommands.h"
-#include "Graphs/Utils/Consts.h"
+#include "Graphs/GraphRenderer/Commands/EdgeCommands.h"
+#include "Graphs/GraphRenderer/Commands/GraphCommands.h"
+#include "Graphs/GraphRenderer/Commands/VertexCommands.h"
 #include "Kismet/GameplayStatics.h"
-#include "Tools/Exporter/ToolExporter.h"
 #include "Tools/Importer/ToolImporter.h"
+#include "Tools/Exporter/ToolExporter.h"
 #include "Tools/Manipulator/ToolManipulator.h"
 #include "Tools/Remover/ToolRemover.h"
 
@@ -21,33 +20,30 @@ UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UAct
 }
 
 void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
-	if (HitEntityId != ENTITY_NONE && GraphProvider->IsEntityValid(HitEntityId))
-		SetEntitySelectionType(SelectionType::NONE);
-	HitResult.Reset();
-	HitEntityId = ENTITY_NONE;
-	if (NewHitResult.bBlockingHit && NewHitResult.GetActor()) {
-		EntityId Id = NewHitResult.GetActor()->GetUniqueID();
-		if (GraphProvider->IsEntityValid(Id)) {
-			const auto RightController = VrPawn->GetRightVrController();
+	HitResult = NewHitResult;
+	auto NewHitEntityId = GetGraphsRenderer()->GetEntityIdFromHitResult(NewHitResult);
 
-			if (RightController->GetSelectionMode() == SelectionMode::GRAPH) {
-				const auto EntityType = GraphProvider->GetEntityType(Id);
-				check(EntityType == EntityType::VERTEX || EntityType == EntityType::EDGE);
-				EntityId GraphId = ENTITY_NONE;
-				if (EntityType == EntityType::VERTEX)
-					GetGraphProvider()->ExecuteCommand(VertexCommands::GetGraphId(Id, GraphId));
-				else
-					GetGraphProvider()->ExecuteCommand(EdgeCommands::GetGraphId(Id, GraphId));
-				check(GetGraphProvider()->IsEntityValid(GraphId));
-				Id = GraphId;
-			}
+	if (NewHitEntityId != EntityId::NONE() && VrPawn->GetRightVrController()->GetSelectionMode() == SelectionMode::GRAPH) {
+		if (ES::IsValid<VertexEntity>(NewHitEntityId))
+			NewHitEntityId = ES::GetEntity<VertexEntity>(NewHitEntityId).GraphId;
+		else
+			NewHitEntityId = ES::GetEntity<EdgeEntity>(NewHitEntityId).GraphId;
+		if (!ES::IsValid<GraphEntity>(NewHitEntityId))
+			NewHitEntityId = EntityId::NONE();
+	}
 
-			if (!ActiveTool.IsValid() || ActiveTool->SupportsType(GraphProvider->GetEntityType(Id))) {
-				HitResult = NewHitResult;
-				HitEntityId = Id;
-				SetEntitySelectionType(SelectionType::HIT);
-			}
+	if (NewHitEntityId != HitEntityId) {
+		if (HitEntityId != EntityId::NONE())
+			ExecuteHitCommandBasedOnHitEntity(false);
+
+		HitEntityId = EntityId::NONE();
+
+		if (NewHitEntityId != EntityId::NONE() && ActiveTool.IsValid() && ActiveTool->SupportsEntity(NewHitEntityId)) {
+			HitEntityId = NewHitEntityId;
+			ExecuteHitCommandBasedOnHitEntity(true);
 		}
+
+		GetGraphsRenderer()->MarkDirty();
 	}
 }
 
@@ -94,20 +90,29 @@ void UToolProvider::SetActiveTool(UTool *NewTool) {
 		ActiveTool->OnAttach();
 }
 
+void UToolProvider::ExecuteHitCommandBasedOnHitEntity(const bool IsHit) const {
+	if (ES::IsValid<VertexEntity>(HitEntityId))
+		GetGraphsRenderer()->ExecuteCommand(VertexCommands::SetHit(HitEntityId, IsHit));
+	else if (ES::IsValid<EdgeEntity>(HitEntityId))
+		GetGraphsRenderer()->ExecuteCommand(EdgeCommands::SetHit(HitEntityId, IsHit));
+	else
+		GetGraphsRenderer()->ExecuteCommand(GraphCommands::SetHit(HitEntityId, IsHit));
+}
+
 void UToolProvider::BeginPlay() {
 	Super::BeginPlay();
-	GraphProvider = Cast<AGraphProvider>(UGameplayStatics::GetActorOfClass(GetWorld(), AGraphProvider::StaticClass()));
+	GraphsRenderer = Cast<AGraphsRenderer>(UGameplayStatics::GetActorOfClass(GetWorld(), AGraphsRenderer::StaticClass()));
 	// TODO: only for test
 	{
-		const auto ImporterTool = Cast<UToolImporter>(Tools[0]);
+		/*const auto ImporterTool = Cast<UToolImporter>(Tools[0]);
 		FString ErrorMessage;
 		const bool Result = ImporterTool->ImportGraphFromFile(
 			FPaths::LaunchDir() + FileConsts::ExportDirName + "Test_8_Vertices_8_Edges.json",
 			ErrorMessage
 		);
-		check(Result && ErrorMessage.Len() == 0);
+		check(Result && ErrorMessage.Len() == 0);*/
 
-		/*const TArray<FVector> Positions = {
+		const TArray<FVector> Positions = {
 			{437.109619f, 225.096985f, 50.0f},
 			{748.974915f, 345.263428f, 260.0f},
 			{504.859009f, -437.556763f, 460.0f},
@@ -127,36 +132,48 @@ void UToolProvider::BeginPlay() {
 			{5, 6},
 			{6, 4},
 		};
-		TMap<uint32_t, EntityId> VertexDisplayIdToEntityId;
 
-		EntityId GraphId = ENTITY_NONE;
-		GraphProvider->ExecuteCommand(GraphCommands::Create(&GraphId));
+		EntityId GraphId = EntityId::NONE();
+		GetGraphsRenderer()->ExecuteCommand(GraphCommands::Create(&GraphId, true));
+
+		GetGraphsRenderer()->ExecuteCommand(VertexCommands::Reserve(GraphId, Positions.Num()));
+		GetGraphsRenderer()->ExecuteCommand(EdgeCommands::Reserve(GraphId, Connections.Num()));
+
 		for (size_t i = 0; i < Positions.Num(); ++i) {
-			EntityId NewVertexId = ENTITY_NONE;
-			GraphProvider->ExecuteCommand(VertexCommands::Create(GraphId, &NewVertexId, i, Positions[i]));
-			VertexDisplayIdToEntityId.Add(i, NewVertexId);
-		}
-		for (size_t i = 0; i < Connections.Num(); ++i) {
-			const EntityId FirstVertexId = VertexDisplayIdToEntityId.FindChecked(Connections[i].first);
-			const EntityId SecondVertexId = VertexDisplayIdToEntityId.FindChecked(Connections[i].second);
-			GraphProvider->ExecuteCommand(EdgeCommands::Create(
-				GraphId,
-				nullptr,
-				FirstVertexId, SecondVertexId
+			GetGraphsRenderer()->ExecuteCommand(VertexCommands::Create(
+				GraphId, nullptr,
+				i,
+				Positions[i],
+				FLinearColor::MakeRandomColor().ToFColor(false)
 			));
-		}*/
-	}
-}
+		}
 
-void UToolProvider::SetEntitySelectionType(const SelectionType Selection) const {
-	const auto HitEntityType = GraphProvider->GetEntityType(HitEntityId);
+		for (size_t i = 0; i < Connections.Num(); ++i) {
+			GetGraphsRenderer()->ExecuteCommand(EdgeCommands::Create(
+				GraphId, nullptr,
+				Connections[i].first, Connections[i].second
+			));
+		}
 
-	if (HitEntityType == EntityType::VERTEX)
-		GraphProvider->ExecuteCommand(VertexCommands::SetSelectionType(HitEntityId, Selection));
-	else if (HitEntityType == EntityType::EDGE)
-		GraphProvider->ExecuteCommand(EdgeCommands::SetSelectionType(HitEntityId, Selection));
-	else {
-		check(HitEntityType == EntityType::GRAPH);
-		GraphProvider->ExecuteCommand(GraphCommands::SetSelectionType(HitEntityId, Selection));
+		check(ES::IsValid<GraphEntity>(GraphId));
+		const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
+		check(Graph.VerticesIds.Num() == Positions.Num());
+		for (const auto &VertexId : Graph.VerticesIds) {
+			check(ES::IsValid<VertexEntity>(VertexId));
+			const auto &Vertex = ES::GetEntity<VertexEntity>(VertexId);
+			for (const auto &EdgeId : Vertex.EdgesIds) {
+				check(ES::IsValid<EdgeEntity>(EdgeId));
+			}
+		}
+		check(Graph.EdgesIds.Num() == Connections.Num());
+		for (const auto &EdgeId : Graph.EdgesIds) {
+			check(ES::IsValid<EdgeEntity>(EdgeId));
+			const auto &Edge = ES::GetEntity<EdgeEntity>(EdgeId);
+			for (const auto &VertexId : Edge.VerticesIds) {
+				check(ES::IsValid<VertexEntity>(VertexId));
+			}
+		}
+
+		GetGraphsRenderer()->MarkDirty();
 	}
 }

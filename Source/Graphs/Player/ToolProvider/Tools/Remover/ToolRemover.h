@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Graphs/Player/ToolProvider/Tools/Tool.h"
+#include "../Tool.h"
 #include "ToolRemover.generated.h"
 
 UCLASS()
@@ -13,4 +13,14 @@ public:
 	virtual void OnDetach() override;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
+
+	void RemoveSelectedEntities();
+	void DeselectEntities();
+private:
+	struct GraphRemoveData {
+		TSet<EntityId> VerticesToRemove;
+		TSet<EntityId> EdgesToRemove;
+	};
+
+	TMap<EntityId, GraphRemoveData> GraphsRemoveData;
 };

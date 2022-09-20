@@ -11,8 +11,9 @@ public:
 	explicit UToolsPanelWidget(const FObjectInitializer &ObjectInitializer);
 
 	virtual void NativePreConstruct() override;
-
 	virtual void NativeConstruct() override;
+
+	void SetCloseToolButtonVisible(bool Visible) const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UWidgetSwitcher *ToolPanelSwitcher;

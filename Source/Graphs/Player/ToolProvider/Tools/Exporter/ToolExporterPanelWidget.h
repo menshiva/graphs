@@ -8,18 +8,28 @@ UCLASS(Abstract)
 class GRAPHS_API UToolExporterPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
-	virtual void NativePreConstruct() override;
+	enum class PanelType : uint8_t {
+		NONE,
+		LOADING,
+		SUCCESS,
+		ERROR
+	};
 
-	void ShowExportPanel() const;
-	void ShowSuccessPanel(const FString &ExportedFileDir) const;
-	void ShowErrorPanel(const FString &ErrorMessage) const;
+	virtual void NativePreConstruct() override;
+	virtual void NativeTick(const FGeometry &MyGeometry, float InDeltaTime) override;
+
+	FORCEINLINE void SetPanelType(const PanelType Type) { CurrentPanelType = Type; }
+	FORCEINLINE void SetMessage(const FString &Msg) { Message = Msg; }
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UWidgetSwitcher *ExporterPanelSwitcher;
+	UWidgetSwitcher *ExporterPanelSwitcher;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextBlock *ExporterText;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextButtonWidget *ExporterConfirmButton;
+private:
+	PanelType CurrentPanelType = PanelType::NONE;
+	FString Message;
 };

@@ -1,10 +1,8 @@
 ﻿#include "ToolManipulator.h"
 #include "ToolManipulatorPanelWidget.h"
-#include "Graphs/GraphProvider/Commands/EdgeCommands.h"
-#include "Graphs/GraphProvider/Commands/GraphCommands.h"
-#include "Graphs/GraphProvider/Commands/VertexCommands.h"
-#include "Graphs/GraphProvider/Entities/GraphEntity.h"
-#include "Graphs/Utils/Consts.h"
+#include "Graphs/GraphRenderer/Commands/EdgeCommands.h"
+#include "Graphs/GraphRenderer/Commands/GraphCommands.h"
+#include "Graphs/GraphRenderer/Commands/VertexCommands.h"
 
 DECLARE_CYCLE_STAT(TEXT("UToolManipulator::TickTool"), STAT_UToolManipulator_TickTool, STATGROUP_GRAPHS_PERF);
 DECLARE_CYCLE_STAT(TEXT("UToolManipulator::OnRightTriggerAction"), STAT_UToolManipulator_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
@@ -22,9 +20,9 @@ UToolManipulator::UToolManipulator() : UTool(
 void UToolManipulator::SetMode(const ManipulationMode NewMode) {
 	Mode = NewMode;
 	if (Mode == ManipulationMode::MOVE)
-		SetSupportedEntityTypes({EntityType::GRAPH, EntityType::EDGE, EntityType::VERTEX});
+		SetSupportedEntities({GRAPH, EDGE, VERTEX});
 	else
-		SetSupportedEntityTypes({EntityType::GRAPH});
+		SetSupportedEntities({GRAPH});
 }
 
 void UToolManipulator::OnAttach() {
@@ -35,6 +33,7 @@ void UToolManipulator::OnAttach() {
 void UToolManipulator::OnDetach() {
 	Super::OnDetach();
 	GetVrRightController()->SetLaserActive(false);
+	ManipulationEntity = EntityId::NONE();
 }
 
 void UToolManipulator::TickTool() {
@@ -44,14 +43,17 @@ void UToolManipulator::TickTool() {
 		const auto NewLaserPosition = GetVrRightController()->GetLaserEndPosition();
 		const auto Delta = NewLaserPosition - PreviousLaserEndPosition;
 
-		const auto HitEntityType = GetGraphProvider()->GetEntityType(GetHitEntityId());
-		if (HitEntityType == EntityType::VERTEX)
-			GetGraphProvider()->ExecuteCommand(VertexCommands::Move(GetHitEntityId(), Delta, true));
-		else if (HitEntityType == EntityType::EDGE)
-			GetGraphProvider()->ExecuteCommand(EdgeCommands::Move(GetHitEntityId(), Delta, true));
-		else {
-			check(HitEntityType == EntityType::GRAPH);
-			GetGraphProvider()->ExecuteCommand(GraphCommands::Move(GetHitEntityId(), Delta));
+		if (!Delta.IsNearlyZero(0.1f)) {
+			if (ES::IsValid<VertexEntity>(ManipulationEntity)) {
+				GetGraphsRenderer()->ExecuteCommand(VertexCommands::Move(ManipulationEntity, Delta), true);
+			}
+			else if (ES::IsValid<EdgeEntity>(ManipulationEntity)) {
+				GetGraphsRenderer()->ExecuteCommand(EdgeCommands::Move(ManipulationEntity, Delta), true);
+			}
+			else {
+				check(ES::IsValid<GraphEntity>(ManipulationEntity));
+				GetGraphsRenderer()->ExecuteCommand(GraphCommands::Move(ManipulationEntity, Delta), true);
+			}
 		}
 
 		PreviousLaserEndPosition = NewLaserPosition;
@@ -62,17 +64,20 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolManipulator_OnRightTriggerAction);
 
 	if (IsPressed) {
-		if (GetHitEntityId() != ENTITY_NONE) {
+		if (GetHitEntityId() != EntityId::NONE()) {
+			ManipulationEntity = GetHitEntityId();
+
 			if (Mode == ManipulationMode::MOVE) {
 				PreviousLaserEndPosition = GetVrRightController()->GetLaserEndPosition();
 			}
 			else {
-				check(GetGraphProvider()->GetEntityType(GetHitEntityId()) == EntityType::GRAPH);
-				GetGraphProvider()->ExecuteCommand(GraphCommands::ComputeCenterPosition(
-					GetHitEntityId(),
-					GraphCenterPosition
-				));
+				check(ES::IsValid<GraphEntity>(ManipulationEntity));
+				GraphCenterPosition = GraphCommands::ConstFuncs::ComputeCenterPosition(ManipulationEntity);
+				LastThumbstickXValue = 0.0f;
 			}
+
+			GetToolProvider()->ExecuteHitCommandBasedOnHitEntity(false);
+			GetGraphsRenderer()->MarkDirty();
 
 			GetToolPanel<UToolManipulatorPanelWidget>()->SetTextActionEntity();
 			GetVrRightController()->SetToolStateEnabled(true);
@@ -80,7 +85,12 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 			return true;
 		}
 	}
-	else {
+	else if (ManipulationEntity != EntityId::NONE()) {
+		ManipulationEntity = EntityId::NONE();
+
+		GetToolProvider()->ExecuteHitCommandBasedOnHitEntity(true);
+		GetGraphsRenderer()->ExecuteCommand(GraphCommands::UpdateCollisions(), true);
+
 		GetVrRightController()->SetLaserActive(true);
 		GetVrRightController()->SetToolStateEnabled(false);
 		GetToolPanel<UToolManipulatorPanelWidget>()->SetTextSelectEntity();
@@ -103,16 +113,18 @@ bool UToolManipulator::OnRightThumbstickY(const float Value) {
 bool UToolManipulator::OnRightThumbstickX(const float Value) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolManipulator_OnRightThumbstickX);
 
-	// TODO: do nothing if value is 0.0f
-	if (Mode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
-		check(GetGraphProvider()->GetEntityType(GetHitEntityId()) == EntityType::GRAPH);
-		GetGraphProvider()->ExecuteCommand(GraphCommands::Rotate(
-			GetHitEntityId(),
-			GraphCenterPosition,
-			Value * DefaultRotationSpeed
-		));
-		return true;
+	if (Value != LastThumbstickXValue || Value > 0.0f) {
+		if (Mode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
+			check(ES::IsValid<GraphEntity>(ManipulationEntity));
+			GetGraphsRenderer()->ExecuteCommand(GraphCommands::Rotate(
+				ManipulationEntity,
+				GraphCenterPosition,
+				Value * DefaultRotationSpeed
+			), true);
+			return true;
+		}
 	}
 
+	LastThumbstickXValue = Value;
 	return Super::OnRightThumbstickX(Value);
 }
