@@ -22,7 +22,6 @@ private:
 
 	static bool ExportGraph(
 		EntityId GraphId,
-		IPlatformFile &FileManager,
 		const FString &OutputPath,
 		FString &ErrorMessage
 	);

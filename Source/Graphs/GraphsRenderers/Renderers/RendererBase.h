@@ -1,11 +1,10 @@
 ﻿#pragma once
 
-#include "../EntityStorage/EntityId.h"
 #include "RuntimeMeshProvider.h"
 #include "RendererBase.generated.h"
 
 struct RenderData {
-	TArray<EntityId> StorageIds;
+	TArray<uint32_t> StorageIds;
 	TArray<FVector> Positions;
 	TArray<FColor> Colors;
 };

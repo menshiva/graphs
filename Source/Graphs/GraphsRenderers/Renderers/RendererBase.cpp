@@ -21,8 +21,8 @@ void URendererBase::Initialize() {
 	Properties.bIsVisible = true;
 	Properties.MaterialSlot = 0;
 	Properties.UpdateFrequency = ERuntimeMeshUpdateFrequency::Average;
-	Properties.bUseHighPrecisionTangents = false; // we don't use it
-	Properties.bUseHighPrecisionTexCoords = false; // we don't use it
+	Properties.bUseHighPrecisionTangents = false;
+	Properties.bUseHighPrecisionTexCoords = false;
 	Properties.bWants32BitIndices = true;
 	Properties.bCastsShadow = false;
 	Properties.bForceOpaque = true;

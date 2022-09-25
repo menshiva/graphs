@@ -4,7 +4,7 @@
 #include "Components/Button.h"
 #include "ButtonWidget.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 class GRAPHS_API UButtonWidget : public UUserWidget {
 	GENERATED_BODY()
 public:

@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "RendererBase.h"
+#include "Graphs/Utils/VertexMeshFactory.h"
 #include "VerticesRenderer.generated.h"
 
 UCLASS()
@@ -16,4 +17,7 @@ public:
 	constexpr static float MeshScale = 50.0f;
 
 	constexpr static uint32_t CollisionQuality = 0;
+private:
+	constexpr static auto IcosahedronMesh = VertexMeshFactory::GenerateScaled<MeshQuality, MeshScale>();
+	constexpr static auto IcosahedronCollision = VertexMeshFactory::GenerateScaled<CollisionQuality, MeshScale>();
 };

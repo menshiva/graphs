@@ -3,23 +3,17 @@
 #include "Graphs/Player/ToolProvider/Tools/ToolWidget.h"
 #include "ToolExporterPanelWidget.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UToolExporterPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
-	enum class PanelType : uint8_t {
-		NONE,
-		LOADING,
-		SUCCESS,
-		ERROR
-	};
-
 	virtual void NativePreConstruct() override;
-	virtual void NativeTick(const FGeometry &MyGeometry, float InDeltaTime) override;
 
-	FORCEINLINE void SetPanelType(const PanelType Type) { CurrentPanelType = Type; }
-	FORCEINLINE void SetMessage(const FString &Msg) { Message = Msg; }
+	void ShowExportPanel() const;
+	void ShowSuccessPanel(const FString &ExportPath) const;
+	void ShowErrorPanel(const FString &ErrorDesc) const;
+	void ShowLoadingPanel() const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UWidgetSwitcher *ExporterPanelSwitcher;
@@ -29,7 +23,4 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextButtonWidget *ExporterConfirmButton;
-private:
-	PanelType CurrentPanelType = PanelType::NONE;
-	FString Message;
 };

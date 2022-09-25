@@ -1,8 +1,8 @@
 ﻿#include "ToolRemover.h"
 #include "ToolRemoverPanelWidget.h"
-#include "Graphs/GraphRenderer/Commands/EdgeCommands.h"
-#include "Graphs/GraphRenderer/Commands/GraphCommands.h"
-#include "Graphs/GraphRenderer/Commands/VertexCommands.h"
+#include "Graphs/GraphsRenderers/Commands/EdgeCommands.h"
+#include "Graphs/GraphsRenderers/Commands/GraphCommands.h"
+#include "Graphs/GraphsRenderers/Commands/VertexCommands.h"
 
 DECLARE_CYCLE_STAT(TEXT("UToolRemover::OnRightTriggerAction"), STAT_UToolRemover_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
 
@@ -37,7 +37,7 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 				GraphRemoveData->VerticesToRemove.Remove(GetHitEntityId());
 				if (GraphRemoveData->VerticesToRemove.Num() == 0 && GraphRemoveData->EdgesToRemove.Num() == 0)
 					GraphsRemoveData.Remove(Vertex.GraphId);
-				GetGraphsRenderer()->ExecuteCommand(VertexCommands::SetOverrideColor(
+				GetGraphsRenderers()->ExecuteCommand(VertexCommands::SetOverrideColor(
 					GetHitEntityId(),
 					ColorConsts::OverrideColorNone
 				));
@@ -46,7 +46,7 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 				if (!GraphRemoveData)
 					GraphRemoveData = &GraphsRemoveData.Add(Vertex.GraphId);
 				GraphRemoveData->VerticesToRemove.Add(GetHitEntityId());
-				GetGraphsRenderer()->ExecuteCommand(VertexCommands::SetOverrideColor(
+				GetGraphsRenderers()->ExecuteCommand(VertexCommands::SetOverrideColor(
 					GetHitEntityId(),
 					ColorConsts::RedColor
 				));
@@ -60,7 +60,7 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 				GraphRemoveData->EdgesToRemove.Remove(GetHitEntityId());
 				if (GraphRemoveData->VerticesToRemove.Num() == 0 && GraphRemoveData->EdgesToRemove.Num() == 0)
 					GraphsRemoveData.Remove(Edge.GraphId);
-				GetGraphsRenderer()->ExecuteCommand(EdgeCommands::SetOverrideColor(
+				GetGraphsRenderers()->ExecuteCommand(EdgeCommands::SetOverrideColor(
 					GetHitEntityId(),
 					ColorConsts::OverrideColorNone
 				));
@@ -69,7 +69,7 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 				if (!GraphRemoveData)
 					GraphRemoveData = &GraphsRemoveData.Add(Edge.GraphId);
 				GraphRemoveData->EdgesToRemove.Add(GetHitEntityId());
-				GetGraphsRenderer()->ExecuteCommand(EdgeCommands::SetOverrideColor(
+				GetGraphsRenderers()->ExecuteCommand(EdgeCommands::SetOverrideColor(
 					GetHitEntityId(),
 					ColorConsts::RedColor
 				));
@@ -80,11 +80,11 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 			auto GraphRemoveData = GraphsRemoveData.Find(GetHitEntityId());
 
 			if (GraphRemoveData
-				&& Graph.VerticesIds.Num() == GraphRemoveData->VerticesToRemove.Num()
-				&& Graph.EdgesIds.Num() == GraphRemoveData->EdgesToRemove.Num())
+				&& Graph.Vertices.Num() == GraphRemoveData->VerticesToRemove.Num()
+				&& Graph.Edges.Num() == GraphRemoveData->EdgesToRemove.Num())
 			{
 				GraphsRemoveData.Remove(GetHitEntityId());
-				GetGraphsRenderer()->ExecuteCommand(GraphCommands::SetOverrideColor(
+				GetGraphsRenderers()->ExecuteCommand(GraphCommands::SetOverrideColor(
 					GetHitEntityId(),
 					ColorConsts::OverrideColorNone
 				));
@@ -92,9 +92,9 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 			else {
 				if (!GraphRemoveData)
 					GraphRemoveData = &GraphsRemoveData.Add(GetHitEntityId());
-				GraphRemoveData->VerticesToRemove.Append(Graph.VerticesIds);
-				GraphRemoveData->EdgesToRemove.Append(Graph.EdgesIds);
-				GetGraphsRenderer()->ExecuteCommand(GraphCommands::SetOverrideColor(
+				GraphRemoveData->VerticesToRemove.Append(Graph.Vertices);
+				GraphRemoveData->EdgesToRemove.Append(Graph.Edges);
+				GetGraphsRenderers()->ExecuteCommand(GraphCommands::SetOverrideColor(
 					GetHitEntityId(),
 					ColorConsts::RedColor
 				));
@@ -113,12 +113,19 @@ bool UToolRemover::OnRightTriggerAction(const bool IsPressed) {
 
 // ReSharper disable once CppMemberFunctionMayBeConst
 void UToolRemover::RemoveSelectedEntities() {
-	const auto GraphsRenderer = GetGraphsRenderer();
+	const auto GraphsRenderer = GetGraphsRenderers();
 	const auto RemoverToolPanel = GetToolPanel<UToolRemoverPanelWidget>();
 	const auto RightVrController = GetVrRightController();
 	RightVrController->SetLaserActive(false);
 	RemoverToolPanel->SetLoadingStatus(true);
 	RemoverToolPanel->SetButtonsEnabled(false);
+
+	for (const auto &P : GraphsRemoveData) {
+		const auto &Graph = ES::GetEntity<GraphEntity>(P.Key);
+		const auto &GraphRemoveData = P.Value;
+		if (GraphRemoveData.VerticesToRemove.Num() == Graph.Vertices.Num())
+			GraphsRenderer->RemoveGraphRenderer(P.Key);
+	}
 
 	AsyncTask(
 		ENamedThreads::AnyBackgroundHiPriTask,
@@ -127,7 +134,7 @@ void UToolRemover::RemoveSelectedEntities() {
 				const auto &Graph = ES::GetEntity<GraphEntity>(P.Key);
 				const auto &GraphRemoveData = P.Value;
 
-				if (GraphRemoveData.VerticesToRemove.Num() == Graph.VerticesIds.Num()) {
+				if (GraphRemoveData.VerticesToRemove.Num() == Graph.Vertices.Num()) {
 					GraphsRenderer->ExecuteCommand(GraphCommands::Remove(P.Key));
 				}
 				else {
@@ -139,18 +146,21 @@ void UToolRemover::RemoveSelectedEntities() {
 				}
 			}
 
-			GraphsRenderer->MarkDirty();
-			RemoverToolPanel->SetLoadingStatus(false);
-			RightVrController->SetLaserActive(true);
+			Utils::DoOnGameThread([=] {
+				GraphsRenderer->RedrawIfDirty();
+				RemoverToolPanel->SetLoadingStatus(false);
+				RightVrController->SetLaserActive(true);
+			});
 		}
 	);
+
 	check(GraphsRemoveData.Num() == 0);
 }
 
 void UToolRemover::DeselectEntities() {
 	for (const auto &P : GraphsRemoveData)
-		GetGraphsRenderer()->ExecuteCommand(GraphCommands::SetOverrideColor(P.Key, ColorConsts::OverrideColorNone));
-	GetGraphsRenderer()->MarkDirty();
+		GetGraphsRenderers()->ExecuteCommand(GraphCommands::SetOverrideColor(P.Key, ColorConsts::OverrideColorNone));
+	GetGraphsRenderers()->RedrawIfDirty();
 	GraphsRemoveData.Reset();
 	GetToolPanel<UToolRemoverPanelWidget>()->SetButtonsEnabled(false);
 }

@@ -10,7 +10,8 @@ public:
 	UToolImporter();
 
 	virtual void OnAttach() override;
+	void OnImportClick(const FString &FilePath) const;
 
 	void RefreshFileList() const;
-	bool ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage) const;
+	static bool ImportGraphFromFile(const FString &FilePath, GraphImportData &ImportData, FString &ErrorMessage);
 };

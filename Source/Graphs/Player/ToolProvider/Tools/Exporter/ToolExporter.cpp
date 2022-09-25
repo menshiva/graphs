@@ -1,6 +1,6 @@
 ﻿#include "ToolExporter.h"
 #include "ToolExporterPanelWidget.h"
-#include "Graphs/GraphRenderer/Commands/GraphCommands.h"
+#include "Graphs/GraphsRenderers/Commands/GraphCommands.h"
 
 DECLARE_CYCLE_STAT(TEXT("UToolExporter::OnRightTriggerAction"), STAT_UToolExporter_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
 DECLARE_CYCLE_STAT(TEXT("UToolExporter::ExportGraph"), STAT_UToolExporter_ExportGraph, STATGROUP_GRAPHS_PERF);
@@ -16,7 +16,7 @@ UToolExporter::UToolExporter() : UTool(
 void UToolExporter::OnAttach() {
 	Super::OnAttach();
 	GetVrRightController()->SetLaserActive(true);
-	GetToolPanel<UToolExporterPanelWidget>()->SetPanelType(UToolExporterPanelWidget::PanelType::NONE);
+	GetToolPanel<UToolExporterPanelWidget>()->ShowExportPanel();
 }
 
 void UToolExporter::OnDetach() {
@@ -31,13 +31,11 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 		const auto ExporterToolPanel = GetToolPanel<UToolExporterPanelWidget>();
 		auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
-		const auto &GameDirPath = FPaths::LaunchDir();
 		const auto &ExportDirName = FileConsts::ExportDirName;
-		const auto ExportDirPath = GameDirPath + ExportDirName;
+		const auto ExportDirPath = FPaths::LaunchDir() + ExportDirName;
 
 		if (!FileManager.CreateDirectoryTree(*ExportDirPath)) {
-			ExporterToolPanel->SetMessage("Failed to create export directory.");
-			ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::ERROR);
+			ExporterToolPanel->ShowErrorPanel("Failed to create export directory.");
 			return false;
 		}
 
@@ -52,19 +50,21 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 		const auto GraphId = GetHitEntityId();
 
 		GetVrRightController()->SetLaserActive(false);
-		ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::LOADING);
+		ExporterToolPanel->ShowLoadingPanel();
 
 		AsyncTask(
 			ENamedThreads::AnyBackgroundHiPriTask,
-			[GraphId, OutputPath(MoveTemp(OutputPath)), OutputDisplayPath(MoveTemp(OutputDisplayPath)), ExporterToolPanel] {
+			[GraphId, OutputPath(MoveTemp(OutputPath)), OutputDisplayPath(MoveTemp(OutputDisplayPath)), ExporterToolPanel] () mutable {
 				FString ErrorMessage;
-				if (ExportGraph(GraphId, FPlatformFileManager::Get().GetPlatformFile(), OutputPath, ErrorMessage)) {
-					ExporterToolPanel->SetMessage(OutputDisplayPath);
-					ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::SUCCESS);
+				if (ExportGraph(GraphId, OutputPath, ErrorMessage)) {
+					Utils::DoOnGameThread([OutputDisplayPath(MoveTemp(OutputDisplayPath)), ExporterToolPanel] {
+						ExporterToolPanel->ShowSuccessPanel(OutputDisplayPath);
+					});
 				}
 				else {
-					ExporterToolPanel->SetMessage(ErrorMessage);
-					ExporterToolPanel->SetPanelType(UToolExporterPanelWidget::PanelType::ERROR);
+					Utils::DoOnGameThread([ErrorMessage(MoveTemp(ErrorMessage)), ExporterToolPanel] {
+						ExporterToolPanel->ShowErrorPanel(ErrorMessage);
+					});
 				}
 			}
 		);
@@ -99,11 +99,11 @@ FString UToolExporter::GenerateJsonFileNameInDirectory(
 
 bool UToolExporter::ExportGraph(
 	const EntityId GraphId,
-	IPlatformFile &FileManager,
 	const FString &OutputPath,
 	FString &ErrorMessage
 ) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolExporter_ExportGraph);
+	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 	TUniquePtr<IFileHandle> OutputFileHandler(FileManager.OpenWrite(*OutputPath, false, false));
 	if (!OutputFileHandler.IsValid()) {
@@ -115,7 +115,7 @@ bool UToolExporter::ExportGraph(
 	rapidjson::PrettyWriter Writer(SBuffer);
 	Writer.SetIndent('\t', 1);
 
-	GraphCommands::ConstFuncs::Serialize(GraphId, Writer);
+	GraphCommands::Consts::Serialize(GraphId, Writer);
 
 	if (!OutputFileHandler->Write(reinterpret_cast<const uint8*>(SBuffer.GetString()), SBuffer.GetSize())) {
 		OutputFileHandler.Reset();

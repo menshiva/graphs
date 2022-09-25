@@ -1,8 +1,8 @@
 ﻿#include "ToolManipulator.h"
 #include "ToolManipulatorPanelWidget.h"
-#include "Graphs/GraphRenderer/Commands/EdgeCommands.h"
-#include "Graphs/GraphRenderer/Commands/GraphCommands.h"
-#include "Graphs/GraphRenderer/Commands/VertexCommands.h"
+#include "Graphs/GraphsRenderers/Commands/EdgeCommands.h"
+#include "Graphs/GraphsRenderers/Commands/GraphCommands.h"
+#include "Graphs/GraphsRenderers/Commands/VertexCommands.h"
 
 DECLARE_CYCLE_STAT(TEXT("UToolManipulator::TickTool"), STAT_UToolManipulator_TickTool, STATGROUP_GRAPHS_PERF);
 DECLARE_CYCLE_STAT(TEXT("UToolManipulator::OnRightTriggerAction"), STAT_UToolManipulator_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
@@ -45,14 +45,14 @@ void UToolManipulator::TickTool() {
 
 		if (!Delta.IsNearlyZero(0.1f)) {
 			if (ES::IsValid<VertexEntity>(ManipulationEntity)) {
-				GetGraphsRenderer()->ExecuteCommand(VertexCommands::Move(ManipulationEntity, Delta), true);
+				GetGraphsRenderers()->ExecuteCommand(VertexCommands::Move(ManipulationEntity, Delta), true);
 			}
 			else if (ES::IsValid<EdgeEntity>(ManipulationEntity)) {
-				GetGraphsRenderer()->ExecuteCommand(EdgeCommands::Move(ManipulationEntity, Delta), true);
+				GetGraphsRenderers()->ExecuteCommand(EdgeCommands::Move(ManipulationEntity, Delta), true);
 			}
 			else {
 				check(ES::IsValid<GraphEntity>(ManipulationEntity));
-				GetGraphsRenderer()->ExecuteCommand(GraphCommands::Move(ManipulationEntity, Delta), true);
+				GetGraphsRenderers()->ExecuteCommand(GraphCommands::Move(ManipulationEntity, Delta), true);
 			}
 		}
 
@@ -72,12 +72,12 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 			}
 			else {
 				check(ES::IsValid<GraphEntity>(ManipulationEntity));
-				GraphCenterPosition = GraphCommands::ConstFuncs::ComputeCenterPosition(ManipulationEntity);
+				GraphCenterPosition = GraphCommands::Consts::ComputeCenterPosition(ManipulationEntity);
 				LastThumbstickXValue = 0.0f;
 			}
 
 			GetToolProvider()->ExecuteHitCommandBasedOnHitEntity(false);
-			GetGraphsRenderer()->MarkDirty();
+			GetGraphsRenderers()->RedrawIfDirty();
 
 			GetToolPanel<UToolManipulatorPanelWidget>()->SetTextActionEntity();
 			GetVrRightController()->SetToolStateEnabled(true);
@@ -86,10 +86,17 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 		}
 	}
 	else if (ManipulationEntity != EntityId::NONE()) {
-		ManipulationEntity = EntityId::NONE();
-
 		GetToolProvider()->ExecuteHitCommandBasedOnHitEntity(true);
-		GetGraphsRenderer()->ExecuteCommand(GraphCommands::UpdateCollisions(), true);
+
+		// TODO
+		auto GraphId = ManipulationEntity;
+		if (ES::IsValid<VertexEntity>(ManipulationEntity))
+			GraphId = ES::GetEntity<VertexEntity>(ManipulationEntity).GraphId;
+		else if (ES::IsValid<EdgeEntity>(ManipulationEntity))
+			GraphId = ES::GetEntity<EdgeEntity>(ManipulationEntity).GraphId;
+		GetGraphsRenderers()->ExecuteCommand(GraphCommands::UpdateCollisions(GraphId), true);
+
+		ManipulationEntity = EntityId::NONE();
 
 		GetVrRightController()->SetLaserActive(true);
 		GetVrRightController()->SetToolStateEnabled(false);
@@ -116,7 +123,7 @@ bool UToolManipulator::OnRightThumbstickX(const float Value) {
 	if (Value != LastThumbstickXValue || Value > 0.0f) {
 		if (Mode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
 			check(ES::IsValid<GraphEntity>(ManipulationEntity));
-			GetGraphsRenderer()->ExecuteCommand(GraphCommands::Rotate(
+			GetGraphsRenderers()->ExecuteCommand(GraphCommands::Rotate(
 				ManipulationEntity,
 				GraphCenterPosition,
 				Value * DefaultRotationSpeed

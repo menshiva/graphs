@@ -8,10 +8,16 @@ struct VertexEntity {
 	EntityId GraphId;
 	bool IsHit;
 	FColor OverrideColor;
-	TSet<EntityId> EdgesIds;
+	TSet<EntityId> ConnectedEdges;
 
 	// Serializable data
-	uint32_t UserId;
+	uint32_t CustomId;
+	FVector Position;
+	FColor Color;
+};
+
+struct VertexImportData {
+	uint32_t CustomId;
 	FVector Position;
 	FColor Color;
 };

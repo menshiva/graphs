@@ -1,18 +1,17 @@
 #pragma once
 
-#include "Graphs/Player/ToolProvider/Tools/ToolWidget.h"
+#include "../ToolWidget.h"
 #include "ToolRemoverPanelWidget.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UToolRemoverPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
 	virtual void NativePreConstruct() override;
-	virtual void NativeTick(const FGeometry &MyGeometry, float InDeltaTime) override;
 
 	void SetButtonsEnabled(bool IsEnabled) const;
-	FORCEINLINE void SetLoadingStatus(const bool Loading) { IsLoading = Loading; }
+	FORCEINLINE void SetLoadingStatus(const bool Loading) const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UWidgetSwitcher *RemoverPanelSwitcher;
@@ -22,6 +21,4 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UTextButtonWidget *RemoverDeselectButton;
-private:
-	bool IsLoading = false;
 };

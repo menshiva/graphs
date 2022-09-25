@@ -19,60 +19,9 @@ void UToolImporterPanelWidget::NativeConstruct() {
 	Super::NativeConstruct();
 	if (ImporterList) {
 		ImporterList->OnItemClicked().AddLambda([&] (const UObject *Item) {
-			const auto ImporterTool = GetTool<UToolImporter>();
-			const auto SelectedItem = Cast<UListItemData>(Item);
-			SetPanelType(PanelType::LOADING);
-
-			AsyncTask(
-				ENamedThreads::AnyBackgroundHiPriTask,
-				[&, ImporterTool, SelectedItem] {
-					FString ErrorMessage;
-					if (ImporterTool->ImportGraphFromFile(SelectedItem->TextData, ErrorMessage)) {
-						SetMessage("Graph has been successfuly\nimported.");
-						SetPanelType(PanelType::SUCCESS);
-					}
-					else {
-						SetMessage("Error while importing graph:\n\n" + ErrorMessage);
-						SetPanelType(PanelType::ERROR);
-					}
-				}
-			);
+			GetTool<UToolImporter>()->OnImportClick(Cast<UListItemData>(Item)->TextData);
 		});
 	}
-}
-
-void UToolImporterPanelWidget::NativeTick(const FGeometry& MyGeometry, const float InDeltaTime) {
-	Super::NativeTick(MyGeometry, InDeltaTime);
-	static PanelType PrevPanelType = CurrentPanelType;
-	if (CurrentPanelType != PrevPanelType && ImporterPanelSwitcher) {
-		switch (CurrentPanelType) {
-			case PanelType::SUCCESS: {
-				if (ImporterText)
-					ImporterText->SetText(FText::FromString(Message));
-				if (ImporterConfirmButton)
-					ImporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
-				ImporterPanelSwitcher->SetActiveWidgetIndex(1);
-				break;
-			}
-			case PanelType::ERROR: {
-				if (ImporterText)
-					ImporterText->SetText(FText::FromString(Message));
-				if (ImporterConfirmButton)
-					ImporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
-				ImporterPanelSwitcher->SetActiveWidgetIndex(1);
-				break;
-			}
-			case PanelType::LOADING: {
-				ImporterPanelSwitcher->SetActiveWidgetIndex(2);
-				break;
-			}
-			default: {
-				ImporterPanelSwitcher->SetActiveWidgetIndex(0);
-			}
-		}
-		SetCloseToolButtonVisible(CurrentPanelType != PanelType::LOADING);
-	}
-	PrevPanelType = CurrentPanelType;
 }
 
 void UToolImporterPanelWidget::SetInputFiles(TArray<FString> &InputFilesPaths) const {
@@ -89,4 +38,36 @@ void UToolImporterPanelWidget::SetInputFiles(TArray<FString> &InputFilesPaths) c
 		NewObj->DisplayText = FilePath;
 		ImporterList->AddItem(NewObj);
 	}
+}
+
+void UToolImporterPanelWidget::ShowImportList() const {
+	SetCloseToolButtonVisible(true);
+	if (ImporterPanelSwitcher)
+		ImporterPanelSwitcher->SetActiveWidgetIndex(0);
+}
+
+void UToolImporterPanelWidget::ShowSuccessPanel() const {
+	SetCloseToolButtonVisible(true);
+	if (ImporterText)
+		ImporterText->SetText(FText::FromString("Graph has been successfuly imported."));
+	if (ImporterConfirmButton)
+		ImporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
+	if (ImporterPanelSwitcher)
+		ImporterPanelSwitcher->SetActiveWidgetIndex(1);
+}
+
+void UToolImporterPanelWidget::ShowErrorPanel(const FString &ErrorDesc) const {
+	SetCloseToolButtonVisible(true);
+	if (ImporterText)
+		ImporterText->SetText(FText::FromString(ErrorDesc));
+	if (ImporterConfirmButton)
+		ImporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
+	if (ImporterPanelSwitcher)
+		ImporterPanelSwitcher->SetActiveWidgetIndex(1);
+}
+
+void UToolImporterPanelWidget::ShowLoadingPanel() const {
+	SetCloseToolButtonVisible(false);
+	if (ImporterPanelSwitcher)
+		ImporterPanelSwitcher->SetActiveWidgetIndex(2);
 }

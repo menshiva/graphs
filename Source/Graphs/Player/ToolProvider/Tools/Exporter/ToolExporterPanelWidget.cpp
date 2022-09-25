@@ -3,7 +3,6 @@
 #include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
 #include "Graphs/UI/Button/TextButtonWidget.h"
-#include "Graphs/Utils/Utils.h"
 
 void UToolExporterPanelWidget::NativePreConstruct() {
 	Super::NativeConstruct();
@@ -11,36 +10,34 @@ void UToolExporterPanelWidget::NativePreConstruct() {
 		ExporterConfirmButton->SetOnClickEvent([&] { GetTool<UToolExporter>()->OnAttach(); });
 }
 
-void UToolExporterPanelWidget::NativeTick(const FGeometry &MyGeometry, const float InDeltaTime) {
-	Super::NativeTick(MyGeometry, InDeltaTime);
-	static PanelType PrevPanelType = CurrentPanelType;
-	if (CurrentPanelType != PrevPanelType && ExporterPanelSwitcher) {
-		switch (CurrentPanelType) {
-			case PanelType::SUCCESS: {
-				if (ExporterText)
-					ExporterText->SetText(FText::FromString("Selected graph has been successfuly\nexported to:\n\n" + Message));
-				if (ExporterConfirmButton)
-					ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
-				ExporterPanelSwitcher->SetActiveWidgetIndex(1);
-				break;
-			}
-			case PanelType::ERROR: {
-				if (ExporterText)
-					ExporterText->SetText(FText::FromString("Error while exporting selected graph:\n\n" + Message));
-				if (ExporterConfirmButton)
-					ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
-				ExporterPanelSwitcher->SetActiveWidgetIndex(1);
-				break;
-			}
-			case PanelType::LOADING: {
-				ExporterPanelSwitcher->SetActiveWidgetIndex(2);
-				break;
-			}
-			default: {
-				ExporterPanelSwitcher->SetActiveWidgetIndex(0);
-			}
-		}
-		SetCloseToolButtonVisible(CurrentPanelType != PanelType::LOADING);
-	}
-	PrevPanelType = CurrentPanelType;
+void UToolExporterPanelWidget::ShowExportPanel() const {
+	SetCloseToolButtonVisible(true);
+	if (ExporterPanelSwitcher)
+		ExporterPanelSwitcher->SetActiveWidgetIndex(0);
+}
+
+void UToolExporterPanelWidget::ShowSuccessPanel(const FString &ExportPath) const {
+	SetCloseToolButtonVisible(true);
+	if (ExporterText)
+		ExporterText->SetText(FText::FromString("Selected graph has been successfuly\nexported to:\n\n" + ExportPath));
+	if (ExporterConfirmButton)
+		ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
+	if (ExporterPanelSwitcher)
+		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
+}
+
+void UToolExporterPanelWidget::ShowErrorPanel(const FString &ErrorDesc) const {
+	SetCloseToolButtonVisible(true);
+	if (ExporterText)
+		ExporterText->SetText(FText::FromString("Error while exporting selected graph:\n\n" + ErrorDesc));
+	if (ExporterConfirmButton)
+		ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
+	if (ExporterPanelSwitcher)
+		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
+}
+
+void UToolExporterPanelWidget::ShowLoadingPanel() const {
+	SetCloseToolButtonVisible(false);
+	if (ExporterPanelSwitcher)
+		ExporterPanelSwitcher->SetActiveWidgetIndex(2);
 }
