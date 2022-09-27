@@ -14,8 +14,6 @@ GraphCommands::Create::Create(EntityId *NewGraphId, const bool Colorful) : Graph
 
 	if (NewGraphId)
 		*NewGraphId = GraphId;
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::FillFromImportData"), STAT_GraphCommands_FillFromImportData, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -56,8 +54,6 @@ GraphCommands::FillFromImportData::FillFromImportData(
 	GraphRenderer->MarkDirty({VERTEX, true, true});
 	if (Graph.Edges.Num() > 0)
 		GraphRenderer->MarkDirty({EDGE, true, true});
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Remove"), STAT_GraphCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -71,8 +67,6 @@ GraphCommands::Remove::Remove(const EntityId GraphId) : GraphsRenderersCommand([
 	for (const auto EdgeId : Graph.Edges)
 		GetESMut().RemoveEntity<EdgeEntity>(EdgeId);
 	GetESMut().RemoveEntity<GraphEntity>(GraphId);
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::RemoveAll"), STAT_GraphCommands_RemoveAll, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -82,8 +76,6 @@ GraphCommands::RemoveAll::RemoveAll() : GraphsRenderersCommand([] {
 	GetESMut().Clear<VertexEntity>();
 	GetESMut().Clear<EdgeEntity>();
 	GetESMut().Clear<GraphEntity>();
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::UpdateCollisions"), STAT_GraphCommands_UpdateCollisions, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -95,8 +87,6 @@ GraphCommands::UpdateCollisions::UpdateCollisions(const EntityId GraphId) : Grap
 	GraphRenderer->MarkDirty({VERTEX, false, true});
 	if (Graph.Edges.Num() > 0)
 		GraphRenderer->MarkDirty({EDGE, false, true});
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::SetHit"), STAT_GraphCommands_SetHit, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -117,8 +107,6 @@ GraphCommands::SetHit::SetHit(const EntityId GraphId, const bool IsHit) : Graphs
 		});
 		GraphRenderer->MarkDirty({EDGE, true, false});
 	}
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::SetOverrideColor"), STAT_GraphCommands_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -143,8 +131,6 @@ GraphCommands::SetOverrideColor::SetOverrideColor(
 		});
 		GraphRenderer->MarkDirty({EDGE, true, false});
 	}
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Move"), STAT_GraphCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -162,8 +148,6 @@ GraphCommands::Move::Move(const EntityId GraphId, const FVector &Delta) : Graphs
 	GraphRenderer->MarkDirty({VERTEX, true, false});
 	if (Graph.Edges.Num() > 0)
 		GraphRenderer->MarkDirty({EDGE, true, false});
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Rotate"), STAT_GraphCommands_Rotate, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -185,8 +169,6 @@ GraphCommands::Rotate::Rotate(
 	GraphRenderer->MarkDirty({VERTEX, true, false});
 	if (Graph.Edges.Num() > 0)
 		GraphRenderer->MarkDirty({EDGE, true, false});
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Consts::Serialize"), STAT_GraphCommands_Consts_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);

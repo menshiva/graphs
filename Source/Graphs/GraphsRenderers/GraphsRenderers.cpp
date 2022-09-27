@@ -13,16 +13,14 @@ EntityId AGraphsRenderers::GetEntityIdFromHitResult(const FHitResult &HitResult)
 	return EntityId::NONE();
 }
 
-bool AGraphsRenderers::ExecuteCommand(GraphsRenderersCommand &&Cmd, const bool RedrawIfDirty) const {
+void AGraphsRenderers::ExecuteCommand(GraphsRenderersCommand &&Cmd, const bool RedrawIfDirty) const {
 	SCOPE_CYCLE_COUNTER(STAT_AGraphsRenderer_ExecuteCommand);
 
 	Cmd.GraphsRenderers = this;
-	const auto Res = Cmd.Implementation();
+	Cmd.Implementation();
 
-	if (RedrawIfDirty && Res)
+	if (RedrawIfDirty)
 		this->RedrawIfDirty();
-
-	return Res;
 }
 
 void AGraphsRenderers::RedrawIfDirty() const {

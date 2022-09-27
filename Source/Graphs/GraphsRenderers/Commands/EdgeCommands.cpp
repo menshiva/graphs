@@ -42,7 +42,6 @@ EdgeCommands::Create::Create(
 		*NewEdgeId = EdgeId;
 
 	GetGraphRenderer(GraphId)->MarkDirty({EDGE, true, true});
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Remove"), STAT_EdgeCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -68,7 +67,6 @@ EdgeCommands::Remove::Remove(const EntityId EdgeId) : GraphsRenderersCommand([=]
 	const auto GraphId = Edge.GraphId;
 	GetESMut().RemoveEntity<EdgeEntity>(EdgeId);
 	GetGraphRenderer(GraphId)->MarkDirty({EDGE, true, true});
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Reserve"), STAT_EdgeCommands_Reserve, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -79,8 +77,6 @@ EdgeCommands::Reserve::Reserve(const EntityId GraphId, const uint32_t NewEdgesNu
 	auto &Graph = GetESMut().GetEntityMut<GraphEntity>(GraphId);
 	Graph.EdgesHashes.Reserve(Graph.EdgesHashes.Num() + NewEdgesNum);
 	Graph.Edges.Reserve(Graph.Edges.Num() + NewEdgesNum);
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetHit"), STAT_EdgeCommands_SetHit, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -89,11 +85,10 @@ EdgeCommands::SetHit::SetHit(const EntityId EdgeId, const bool IsHit) : GraphsRe
 	auto &Edge = GetESMut().GetEntityMut<EdgeEntity>(EdgeId);
 
 	if (Edge.IsHit == IsHit)
-		return false;
+		return;
 	Edge.IsHit = IsHit;
 
 	GetGraphRenderer(Edge.GraphId)->MarkDirty({EDGE, true, false});
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::SetOverrideColor"), STAT_EdgeCommands_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -105,11 +100,10 @@ EdgeCommands::SetOverrideColor::SetOverrideColor(
 	auto &Edge = GetESMut().GetEntityMut<EdgeEntity>(EdgeId);
 
 	if (Edge.OverrideColor == OverrideColor)
-		return false;
+		return;
 	Edge.OverrideColor = OverrideColor;
 
 	GetGraphRenderer(Edge.GraphId)->MarkDirty({EDGE, true, false});
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Move"), STAT_EdgeCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -119,8 +113,6 @@ EdgeCommands::Move::Move(const EntityId EdgeId, const FVector &Delta) : GraphsRe
 
 	ExecuteSubCommand(VertexCommands::Move(Edge.ConnectedVertices[0], Delta));
 	ExecuteSubCommand(VertexCommands::Move(Edge.ConnectedVertices[1], Delta));
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Consts::Serialize"), STAT_EdgeCommands_Consts_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);

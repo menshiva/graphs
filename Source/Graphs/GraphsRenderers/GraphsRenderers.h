@@ -10,7 +10,7 @@ public:
 	AGraphsRenderers();
 
 	EntityId GetEntityIdFromHitResult(const FHitResult &HitResult) const;
-	bool ExecuteCommand(GraphsRenderersCommand &&Cmd, bool RedrawIfDirty = false) const;
+	void ExecuteCommand(GraphsRenderersCommand &&Cmd, bool RedrawIfDirty = false) const;
 	void RedrawIfDirty() const;
 
 	void AddGraphRenderer(EntityId GraphId);
@@ -24,7 +24,7 @@ private:
 	friend GraphsRenderersCommand;
 };
 
-using CommandImpl = TFunction<bool()>;
+using CommandImpl = TFunction<void()>;
 class GraphsRenderersCommand {
 public:
 	explicit GraphsRenderersCommand(CommandImpl &&Impl) : Implementation(MoveTemp(Impl)) {}
@@ -34,8 +34,8 @@ protected:
 		return ES::GetInstance();
 	}
 
-	FORCEINLINE bool ExecuteSubCommand(GraphsRenderersCommand &&Cmd, const bool RedrawIfDirty = false) const {
-		return GraphsRenderers->ExecuteCommand(MoveTemp(Cmd), RedrawIfDirty);
+	FORCEINLINE void ExecuteSubCommand(GraphsRenderersCommand &&Cmd, const bool RedrawIfDirty = false) const {
+		GraphsRenderers->ExecuteCommand(MoveTemp(Cmd), RedrawIfDirty);
 	}
 
 	FORCEINLINE AGraphRenderer *GetGraphRenderer(const EntityId GraphId) const {

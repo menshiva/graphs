@@ -37,7 +37,6 @@ VertexCommands::Create::Create(
 		*NewVertexId = VertexId;
 
 	GetGraphRenderer(GraphId)->MarkDirty({VERTEX, true, true});
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::Remove"), STAT_VertexCommands_Remove, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -66,11 +65,11 @@ VertexCommands::Remove::Remove(const EntityId VertexId) : GraphsRenderersCommand
 		const auto GraphId = Vertex.GraphId;
 		GetESMut().RemoveEntity<VertexEntity>(VertexId);
 		GetGraphRenderer(GraphId)->MarkDirty({VERTEX, true, true});
-		return true;
+		return;
 	}
 
 	// if we got here, then we are removing last vertex from graph
-	return ExecuteSubCommand(GraphCommands::Remove(Vertex.GraphId));
+	ExecuteSubCommand(GraphCommands::Remove(Vertex.GraphId));
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::Reserve"), STAT_VertexCommands_Reserve, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -81,8 +80,6 @@ VertexCommands::Reserve::Reserve(const EntityId GraphId, const uint32_t NewVerti
 	auto &Graph = GetESMut().GetEntityMut<GraphEntity>(GraphId);
 	Graph.VerticesCustomIdToEntityId.Reserve(Graph.VerticesCustomIdToEntityId.Num() + NewVerticesNum);
 	Graph.Vertices.Reserve(Graph.Vertices.Num() + NewVerticesNum);
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::SetHit"), STAT_VertexCommands_SetHit, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -94,11 +91,10 @@ VertexCommands::SetHit::SetHit(
 	auto &Vertex = GetESMut().GetEntityMut<VertexEntity>(VertexId);
 
 	if (Vertex.IsHit == IsHit)
-		return false;
+		return;
 	Vertex.IsHit = IsHit;
 
 	GetGraphRenderer(Vertex.GraphId)->MarkDirty({VERTEX, true, false});
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::SetOverrideColor"), STAT_VertexCommands_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -110,11 +106,10 @@ VertexCommands::SetOverrideColor::SetOverrideColor(
 	auto &Vertex = GetESMut().GetEntityMut<VertexEntity>(VertexId);
 
 	if (Vertex.OverrideColor == OverrideColor)
-		return false;
+		return;
 	Vertex.OverrideColor = OverrideColor;
 
 	GetGraphRenderer(Vertex.GraphId)->MarkDirty({VERTEX, true, false});
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::Move"), STAT_VertexCommands_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -131,8 +126,6 @@ VertexCommands::Move::Move(
 	GraphRenderer->MarkDirty({VERTEX, true, false});
 	if (Vertex.ConnectedEdges.Num() > 0)
 		GraphRenderer->MarkDirty({EDGE, true, false});
-
-	return true;
 }) {}
 
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::Consts::Serialize"), STAT_VertexCommands_Consts_Serialize, STATGROUP_GRAPHS_PERF_COMMANDS);
