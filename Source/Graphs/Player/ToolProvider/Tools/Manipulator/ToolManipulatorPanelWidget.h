@@ -3,7 +3,7 @@
 #include "Graphs/Player/ToolProvider/Tools/ToolWidget.h"
 #include "ToolManipulatorPanelWidget.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UToolManipulatorPanelWidget : public UToolWidget {
 	GENERATED_BODY()

@@ -20,7 +20,7 @@ public:
 	void SetToolPanel(UToolsPanelWidget *ParentToolsPanel, UToolWidget *Panel);
 
 	FORCEINLINE bool SupportsEntity(const EntityId &Id) const {
-		return SupportedEntitiesMask[Id.Signature];
+		return SupportedEntitiesMask[Id.GetSignature()];
 	}
 
 	virtual void OnAttach() {}
@@ -29,7 +29,7 @@ public:
 protected:
 	FORCEINLINE UVRControllerRight *GetVrRightController() const { return ToolProvider->GetVrPawn()->GetRightVrController(); }
 	FORCEINLINE const UToolProvider *GetToolProvider() const { return ToolProvider.Get(); }
-	FORCEINLINE AGraphsRenderer *GetGraphsRenderer() const { return ToolProvider->GetGraphsRenderer(); }
+	FORCEINLINE AGraphsRenderers *GetGraphsRenderers() const { return ToolProvider->GetGraphsRenderers(); }
 
 	FORCEINLINE EntityId GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
 

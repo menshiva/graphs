@@ -1,11 +1,10 @@
 ﻿#pragma once
 
-#include "../EntityStorage/EntityId.h"
 #include "RuntimeMeshProvider.h"
 #include "RendererBase.generated.h"
 
 struct RenderData {
-	TArray<EntityId> StorageIds;
+	TArray<uint32_t> StorageIds;
 	TArray<FVector> Positions;
 	TArray<FColor> Colors;
 };
@@ -15,6 +14,7 @@ class GRAPHS_API URendererBase : public URuntimeMeshProvider {
 	GENERATED_BODY()
 public:
 	URendererBase();
+	void SetInitRenderData(RenderData &&InRenderData);
 	virtual void Initialize() override;
 
 	virtual FBoxSphereBounds GetBounds() override;

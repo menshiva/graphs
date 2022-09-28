@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Graphs/Player/Pawn/VRPawn.h"
-#include "Graphs/GraphRenderer/GraphsRenderer.h"
+#include "Graphs/GraphsRenderers/GraphsRenderers.h"
 #include "ToolProvider.generated.h"
 
 UCLASS()
@@ -13,7 +13,7 @@ public:
 	FORCEINLINE void SetupPawn(AVRPawn *Pawn) { VrPawn = Pawn; }
 
 	FORCEINLINE AVRPawn *GetVrPawn() const { return VrPawn.Get(); }
-	FORCEINLINE AGraphsRenderer *GetGraphsRenderer() const { return GraphsRenderer.Get(); }
+	FORCEINLINE AGraphsRenderers *GetGraphsRenderers() const { return GraphsRenderers.Get(); }
 
 	FORCEINLINE EntityId GetHitEntityId() const { return HitEntityId; }
 	FORCEINLINE const FHitResult &GetHitResult() const { return HitResult; }
@@ -43,7 +43,7 @@ private:
 	}
 
 	TWeakObjectPtr<AVRPawn> VrPawn;
-	TWeakObjectPtr<AGraphsRenderer> GraphsRenderer;
+	TWeakObjectPtr<AGraphsRenderers> GraphsRenderers;
 
 	EntityId HitEntityId = EntityId::NONE();
 	FHitResult HitResult;

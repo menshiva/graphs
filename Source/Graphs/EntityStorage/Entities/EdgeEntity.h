@@ -10,5 +10,5 @@ struct EdgeEntity {
 	FColor OverrideColor;
 
 	// Serializable data
-	TStaticArray<EntityId, 2> VerticesIds;
+	TStaticArray<EntityId, 2> ConnectedVertices;
 };

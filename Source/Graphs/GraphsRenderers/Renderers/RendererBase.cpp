@@ -8,6 +8,11 @@ URendererBase::URendererBase() {
 	MeshMaterial = GraphMaterialAsset.Object;
 }
 
+void URendererBase::SetInitRenderData(RenderData &&InRenderData) {
+	Data = MoveTemp(InRenderData);
+	check(InRenderData.StorageIds.Num() == 0 && InRenderData.Positions.Num() == 0 && InRenderData.Colors.Num() == 0);
+}
+
 void URendererBase::Initialize() {
 	Super::Initialize();
 	SetupMaterialSlot(0, "Mesh Material", MeshMaterial);
@@ -21,8 +26,8 @@ void URendererBase::Initialize() {
 	Properties.bIsVisible = true;
 	Properties.MaterialSlot = 0;
 	Properties.UpdateFrequency = ERuntimeMeshUpdateFrequency::Average;
-	Properties.bUseHighPrecisionTangents = false; // we don't use it
-	Properties.bUseHighPrecisionTexCoords = false; // we don't use it
+	Properties.bUseHighPrecisionTangents = false;
+	Properties.bUseHighPrecisionTexCoords = false;
 	Properties.bWants32BitIndices = true;
 	Properties.bCastsShadow = false;
 	Properties.bForceOpaque = true;

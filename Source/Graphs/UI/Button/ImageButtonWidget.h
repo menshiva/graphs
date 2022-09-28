@@ -3,7 +3,7 @@
 #include "ButtonWidget.h"
 #include "ImageButtonWidget.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UImageButtonWidget : public UButtonWidget {
 	GENERATED_BODY()

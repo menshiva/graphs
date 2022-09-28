@@ -12,14 +12,9 @@ void UToolRemoverPanelWidget::NativePreConstruct() {
 	SetButtonsEnabled(false);
 }
 
-void UToolRemoverPanelWidget::NativeTick(const FGeometry& MyGeometry, const float InDeltaTime) {
-	Super::NativeTick(MyGeometry, InDeltaTime);
-	static bool IsLoadingPrev = IsLoading;
-	if (IsLoading != IsLoadingPrev) {
-		RemoverPanelSwitcher->SetActiveWidgetIndex(IsLoading);
-		SetCloseToolButtonVisible(!IsLoading);
-	}
-	IsLoadingPrev = IsLoading;
+void UToolRemoverPanelWidget::SetLoadingStatus(const bool Loading) const {
+	RemoverPanelSwitcher->SetActiveWidgetIndex(Loading);
+	SetCloseToolButtonVisible(!Loading);
 }
 
 void UToolRemoverPanelWidget::SetButtonsEnabled(const bool IsEnabled) const {

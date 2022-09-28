@@ -68,9 +68,12 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 	const size_t VerticesNum = MeshQuality * 2 * EdgesNum;
 	const size_t IndicesNum = MeshQuality * 2 * 3 * EdgesNum;
 
-	MeshData.Positions.Reserve(VerticesNum);
-	MeshData.Colors.Reserve(VerticesNum);
-	MeshData.Triangles.Reserve(IndicesNum);
+	TArray<FVector> Positions;
+	Positions.Reserve(VerticesNum);
+	TArray<FColor> Colors;
+	Colors.Reserve(VerticesNum);
+	TArray<int32> Indices;
+	Indices.Reserve(IndicesNum);
 
 	size_t SkippedEdges = 0;
 	for (size_t RdataI = 0; RdataI < EdgesNum; ++RdataI) {
@@ -88,25 +91,25 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 		const auto &FirstVertexColor = TmpData.Colors[RdataI * 2];
 		const auto &SecondVertexColor = TmpData.Colors[RdataI * 2 + 1];
 
-		const auto PrevVerticesNum = MeshData.Positions.Num();
-		GenerateEdgeFaces<MeshQuality>(FirstVertexPos, SecondVertexPos, MeshData.Positions);
+		const auto PrevVerticesNum = Positions.Num();
+		GenerateEdgeFaces<MeshQuality>(FirstVertexPos, SecondVertexPos, Positions);
 
 		for (uint32_t i = 0; i < MeshQuality; ++i) {
-			MeshData.Colors.Add(FirstVertexColor);
-			MeshData.Colors.Add(SecondVertexColor);
+			Colors.Add(FirstVertexColor);
+			Colors.Add(SecondVertexColor);
 		}
 
 		for (int32 i = 1; i < MeshQuality * 2; i += 2) {
-			MeshData.Triangles.AddTriangle(
+			Indices.Append({
 				PrevVerticesNum + i - 1,
 				PrevVerticesNum + i,
 				PrevVerticesNum + (i + 1) % (MeshQuality * 2)
-			);
-			MeshData.Triangles.AddTriangle(
+			});
+			Indices.Append({
 				PrevVerticesNum + (i + 1) % (MeshQuality * 2),
 				PrevVerticesNum + i,
 				PrevVerticesNum + (i + 2) % (MeshQuality * 2)
-			);
+			});
 		}
 	}
 
@@ -116,11 +119,15 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 	const size_t GeneratedVerticesNum = VerticesNum - SkippedVerticesNum;
 	const size_t GeneratedIndicesNum = IndicesNum - SkippedIndicesNum;
 
+	check(Positions.Num() == GeneratedVerticesNum);
+	check(Colors.Num() == GeneratedVerticesNum);
+	check(Indices.Num() == GeneratedIndicesNum);
+
+	MeshData.Positions.Append(Positions);
 	MeshData.Tangents.SetNum(GeneratedVerticesNum);
 	MeshData.TexCoords.SetNum(GeneratedVerticesNum);
-	check(MeshData.Positions.Num() == GeneratedVerticesNum);
-	check(MeshData.Colors.Num() == GeneratedVerticesNum);
-	check(MeshData.Triangles.Num() == GeneratedIndicesNum);
+	MeshData.Colors.Append(Colors);
+	MeshData.Triangles.Append(Indices);
 
 	return true;
 }
@@ -182,7 +189,7 @@ bool UEdgesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionData) 
 
 		CollisionData.CollisionSources.Emplace(
 			TrianglesStart, TrianglesEnd,
-			this, EntityId::Hash(EdgeId),
+			this, EdgeId,
 			ERuntimeMeshCollisionFaceSourceType::Collision
 		);
 	}

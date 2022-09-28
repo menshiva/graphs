@@ -4,7 +4,7 @@
 #include "Graphs/Player/Menu/Panels/ToolsPanelWidget.h"
 #include "ToolWidget.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 class GRAPHS_API UToolWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
