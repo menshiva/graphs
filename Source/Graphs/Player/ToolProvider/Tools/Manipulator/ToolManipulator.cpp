@@ -1,8 +1,8 @@
 ﻿#include "ToolManipulator.h"
 #include "ToolManipulatorPanelWidget.h"
-#include "Graphs/GraphsRenderers/Commands/EdgeCommands.h"
-#include "Graphs/GraphsRenderers/Commands/GraphCommands.h"
-#include "Graphs/GraphsRenderers/Commands/VertexCommands.h"
+#include "Graphs/EntityStorage/Commands/EdgeCommands.h"
+#include "Graphs/EntityStorage/Commands/GraphCommands.h"
+#include "Graphs/EntityStorage/Commands/VertexCommands.h"
 
 DECLARE_CYCLE_STAT(TEXT("UToolManipulator::TickTool"), STAT_UToolManipulator_TickTool, STATGROUP_GRAPHS_PERF);
 DECLARE_CYCLE_STAT(TEXT("UToolManipulator::OnRightTriggerAction"), STAT_UToolManipulator_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
@@ -45,14 +45,23 @@ void UToolManipulator::TickTool() {
 
 		if (!Delta.IsNearlyZero(0.1f)) {
 			if (ES::IsValid<VertexEntity>(ManipulationEntity)) {
-				GetGraphsRenderers()->ExecuteCommand(VertexCommands::Move(ManipulationEntity, Delta), true);
+				VertexCommands::Mutable::Move(ManipulationEntity, Delta);
+				GetGraphsRenderers()->MarkVertexDirty(ManipulationEntity, true, false, true);
+				GetGraphsRenderers()->RedrawChunkByVertexIfDirty(ManipulationEntity, true);
 			}
 			else if (ES::IsValid<EdgeEntity>(ManipulationEntity)) {
-				GetGraphsRenderers()->ExecuteCommand(EdgeCommands::Move(ManipulationEntity, Delta), true);
+				EdgeCommands::Mutable::Move(ManipulationEntity, Delta);
+				GetGraphsRenderers()->MarkEdgeDirty(ManipulationEntity, true, false, true);
+				GetGraphsRenderers()->RedrawChunkByEdgeIfDirty(ManipulationEntity, true);
 			}
 			else {
-				check(ES::IsValid<GraphEntity>(ManipulationEntity));
-				GetGraphsRenderers()->ExecuteCommand(GraphCommands::Move(ManipulationEntity, Delta), true);
+				GraphCommands::Mutable::Move(ManipulationEntity, Delta);
+				GetGraphsRenderers()->MarkGraphDirty(
+					ManipulationEntity,
+					true, false,
+					true, false
+				);
+				GetGraphsRenderers()->RedrawGraphChunksIfDirty(ManipulationEntity);
 			}
 		}
 
@@ -72,12 +81,11 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 			}
 			else {
 				check(ES::IsValid<GraphEntity>(ManipulationEntity));
-				GraphCenterPosition = GraphCommands::Consts::ComputeCenterPosition(ManipulationEntity);
+				GraphCenterPosition = GraphCommands::Const::ComputeCenterPosition(ManipulationEntity);
 				LastThumbstickXValue = 0.0f;
 			}
 
 			GetToolProvider()->ExecuteHitCommandBasedOnHitEntity(false);
-			GetGraphsRenderers()->RedrawIfDirty();
 
 			GetToolPanel<UToolManipulatorPanelWidget>()->SetTextActionEntity();
 			GetVrRightController()->SetToolStateEnabled(true);
@@ -88,13 +96,24 @@ bool UToolManipulator::OnRightTriggerAction(const bool IsPressed) {
 	else if (ManipulationEntity != EntityId::NONE()) {
 		GetToolProvider()->ExecuteHitCommandBasedOnHitEntity(true);
 
-		// TODO
-		auto GraphId = ManipulationEntity;
-		if (ES::IsValid<VertexEntity>(ManipulationEntity))
-			GraphId = ES::GetEntity<VertexEntity>(ManipulationEntity).GraphId;
-		else if (ES::IsValid<EdgeEntity>(ManipulationEntity))
-			GraphId = ES::GetEntity<EdgeEntity>(ManipulationEntity).GraphId;
-		GetGraphsRenderers()->ExecuteCommand(GraphCommands::UpdateCollisions(GraphId), true);
+		// update collisions
+		if (ES::IsValid<VertexEntity>(ManipulationEntity)) {
+			GetGraphsRenderers()->MarkVertexDirty(ManipulationEntity, false, true, true);
+			GetGraphsRenderers()->RedrawChunkByVertexIfDirty(ManipulationEntity, true);
+		}
+		else if (ES::IsValid<EdgeEntity>(ManipulationEntity)) {
+			GetGraphsRenderers()->MarkEdgeDirty(ManipulationEntity, false, true, true);
+			GetGraphsRenderers()->RedrawChunkByEdgeIfDirty(ManipulationEntity, true);
+		}
+		else {
+			check(ES::IsValid<GraphEntity>(ManipulationEntity));
+			GetGraphsRenderers()->MarkGraphDirty(
+				ManipulationEntity,
+				false, true,
+				false, true
+			);
+			GetGraphsRenderers()->RedrawGraphChunksIfDirty(ManipulationEntity);
+		}
 
 		ManipulationEntity = EntityId::NONE();
 
@@ -123,11 +142,17 @@ bool UToolManipulator::OnRightThumbstickX(const float Value) {
 	if (Value != LastThumbstickXValue || Value > 0.0f) {
 		if (Mode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
 			check(ES::IsValid<GraphEntity>(ManipulationEntity));
-			GetGraphsRenderers()->ExecuteCommand(GraphCommands::Rotate(
+			GraphCommands::Mutable::Rotate(
 				ManipulationEntity,
 				GraphCenterPosition,
 				Value * DefaultRotationSpeed
-			), true);
+			);
+			GetGraphsRenderers()->MarkGraphDirty(
+				ManipulationEntity,
+				true, false,
+				true, false
+			);
+			GetGraphsRenderers()->RedrawGraphChunksIfDirty(ManipulationEntity);
 			return true;
 		}
 	}

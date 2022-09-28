@@ -1,6 +1,6 @@
 ﻿#include "ToolImporter.h"
 #include "ToolImporterPanelWidget.h"
-#include "Graphs/GraphsRenderers/Commands/GraphCommands.h"
+#include "Graphs/EntityStorage/Commands/GraphCommands.h"
 
 DECLARE_CYCLE_STAT(TEXT("UToolImporter::ImportGraphFromFile"), STAT_UToolImporter_ImportGraphFromFile, STATGROUP_GRAPHS_PERF);
 
@@ -24,33 +24,17 @@ void UToolImporter::OnImportClick(const FString &FilePath) const {
 	AsyncTask(
 		ENamedThreads::AnyBackgroundHiPriTask,
 		[GraphRenderers, &FilePath, ImporterToolPanel] {
-			GraphImportData ImportData;
 			FString ErrorMessage;
+			const auto GraphId = ImportGraphFromFile(FilePath, ErrorMessage);
 
-			if (!ImportGraphFromFile(FilePath, ImportData, ErrorMessage)) {
-				Utils::DoOnGameThread([ImporterToolPanel, ErrorMessage(MoveTemp(ErrorMessage))] {
+			Utils::DoOnGameThread([=, ErrorMessage(MoveTemp(ErrorMessage))] {
+				if (GraphId != EntityId::NONE()) {
+					ImporterToolPanel->ShowSuccessPanel();
+					GraphRenderers->ConstructGraphChunks(GraphId);
+				}
+				else {
 					ImporterToolPanel->ShowErrorPanel("Error while importing graph:\n\n" + ErrorMessage);
-				});
-				return;
-			}
-
-			Utils::DoOnGameThread([GraphRenderers, ImportData(MoveTemp(ImportData)), ImporterToolPanel] () mutable {
-				EntityId NewGraphId = EntityId::NONE();
-				GraphRenderers->ExecuteCommand(GraphCommands::Create(&NewGraphId, ImportData.Colorful));
-				check(NewGraphId != EntityId::NONE());
-				GraphRenderers->AddGraphRenderer(NewGraphId);
-
-				AsyncTask(
-					ENamedThreads::AnyBackgroundHiPriTask,
-					[=, ImportData(MoveTemp(ImportData))] {
-						GraphRenderers->ExecuteCommand(GraphCommands::FillFromImportData(NewGraphId, ImportData));
-
-						Utils::DoOnGameThread([GraphRenderers, ImporterToolPanel] {
-							GraphRenderers->RedrawIfDirty();
-							ImporterToolPanel->ShowSuccessPanel();
-						});
-					}
-				);
+				}
 			});
 		}
 	);
@@ -72,11 +56,7 @@ void UToolImporter::RefreshFileList() const {
 	ImporterToolPanel->SetInputFiles(ImportFiles);
 }
 
-bool UToolImporter::ImportGraphFromFile(
-	const FString &FilePath,
-	GraphImportData &ImportData,
-	FString &ErrorMessage
-) {
+EntityId UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolImporter_ImportGraphFromFile);
 
 	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
@@ -84,14 +64,14 @@ bool UToolImporter::ImportGraphFromFile(
 
 	if (!FileManager.FileExists(*FilePath)) {
 		ErrorMessage = "File does not exist.";
-		return false;
+		return EntityId::NONE();
 	}
 
 	FString JsonStr;
 	if (!FFileHelper::LoadFileToString(JsonStr, &FileManager, *FilePath)) {
 		ErrorMessage = "Failed to read from file.";
-		return false;
+		return EntityId::NONE();
 	}
 
-	return GraphCommands::Consts::Deserialize(JsonStr, ImportData, ErrorMessage);
+	return GraphCommands::Mutable::Deserialize(JsonStr, ErrorMessage);
 }

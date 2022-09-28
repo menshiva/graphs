@@ -1,6 +1,6 @@
 ﻿#pragma once
 
-#include "Renderers/GraphRenderer.h"
+#include "Renderers/GraphChunkRenderer.h"
 #include "GraphsRenderers.generated.h"
 
 UCLASS()
@@ -8,42 +8,32 @@ class GRAPHS_API AGraphsRenderers final : public AActor {
 	GENERATED_BODY()
 public:
 	AGraphsRenderers();
-
 	EntityId GetEntityIdFromHitResult(const FHitResult &HitResult) const;
-	void ExecuteCommand(GraphsRenderersCommand &&Cmd, bool RedrawIfDirty = false) const;
-	void RedrawIfDirty() const;
 
-	void AddGraphRenderer(EntityId GraphId);
-	void RemoveGraphRenderer(EntityId GraphId);
+	void ConstructGraphChunks(EntityId GraphId);
+	// TODO: void AddVertexToChunk(EntityId VertexId);
+	// TODO: void AddEdgeToChunk(EntityId EdgeId);
+
+	void RemoveGraphChunks(EntityId GraphId);
+	void RemoveVertexFromChunk(EntityId VertexId);
+	void RemoveEdgeFromChunk(EntityId EdgeId);
+
+	void MarkGraphDirty(
+		EntityId GraphId,
+		bool MarkVertexMesh, bool MarkVertexCollision,
+		bool MarkEdgeMesh, bool MarkEdgeCollision
+	);
+	void MarkVertexDirty(EntityId VertexId, bool MarkMesh, bool MarkCollision, bool MarkConnectedEdges);
+	void MarkEdgeDirty(EntityId EdgeId, bool MarkMesh, bool MarkCollision, bool MarkConnectedVertices);
+
+	void RedrawGraphChunksIfDirty(EntityId GraphId);
+	void RedrawChunkByVertexIfDirty(EntityId VertexId, bool RedrawConnectedEdges);
+	void RedrawChunkByEdgeIfDirty(EntityId EdgeId, bool RedrawConnectedVertices);
 private:
 	UPROPERTY()
-	TSet<AGraphRenderer*> Renderers;
+	TSet<AGraphChunkRenderer*> AllChunks;
 
-	TSparseArray<TWeakObjectPtr<AGraphRenderer>> IdsRenderersMappings;
-
-	friend GraphsRenderersCommand;
-};
-
-using CommandImpl = TFunction<void()>;
-class GraphsRenderersCommand {
-public:
-	explicit GraphsRenderersCommand(CommandImpl &&Impl) : Implementation(MoveTemp(Impl)) {}
-	virtual ~GraphsRenderersCommand() = default;
-protected:
-	FORCEINLINE static ES &GetESMut() {
-		return ES::GetInstance();
-	}
-
-	FORCEINLINE void ExecuteSubCommand(GraphsRenderersCommand &&Cmd, const bool RedrawIfDirty = false) const {
-		GraphsRenderers->ExecuteCommand(MoveTemp(Cmd), RedrawIfDirty);
-	}
-
-	FORCEINLINE AGraphRenderer *GetGraphRenderer(const EntityId GraphId) const {
-		return GraphsRenderers->IdsRenderersMappings[GraphId.GetIndex()].Get();
-	}
-private:
-	TWeakObjectPtr<const AGraphsRenderers> GraphsRenderers;
-	CommandImpl Implementation;
-
-	friend AGraphsRenderers;
+	TSparseArray<TSet<AGraphChunkRenderer*>> GraphsChunks;
+	TSparseArray<AGraphChunkRenderer*> VerticesChunksLookup;
+	TSparseArray<AGraphChunkRenderer*> EdgesChunksLookup;
 };

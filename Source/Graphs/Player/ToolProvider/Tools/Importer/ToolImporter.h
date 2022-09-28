@@ -13,5 +13,5 @@ public:
 	void OnImportClick(const FString &FilePath) const;
 
 	void RefreshFileList() const;
-	static bool ImportGraphFromFile(const FString &FilePath, GraphImportData &ImportData, FString &ErrorMessage);
+	static EntityId ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage);
 };

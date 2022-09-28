@@ -15,9 +15,3 @@ struct VertexEntity {
 	FVector Position;
 	FColor Color;
 };
-
-struct VertexImportData {
-	uint32_t CustomId;
-	FVector Position;
-	FColor Color;
-};

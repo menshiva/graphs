@@ -1,7 +1,7 @@
 #include "ToolProvider.h"
-#include "Graphs/GraphsRenderers/Commands/EdgeCommands.h"
-#include "Graphs/GraphsRenderers/Commands/GraphCommands.h"
-#include "Graphs/GraphsRenderers/Commands/VertexCommands.h"
+#include "Graphs/EntityStorage/Commands/EdgeCommands.h"
+#include "Graphs/EntityStorage/Commands/GraphCommands.h"
+#include "Graphs/EntityStorage/Commands/VertexCommands.h"
 #include "Kismet/GameplayStatics.h"
 #include "Tools/Importer/ToolImporter.h"
 #include "Tools/Exporter/ToolExporter.h"
@@ -42,8 +42,6 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 			HitEntityId = NewHitEntityId;
 			ExecuteHitCommandBasedOnHitEntity(true);
 		}
-
-		GetGraphsRenderers()->RedrawIfDirty();
 	}
 }
 
@@ -91,12 +89,25 @@ void UToolProvider::SetActiveTool(UTool *NewTool) {
 }
 
 void UToolProvider::ExecuteHitCommandBasedOnHitEntity(const bool IsHit) const {
-	if (ES::IsValid<VertexEntity>(HitEntityId))
-		GetGraphsRenderers()->ExecuteCommand(VertexCommands::SetHit(HitEntityId, IsHit));
-	else if (ES::IsValid<EdgeEntity>(HitEntityId))
-		GetGraphsRenderers()->ExecuteCommand(EdgeCommands::SetHit(HitEntityId, IsHit));
-	else
-		GetGraphsRenderers()->ExecuteCommand(GraphCommands::SetHit(HitEntityId, IsHit));
+	if (ES::IsValid<VertexEntity>(HitEntityId)) {
+		VertexCommands::Mutable::SetHit(HitEntityId, IsHit);
+		GetGraphsRenderers()->MarkVertexDirty(HitEntityId, true, false, false);
+		GetGraphsRenderers()->RedrawChunkByVertexIfDirty(HitEntityId, false);
+	}
+	else if (ES::IsValid<EdgeEntity>(HitEntityId)) {
+		EdgeCommands::Mutable::SetHit(HitEntityId, IsHit);
+		GetGraphsRenderers()->MarkEdgeDirty(HitEntityId, true, false, false);
+		GetGraphsRenderers()->RedrawChunkByEdgeIfDirty(HitEntityId, false);
+	}
+	else {
+		GraphCommands::Mutable::SetHit(HitEntityId, IsHit);
+		GetGraphsRenderers()->MarkGraphDirty(
+			HitEntityId,
+			true, false,
+			true, false
+		);
+		GetGraphsRenderers()->RedrawGraphChunksIfDirty(HitEntityId);
+	}
 }
 
 void UToolProvider::BeginPlay() {
@@ -109,7 +120,9 @@ void UToolProvider::BeginPlay() {
 
 	// TODO: only for test
 	{
-		GetGraphsRenderers()->ExecuteCommand(GraphCommands::RemoveAll());
+		ES::Clear<VertexEntity>();
+		ES::Clear<EdgeEntity>();
+		ES::Clear<GraphEntity>();
 
 		/*const auto ImporterTool = Cast<UToolImporter>(Tools[0]);
 		FString ErrorMessage;
@@ -140,29 +153,24 @@ void UToolProvider::BeginPlay() {
 			{6, 4},
 		};
 
-		EntityId GraphId = EntityId::NONE();
-		GetGraphsRenderers()->ExecuteCommand(GraphCommands::Create(&GraphId, true));
+		const EntityId GraphId = GraphCommands::Mutable::Create(true);
 		const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
-		GetGraphsRenderers()->AddGraphRenderer(GraphId);
-
-		GetGraphsRenderers()->ExecuteCommand(VertexCommands::Reserve(GraphId, Positions.Num()));
-		GetGraphsRenderers()->ExecuteCommand(EdgeCommands::Reserve(GraphId, Connections.Num()));
 
 		for (size_t i = 0; i < Positions.Num(); ++i) {
-			GetGraphsRenderers()->ExecuteCommand(VertexCommands::Create(
-				GraphId, nullptr,
+			VertexCommands::Mutable::Create(
+				GraphId,
 				i,
 				Positions[i],
 				FLinearColor::MakeRandomColor().ToFColor(false)
-			));
+			);
 		}
 
 		for (size_t i = 0; i < Connections.Num(); ++i) {
-			GetGraphsRenderers()->ExecuteCommand(EdgeCommands::Create(
-				GraphId, nullptr,
-				Graph.Vertices[Connections[i].first],
-				Graph.Vertices[Connections[i].second]
-			));
+			EdgeCommands::Mutable::Create(
+				GraphId,
+				Graph.Vertices[FSetElementId::FromInteger(Connections[i].first)],
+				Graph.Vertices[FSetElementId::FromInteger(Connections[i].second)]
+			);
 		}
 
 		check(ES::IsValid<GraphEntity>(GraphId));
@@ -183,6 +191,6 @@ void UToolProvider::BeginPlay() {
 			}
 		}
 
-		GetGraphsRenderers()->RedrawIfDirty();
+		GetGraphsRenderers()->ConstructGraphChunks(GraphId);
 	}
 }

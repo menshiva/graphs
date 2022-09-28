@@ -1,6 +1,6 @@
 ﻿#include "ToolExporter.h"
 #include "ToolExporterPanelWidget.h"
-#include "Graphs/GraphsRenderers/Commands/GraphCommands.h"
+#include "Graphs/EntityStorage/Commands/GraphCommands.h"
 
 DECLARE_CYCLE_STAT(TEXT("UToolExporter::OnRightTriggerAction"), STAT_UToolExporter_OnRightTriggerAction, STATGROUP_GRAPHS_PERF);
 DECLARE_CYCLE_STAT(TEXT("UToolExporter::ExportGraph"), STAT_UToolExporter_ExportGraph, STATGROUP_GRAPHS_PERF);
@@ -115,7 +115,7 @@ bool UToolExporter::ExportGraph(
 	rapidjson::PrettyWriter Writer(SBuffer);
 	Writer.SetIndent('\t', 1);
 
-	GraphCommands::Consts::Serialize(GraphId, Writer);
+	GraphCommands::Const::Serialize(GraphId, Writer);
 
 	if (!OutputFileHandler->Write(reinterpret_cast<const uint8*>(SBuffer.GetString()), SBuffer.GetSize())) {
 		OutputFileHandler.Reset();

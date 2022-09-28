@@ -30,36 +30,36 @@ public:
 	}
 
 	template <typename Entity>
-	FORCEINLINE void Clear() {
-		GetStorage<Entity>().Empty();
-	}
-
-	template <typename Entity>
-	void Reserve(size_t NumElementsToAdd) {
-		auto &Storage = GetStorage<Entity>();
+	static void Reserve(size_t NumElementsToAdd) {
+		auto &Storage = GetInstance().GetStorage<Entity>();
 		Storage.Reserve(Storage.Num() + NumElementsToAdd);
 	}
 
 	template <typename Entity>
-	FORCEINLINE Entity &GetEntityMut(const EntityId Id) {
-		check(Id != EntityId::NONE());
-		check(Entity::Signature == Id.GetSignature());
-		return GetStorage<Entity>()[Id.GetIndex()];
+	FORCEINLINE static void Clear() {
+		GetInstance().GetStorage<Entity>().Empty();
 	}
 
 	template <typename Entity>
-	FORCEINLINE EntityId NewEntity() {
+	FORCEINLINE static Entity &GetEntityMut(const EntityId Id) {
+		check(Id != EntityId::NONE());
+		check(Entity::Signature == Id.GetSignature());
+		return GetInstance().GetStorage<Entity>()[Id.GetIndex()];
+	}
+
+	template <typename Entity>
+	FORCEINLINE static EntityId NewEntity() {
 		return {
-			static_cast<uint32_t>(GetStorage<Entity>().Emplace()),
+			static_cast<uint32_t>(GetInstance().GetStorage<Entity>().Emplace()),
 			Entity::Signature
 		};
 	}
 
 	template <typename Entity>
-	FORCEINLINE void RemoveEntity(const EntityId Id) {
+	FORCEINLINE static void RemoveEntity(const EntityId Id) {
 		check(Id != EntityId::NONE());
 		check(Entity::Signature == Id.GetSignature());
-		GetStorage<Entity>().RemoveAt(Id.GetIndex());
+		GetInstance().GetStorage<Entity>().RemoveAt(Id.GetIndex());
 	}
 private:
 	static ES &GetInstance() {
@@ -94,6 +94,4 @@ private:
 	StorageImpl<VertexEntity> Vertices;
 	StorageImpl<EdgeEntity> Edges;
 	StorageImpl<GraphEntity> Graphs;
-
-	friend class GraphsRenderersCommand;
 };

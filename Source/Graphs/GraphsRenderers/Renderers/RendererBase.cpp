@@ -8,6 +8,11 @@ URendererBase::URendererBase() {
 	MeshMaterial = GraphMaterialAsset.Object;
 }
 
+void URendererBase::SetInitRenderData(RenderData &&InRenderData) {
+	Data = MoveTemp(InRenderData);
+	check(InRenderData.StorageIds.Num() == 0 && InRenderData.Positions.Num() == 0 && InRenderData.Colors.Num() == 0);
+}
+
 void URendererBase::Initialize() {
 	Super::Initialize();
 	SetupMaterialSlot(0, "Mesh Material", MeshMaterial);

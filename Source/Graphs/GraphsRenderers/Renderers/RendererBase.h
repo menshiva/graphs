@@ -14,6 +14,7 @@ class GRAPHS_API URendererBase : public URuntimeMeshProvider {
 	GENERATED_BODY()
 public:
 	URendererBase();
+	void SetInitRenderData(RenderData &&InRenderData);
 	virtual void Initialize() override;
 
 	virtual FBoxSphereBounds GetBounds() override;

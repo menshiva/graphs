@@ -12,7 +12,3 @@ struct EdgeEntity {
 	// Serializable data
 	TStaticArray<EntityId, 2> ConnectedVertices;
 };
-
-struct EdgeImportData {
-	TStaticArray<uint32_t, 2> ConnectedVertexCustomIds;
-};
