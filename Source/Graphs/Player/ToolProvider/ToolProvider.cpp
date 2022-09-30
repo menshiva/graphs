@@ -124,14 +124,6 @@ void UToolProvider::BeginPlay() {
 		ES::Clear<EdgeEntity>();
 		ES::Clear<GraphEntity>();
 
-		/*const auto ImporterTool = Cast<UToolImporter>(Tools[0]);
-		FString ErrorMessage;
-		const bool Result = ImporterTool->ImportGraphFromFile(
-			FPaths::LaunchDir() + FileConsts::ExportDirName + "Test_8_Vertices_8_Edges.json",
-			ErrorMessage
-		);
-		check(Result && ErrorMessage.Len() == 0);*/
-
 		const TArray<FVector> Positions = {
 			{437.109619f, 225.096985f, 50.0f},
 			{748.974915f, 345.263428f, 260.0f},

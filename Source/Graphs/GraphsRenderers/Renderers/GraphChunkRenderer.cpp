@@ -18,6 +18,7 @@ AGraphChunkRenderer::AGraphChunkRenderer(const FObjectInitializer &ObjectInitial
     VerticesRuntimeMeshComponent->CanCharacterStepUpOn = ECB_No;
     VerticesRuntimeMeshComponent->SetCollisionProfileName("Graph");
     VerticesRuntimeMeshComponent->SetCastShadow(false);
+	RootComponent = VerticesRuntimeMeshComponent;
 
     EdgesRuntimeMeshComponent = ObjectInitializer.CreateDefaultSubobject<URuntimeMeshComponent>(
     	this,
@@ -30,6 +31,7 @@ AGraphChunkRenderer::AGraphChunkRenderer(const FObjectInitializer &ObjectInitial
     EdgesRuntimeMeshComponent->CanCharacterStepUpOn = ECB_No;
     EdgesRuntimeMeshComponent->SetCollisionProfileName("Graph");
     EdgesRuntimeMeshComponent->SetCastShadow(false);
+	EdgesRuntimeMeshComponent->SetupAttachment(RootComponent);
 }
 
 void AGraphChunkRenderer::Initialize(const EntityId InGraphId) {

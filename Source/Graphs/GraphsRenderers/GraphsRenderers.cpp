@@ -78,7 +78,7 @@ void AGraphsRenderers::ConstructGraphChunks(const EntityId GraphId) {
 		GraphChunk->Initialize(GraphId);
 
 	// since creating runtime mesh components (chunks) marks LODs and collisions implicitly,
-	// we don't need to mark them ourselves again
+	// we don't need to mark them
 }
 
 DECLARE_CYCLE_STAT(TEXT("AGraphsRenderers::RemoveGraphChunks"), STAT_AGraphsRenderers_RemoveGraphChunks, GRAPHS_PERF_GRAPHS_RENDERERS);
@@ -109,7 +109,7 @@ void AGraphsRenderers::RemoveGraphChunks(const EntityId GraphId) {
 	GraphsChunks.RemoveAt(GraphId.GetIndex());
 
 	// since removing runtime mesh components (chunks) clears LODs and collisions implicitly,
-	// we don't need to clear them ourselves again
+	// we don't need to clear them
 }
 
 DECLARE_CYCLE_STAT(TEXT("AGraphsRenderers::RemoveVertexFromChunk"), STAT_AGraphsRenderers_RemoveVertexFromChunk, GRAPHS_PERF_GRAPHS_RENDERERS);
@@ -133,13 +133,18 @@ void AGraphsRenderers::RemoveVertexFromChunk(const EntityId VertexId) {
 	else {
 		// chunk is empty -> remove it
 		check(GraphsChunks.IsValidIndex(Vertex.GraphId.GetIndex()));
-		auto CheckNum = GraphsChunks[Vertex.GraphId.GetIndex()].Remove(VertexChunk);
+		auto &GraphChunks = GraphsChunks[Vertex.GraphId.GetIndex()];
+		auto CheckNum = GraphChunks.Remove(VertexChunk);
 		check(CheckNum == 1);
 		CheckNum = AllChunks.Remove(VertexChunk);
 		check(CheckNum == 1);
 		VertexChunk->Destroy();
+
+		if (GraphChunks.Num() == 0)
+			GraphsChunks.RemoveAt(Vertex.GraphId.GetIndex());
+
 		// since removing runtime mesh component (chunk) clears LODs and collisions implicitly,
-		// we don't need to clear them ourselves again
+		// we don't need to clear it
 	}
 
 	// remove connected edges from chunks
@@ -167,14 +172,18 @@ void AGraphsRenderers::RemoveEdgeFromChunk(const EntityId EdgeId) {
 		// chunk is empty -> remove it
 		const auto &Edge = ES::GetEntity<EdgeEntity>(EdgeId);
 		check(GraphsChunks.IsValidIndex(Edge.GraphId.GetIndex()));
-		auto CheckNum = GraphsChunks[Edge.GraphId.GetIndex()].Remove(EdgeChunk);
+		auto &GraphChunks = GraphsChunks[Edge.GraphId.GetIndex()];
+		auto CheckNum = GraphChunks.Remove(EdgeChunk);
 		check(CheckNum == 1);
 		CheckNum = AllChunks.Remove(EdgeChunk);
 		check(CheckNum == 1);
 		EdgeChunk->Destroy();
 
+		if (GraphChunks.Num() == 0)
+			GraphsChunks.RemoveAt(Edge.GraphId.GetIndex());
+
 		// since removing runtime mesh component (chunk) clears LODs and collisions implicitly,
-		// we don't need to clear them ourselves again
+		// we don't need to clear it
 	}
 }
 
