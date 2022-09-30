@@ -8,7 +8,7 @@ UCLASS(Abstract, meta=(DisableNativeTick))
 class GRAPHS_API UToolManipulatorPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
-	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
 
 	void SetTextSelectEntity() const;
 	void SetTextActionEntity() const;
