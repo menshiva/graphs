@@ -9,7 +9,7 @@ struct RenderData {
 	TArray<FColor> Colors;
 };
 
-UCLASS()
+UCLASS(Abstract)
 class GRAPHS_API URendererBase : public URuntimeMeshProvider {
 	GENERATED_BODY()
 public:
@@ -24,9 +24,6 @@ public:
 	virtual bool HasCollisionMesh() override { return true; }
 
 	virtual bool IsThreadSafe() override { return true; }
-private:
-	UPROPERTY()
-	UMaterial *MeshMaterial;
 protected:
 	static void GenerateEmptyCollision(FRuntimeMeshCollisionData &CollisionData);
 
