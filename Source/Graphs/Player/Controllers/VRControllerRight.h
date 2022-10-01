@@ -72,5 +72,5 @@ private:
 
 	SelectionMode Selection = SelectionMode::VERTEX_EDGE;
 
-	constexpr static float MeshInteractionLaserMaxDistance = 7500.0f;
+	constexpr static float MeshInteractionLaserMaxDistance = 15000.0f;
 };
