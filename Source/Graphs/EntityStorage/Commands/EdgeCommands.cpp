@@ -26,10 +26,13 @@ EntityId EdgeCommands::Mutable::Create(const EntityId GraphId, const EntityId Fr
 	check(!AlreadyInSet);
 
 	// add to connected vertices
-	ES::GetEntityMut<VertexEntity>(FromVertexId).ConnectedEdges.Add(EdgeId, &AlreadyInSet);
+	auto &FirstVertex = ES::GetEntityMut<VertexEntity>(FromVertexId);
+	auto &SecondVertex = ES::GetEntityMut<VertexEntity>(ToVertexId);
+	FirstVertex.ConnectedEdges.Add(EdgeId, &AlreadyInSet);
 	check(!AlreadyInSet);
-	ES::GetEntityMut<VertexEntity>(ToVertexId).ConnectedEdges.Add(EdgeId, &AlreadyInSet);
+	SecondVertex.ConnectedEdges.Add(EdgeId, &AlreadyInSet);
 	check(!AlreadyInSet);
+	check(FirstVertex.GraphId == SecondVertex.GraphId);
 
 	return EdgeId;
 }

@@ -246,3 +246,13 @@ FVector GraphCommands::Const::ComputeCenterPosition(const EntityId GraphId) {
 
 	return Center;
 }
+
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Const::GenerateUniqueVertexUserId"), STAT_GraphCommands_Const_GenerateUniqueVertexUserId, STATGROUP_GRAPHS_PERF_COMMANDS);
+uint32_t GraphCommands::Const::GenerateUniqueVertexUserId(const EntityId GraphId) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Const_GenerateUniqueVertexUserId);
+	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
+	uint32_t UserId = FMath::Rand();
+	while (Graph.VerticesCustomIdToEntityId.Contains(UserId))
+		UserId = FMath::Rand();
+	return UserId;
+}

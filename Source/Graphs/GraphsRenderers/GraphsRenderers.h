@@ -11,8 +11,8 @@ public:
 	EntityId GetEntityIdFromHitResult(const FHitResult &HitResult) const;
 
 	void ConstructGraphChunks(EntityId GraphId);
-	// TODO: void AddVertexToChunk(EntityId VertexId);
-	// TODO: void AddEdgeToChunk(EntityId EdgeId);
+	void AddVertexToChunk(EntityId VertexId);
+	void AddEdgeToChunk(EntityId EdgeId);
 
 	void RemoveGraphChunks(EntityId GraphId);
 	void RemoveVertexFromChunk(EntityId VertexId);
@@ -30,6 +30,8 @@ public:
 	void RedrawChunkByVertexIfDirty(EntityId VertexId, bool RedrawConnectedEdges);
 	void RedrawChunkByEdgeIfDirty(EntityId EdgeId, bool RedrawConnectedVertices);
 private:
+	AGraphChunkRenderer *SpawnChunkActor(TSet<AGraphChunkRenderer*> &GraphChunks);
+
 	UPROPERTY()
 	TSet<AGraphChunkRenderer*> AllChunks;
 

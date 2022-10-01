@@ -32,16 +32,8 @@ void AGraphsRenderers::ConstructGraphChunks(const EntityId GraphId) {
 	check(NewGraphChunksIdx == GraphId.GetIndex());
 	auto &NewGraphChunks = GraphsChunks[NewGraphChunksIdx];
 	NewGraphChunks.Reserve(NewChunksNum);
-	for (size_t i = 0; i < NewChunksNum; ++i) {
-		FActorSpawnParameters Params;
-		Params.Owner = this;
-		const auto NewChunk = GetWorld()->SpawnActor<AGraphChunkRenderer>(Params);
-		bool AlreadyInSet = false;
-		AllChunks.Add(NewChunk, &AlreadyInSet);
-		check(!AlreadyInSet);
-		NewGraphChunks.Add(NewChunk, &AlreadyInSet);
-		check(!AlreadyInSet);
-	}
+	for (size_t i = 0; i < NewChunksNum; ++i)
+		SpawnChunkActor(NewGraphChunks);
 
 	// fill new chunks with vertices and edges from graph
 	VerticesChunksLookup.Reserve(VerticesChunksLookup.Num() + Graph.Vertices.Num());
@@ -77,8 +69,70 @@ void AGraphsRenderers::ConstructGraphChunks(const EntityId GraphId) {
 	for (const auto GraphChunk : NewGraphChunks)
 		GraphChunk->Initialize(GraphId);
 
-	// since creating runtime mesh components (chunks) marks LODs and collisions implicitly,
-	// we don't need to mark them
+	// since creation of runtime mesh components (chunks) marks LODs and collisions implicitly,
+	// we don't need to mark them explicitly
+}
+
+DECLARE_CYCLE_STAT(TEXT("AGraphsRenderers::AddVertexToChunk"), STAT_AGraphsRenderers_AddVertexToChunk, GRAPHS_PERF_GRAPHS_RENDERERS);
+void AGraphsRenderers::AddVertexToChunk(const EntityId VertexId) {
+	check(IsInGameThread());
+	check(!VerticesChunksLookup.IsValidIndex(VertexId.GetIndex()));
+
+	const auto &Vertex = ES::GetEntity<VertexEntity>(VertexId);
+
+	// try to insert a new vertex into existed chunk
+	check(GraphsChunks.IsValidIndex(Vertex.GraphId.GetIndex()));
+	auto &GraphChunks = GraphsChunks[Vertex.GraphId.GetIndex()];
+	for (const auto GraphChunk : GraphChunks) {
+		if (GraphChunk->AddVertex(VertexId)) {
+			const auto LookupIdx = VerticesChunksLookup.Add(GraphChunk);
+			check(VertexId.GetIndex() == LookupIdx);
+			GraphChunk->MarkAllVerticesDirty(true, true);
+			return;
+		}
+	}
+
+	// chunks are all filled for a new vertex -> create a new chunk
+	const auto NewChunk = SpawnChunkActor(GraphChunks);
+	const bool Res = NewChunk->AddVertex(VertexId);
+	check(Res);
+	const auto LookupIdx = VerticesChunksLookup.Add(NewChunk);
+	check(VertexId.GetIndex() == LookupIdx);
+	NewChunk->Initialize(Vertex.GraphId);
+
+	// since creation of runtime mesh component (chunk) marks LODs and collisions implicitly,
+	// we don't need to mark it explicitly
+}
+
+DECLARE_CYCLE_STAT(TEXT("AGraphsRenderers::AddEdgeToChunk"), STAT_AGraphsRenderers_AddEdgeToChunk, GRAPHS_PERF_GRAPHS_RENDERERS);
+void AGraphsRenderers::AddEdgeToChunk(const EntityId EdgeId) {
+	check(IsInGameThread());
+	check(!EdgesChunksLookup.IsValidIndex(EdgeId.GetIndex()));
+
+	const auto &Edge = ES::GetEntity<EdgeEntity>(EdgeId);
+
+	// try to insert a new vertex into existed chunk
+	check(GraphsChunks.IsValidIndex(Edge.GraphId.GetIndex()));
+	auto &GraphChunks = GraphsChunks[Edge.GraphId.GetIndex()];
+	for (const auto GraphChunk : GraphChunks) {
+		if (GraphChunk->AddEdge(EdgeId)) {
+			const auto LookupIdx = EdgesChunksLookup.Add(GraphChunk);
+			check(EdgeId.GetIndex() == LookupIdx);
+			GraphChunk->MarkAllEdgesDirty(true, true);
+			return;
+		}
+	}
+
+	// chunks are all filled for a new edge -> create a new chunk
+	const auto NewChunk = SpawnChunkActor(GraphChunks);
+	const bool Res = NewChunk->AddEdge(EdgeId);
+	check(Res);
+	const auto LookupIdx = EdgesChunksLookup.Add(NewChunk);
+	check(EdgeId.GetIndex() == LookupIdx);
+	NewChunk->Initialize(Edge.GraphId);
+
+	// since creation of runtime mesh component (chunk) marks LODs and collisions implicitly,
+	// we don't need to mark it explicitly
 }
 
 DECLARE_CYCLE_STAT(TEXT("AGraphsRenderers::RemoveGraphChunks"), STAT_AGraphsRenderers_RemoveGraphChunks, GRAPHS_PERF_GRAPHS_RENDERERS);
@@ -108,8 +162,8 @@ void AGraphsRenderers::RemoveGraphChunks(const EntityId GraphId) {
 	}
 	GraphsChunks.RemoveAt(GraphId.GetIndex());
 
-	// since removing runtime mesh components (chunks) clears LODs and collisions implicitly,
-	// we don't need to clear them
+	// since removal of runtime mesh components (chunks) clears LODs and collisions implicitly,
+	// we don't need to clear them explicitly
 }
 
 DECLARE_CYCLE_STAT(TEXT("AGraphsRenderers::RemoveVertexFromChunk"), STAT_AGraphsRenderers_RemoveVertexFromChunk, GRAPHS_PERF_GRAPHS_RENDERERS);
@@ -143,8 +197,8 @@ void AGraphsRenderers::RemoveVertexFromChunk(const EntityId VertexId) {
 		if (GraphChunks.Num() == 0)
 			GraphsChunks.RemoveAt(Vertex.GraphId.GetIndex());
 
-		// since removing runtime mesh component (chunk) clears LODs and collisions implicitly,
-		// we don't need to clear it
+		// since removal of runtime mesh component (chunk) clears LODs and collisions implicitly,
+		// we don't need to clear it explicitly
 	}
 
 	// remove connected edges from chunks
@@ -182,8 +236,8 @@ void AGraphsRenderers::RemoveEdgeFromChunk(const EntityId EdgeId) {
 		if (GraphChunks.Num() == 0)
 			GraphsChunks.RemoveAt(Edge.GraphId.GetIndex());
 
-		// since removing runtime mesh component (chunk) clears LODs and collisions implicitly,
-		// we don't need to clear it
+		// since removal of runtime mesh component (chunk) clears LODs and collisions implicitly,
+		// we don't need to clear it explicitly
 	}
 }
 
@@ -279,4 +333,16 @@ void AGraphsRenderers::RedrawChunkByEdgeIfDirty(const EntityId EdgeId, const boo
 		for (const auto VertexId : Edge.ConnectedVertices)
 			RedrawChunkByVertexIfDirty(VertexId, true);
 	}
+}
+
+AGraphChunkRenderer *AGraphsRenderers::SpawnChunkActor(TSet<AGraphChunkRenderer*> &GraphChunks) {
+	FActorSpawnParameters Params;
+	Params.Owner = this;
+	const auto NewChunk = GetWorld()->SpawnActor<AGraphChunkRenderer>(Params);
+	bool AlreadyInSet = false;
+	AllChunks.Add(NewChunk, &AlreadyInSet);
+	check(!AlreadyInSet);
+	GraphChunks.Add(NewChunk, &AlreadyInSet);
+	check(!AlreadyInSet);
+	return NewChunk;
 }

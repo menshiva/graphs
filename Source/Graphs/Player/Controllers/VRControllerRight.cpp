@@ -10,6 +10,7 @@ UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Right) {
 	SetLaserColor(ColorConsts::BlueColor.ReinterpretAsLinear());
+	SetLaserMinLength(UVerticesRenderer::MeshScale);
 	SetLaserLength(MeshInteractionLaserMaxDistance);
 	UVRControllerBase::SetLaserActive(true);
 

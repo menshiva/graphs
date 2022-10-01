@@ -36,5 +36,7 @@ namespace VertexCommands {
 
 	namespace Const {
 		void Serialize(EntityId VertexId, rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer);
+
+		bool AreConnected(EntityId FirstVertexId, EntityId SecondVertexId);
 	}
 }

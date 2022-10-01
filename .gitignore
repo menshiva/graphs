@@ -20,6 +20,7 @@
 # They're tracked by git-lfs, don't forget to track other
 # files if adding them here.
 !/Content/**/*.uasset
+!/Content/**/*.png
 !/Content/**/*.umap
 
 # OS/platform generated files.

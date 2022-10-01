@@ -29,7 +29,7 @@ void UToolsPanelWidget::NativeConstruct() {
 	ToolProvider = Pawn->GetToolProvider();
 
 	for (size_t i = 0; i < ToolProvider->GetTools().Num(); ++i) {
-		constexpr static size_t MaxToolsInRow = 2;
+		constexpr static size_t MaxToolsInRow = 3;
 
 		const auto Tool = ToolProvider->GetTools()[i];
 		const auto ToolBtn = CreateWidget<UToolButtonWidget>(

@@ -3,6 +3,7 @@
 #include "Graphs/EntityStorage/Commands/GraphCommands.h"
 #include "Graphs/EntityStorage/Commands/VertexCommands.h"
 #include "Kismet/GameplayStatics.h"
+#include "Tools/Creator/ToolCreator.h"
 #include "Tools/Importer/ToolImporter.h"
 #include "Tools/Exporter/ToolExporter.h"
 #include "Tools/Manipulator/ToolManipulator.h"
@@ -10,11 +11,12 @@
 
 DECLARE_CYCLE_STAT(TEXT("UToolProvider::Tick"), STAT_UToolProvider_Tick, STATGROUP_GRAPHS_PERF);
 
-UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UActorComponent(ObjectInitializer) {
+UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : USceneComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
 
 	RegisterTool<UToolImporter>(ObjectInitializer, "Tool Importer");
 	RegisterTool<UToolExporter>(ObjectInitializer, "Tool Exporter");
+	RegisterTool<UToolCreator>(ObjectInitializer, "Tool Creator");
 	RegisterTool<UToolManipulator>(ObjectInitializer, "Tool Manipulator");
 	RegisterTool<UToolRemover>(ObjectInitializer, "Tool Remover");
 }
@@ -145,7 +147,7 @@ void UToolProvider::BeginPlay() {
 			{6, 4},
 		};
 
-		const EntityId GraphId = GraphCommands::Mutable::Create(true);
+		const auto GraphId = GraphCommands::Mutable::Create(true);
 		const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 		for (size_t i = 0; i < Positions.Num(); ++i) {

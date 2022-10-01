@@ -13,9 +13,7 @@ UToolManipulator::UToolManipulator() : UTool(
 	"Manipulate",
 	TEXT("/Game/Graphs/UI/Icons/Move"),
 	TEXT("/Game/Graphs/UI/Blueprints/Tools/ToolManipulatorPanel")
-) {
-	SetMode(Mode);
-}
+) {}
 
 void UToolManipulator::SetMode(const ManipulationMode NewMode) {
 	Mode = NewMode;

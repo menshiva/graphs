@@ -148,3 +148,25 @@ void VertexCommands::Const::Serialize(const EntityId VertexId, rapidjson::Pretty
 
 	Writer.EndObject();
 }
+
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Const::AreConnected"), STAT_VertexCommands_Const_AreConnected, STATGROUP_GRAPHS_PERF_COMMANDS);
+bool VertexCommands::Const::AreConnected(const EntityId FirstVertexId, const EntityId SecondVertexId) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Const_AreConnected);
+	check(FirstVertexId != SecondVertexId);
+
+	const auto &FirstVertex = ES::GetEntity<VertexEntity>(FirstVertexId);
+	const auto &SecondVertex = ES::GetEntity<VertexEntity>(SecondVertexId);
+
+	if (FirstVertex.GraphId != SecondVertex.GraphId)
+		return false;
+
+	for (const auto EdgeId : FirstVertex.ConnectedEdges) {
+		const auto &Edge = ES::GetEntity<EdgeEntity>(EdgeId);
+		if (Edge.ConnectedVertices[0] == SecondVertexId || Edge.ConnectedVertices[1] == SecondVertexId) {
+			check(SecondVertex.ConnectedEdges.Contains(EdgeId));
+			return true;
+		}
+	}
+
+	return false;
+}

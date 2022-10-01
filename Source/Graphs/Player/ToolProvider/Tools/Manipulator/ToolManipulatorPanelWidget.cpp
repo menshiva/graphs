@@ -17,8 +17,8 @@ void UToolManipulatorPanelWidget::NativeConstruct() {
 			SetTextSelectEntity();
 		});
 		ModeSelector->SetOptions({
-			"Mode: Move",
-			"Mode: Rotate"
+			"Move",
+			"Rotate"
 		});
 		ModeSelector->SetSelectedOptionIndex(0, true);
 	}

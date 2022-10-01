@@ -26,5 +26,7 @@ namespace GraphCommands {
 		void Serialize(EntityId GraphId, rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer);
 
 		FVector ComputeCenterPosition(EntityId GraphId);
+
+		uint32_t GenerateUniqueVertexUserId(EntityId GraphId);
 	}
 }

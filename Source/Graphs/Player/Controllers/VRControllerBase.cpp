@@ -72,6 +72,10 @@ void UVRControllerBase::SetLaserLengthDelta(const float Delta) {
 	LaserLength = FMath::Clamp(LaserLength + Delta * LaserLengthDeltaSpeed, LaserMinLength, LaserMaxLength);
 }
 
+void UVRControllerBase::SetLaserColor(const FLinearColor &Color) const {
+	Laser->SetColorParameter("User.CustomColor", Color);
+}
+
 void UVRControllerBase::ForceUpdateLaserTransform() {
 	LaserStartPosition = MotionControllerAim->GetComponentLocation();
 	LaserDirection = MotionControllerAim->GetForwardVector();
@@ -120,10 +124,6 @@ void UVRControllerBase::BindAxis(
 	FInputAxisBinding AB(ActionName);
 	AB.AxisDelegate.GetDelegateForManualSet().BindLambda(Func);
 	PlayerInputComponent->AxisBindings.Push(MoveTemp(AB));
-}
-
-void UVRControllerBase::SetLaserNiagaraColor(const FLinearColor &Color) const {
-	Laser->SetColorParameter("User.CustomColor", Color);
 }
 
 void UVRControllerBase::SetLaserNiagaraStartEnd(UNiagaraComponent *aLaser, const FVector &Start, const FVector &End) {

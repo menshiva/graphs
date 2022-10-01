@@ -8,7 +8,8 @@ DECLARE_CYCLE_STAT(TEXT("UVRControllerLeft::Tick"), STAT_UVRControllerLeft_Tick,
 UVRControllerLeft::UVRControllerLeft(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Left) {
-	SetLaserNiagaraColor(ColorConsts::GreenColor.ReinterpretAsLinear());
+	SetLaserColor(ColorConsts::GreenColor.ReinterpretAsLinear());
+	SetLaserMinLength(15.0f);
 	SetLaserLength(TeleportLaserDefaultLength);
 	UVRControllerBase::SetLaserActive(false);
 

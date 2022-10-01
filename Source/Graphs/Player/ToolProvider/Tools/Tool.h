@@ -5,7 +5,7 @@
 #include "Tool.generated.h"
 
 UCLASS(Abstract)
-class GRAPHS_API UTool : public UActorComponent, public RightControllerInputInterface {
+class GRAPHS_API UTool : public USceneComponent, public RightControllerInputInterface {
 	GENERATED_BODY()
 public:
 	UTool();
@@ -28,7 +28,7 @@ public:
 	virtual void TickTool() {}
 protected:
 	FORCEINLINE UVRControllerRight *GetVrRightController() const { return ToolProvider->GetVrPawn()->GetRightVrController(); }
-	FORCEINLINE const UToolProvider *GetToolProvider() const { return ToolProvider.Get(); }
+	FORCEINLINE UToolProvider *GetToolProvider() const { return ToolProvider.Get(); }
 	FORCEINLINE AGraphsRenderers *GetGraphsRenderers() const { return ToolProvider->GetGraphsRenderers(); }
 
 	FORCEINLINE EntityId GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
