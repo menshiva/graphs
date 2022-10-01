@@ -9,9 +9,9 @@ DECLARE_CYCLE_STAT(TEXT("UVRControllerRight::Tick"), STAT_UVRControllerRight_Tic
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Right) {
-	SetLaserNiagaraColor(ColorConsts::BlueColor.ReinterpretAsLinear());
+	SetLaserColor(ColorConsts::BlueColor.ReinterpretAsLinear());
 	SetLaserLength(MeshInteractionLaserMaxDistance);
-	UVRControllerBase::SetLaserActive(LaserVisibleFlag);
+	UVRControllerBase::SetLaserActive(true);
 
 	UiInteractor = ObjectInitializer.CreateDefaultSubobject<UWidgetInteractionComponent>(this, "UiInteractor");
 	UiInteractor->PointerIndex = 1;
@@ -76,7 +76,7 @@ void UVRControllerRight::TickComponent(
 		if (const auto Menu = Cast<UMenuWidgetComponent>(UiHitResult.Component.Get()))
 			Menu->SetCursorLocation(UiHitResult.ImpactPoint);
 	}
-	else if (State == ControllerState::NONE && IsLaserActive()) {
+	else if (CastEnabled && State == ControllerState::NONE && IsLaserActive()) {
 		FHitResult NewHitResult;
 		FCollisionQueryParams QueryParams;
 		QueryParams.bReturnFaceIndex = true;
@@ -220,6 +220,8 @@ void UVRControllerRight::BeginPlay() {
 		"Selection Mode: Graph"
 	});
 	SelectorWidget->SetSelectedOptionIndex(0, true);
+
+	UVRControllerBase::SetLaserActive(LaserVisibleFlag);
 }
 
 void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent) {

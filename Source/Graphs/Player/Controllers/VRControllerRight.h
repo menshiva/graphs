@@ -45,9 +45,11 @@ public:
 	virtual bool OnRightThumbstickXAction(float Value) override;
 
 	virtual void SetLaserActive(bool IsActive) override;
+	FORCEINLINE void SetCastEnabled(const bool Enable) { CastEnabled = Enable; }
 
 	void SetUiInteractionEnabled(bool Enabled);
 
+	FORCEINLINE bool IsInUiState() const { return State == ControllerState::UI; }
 	FORCEINLINE bool IsInToolState() const { return State == ControllerState::TOOL; }
 	void SetToolStateEnabled(bool Enabled);
 
@@ -67,8 +69,8 @@ private:
 	ControllerState State = ControllerState::NONE;
 
 	bool TriggerPressed = false;
-
 	bool LaserVisibleFlag = false;
+	bool CastEnabled = true;
 
 	SelectionMode Selection = SelectionMode::VERTEX_EDGE;
 
