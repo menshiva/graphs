@@ -22,5 +22,5 @@ private:
 	UPROPERTY()
 	UMaterial *MeshMaterial;
 
-	static inline uint8 MeshAlpha = roundf(255.0f * 0.75f);
+	static inline uint8 MeshAlpha = roundf(255.0f * 0.7f);
 };
