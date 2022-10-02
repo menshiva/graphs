@@ -43,32 +43,32 @@ UVRControllerLeft::UVRControllerLeft(
 }
 
 void UVRControllerLeft::SetupInputBindings(UInputComponent *Pic) {
-	BindAction(Pic, "LeftTrigger", IE_Pressed, [this] {
+	Utils::BindAction(Pic, "LeftTrigger", IE_Pressed, [this] {
 		if (IsLaserActive()) {
 			GetVrPawn()->Teleport(GetLaserEndPosition());
 			PlayActionHapticEffect();
 		}
 	});
 
-	BindAction(Pic, "LeftGrip", IE_Pressed, [this] {
+	Utils::BindAction(Pic, "LeftGrip", IE_Pressed, [this] {
 		SetLaserActive(true);
 		TeleportRing->Activate();
 		TeleportRing->SetVisibility(true);
 		TeleportPreviewMesh->SetVisibility(true);
 		PlayActionHapticEffect();
 	});
-	BindAction(Pic, "LeftGrip", IE_Released, [this] {
+	Utils::BindAction(Pic, "LeftGrip", IE_Released, [this] {
 		SetLaserActive(false);
 		TeleportRing->Deactivate();
 		TeleportRing->SetVisibility(false);
 		TeleportPreviewMesh->SetVisibility(false);
 	});
 
-	BindAxis(Pic, "LeftThumbstickAxisY", [this] (const float Value) {
+	Utils::BindAxis(Pic, "LeftThumbstickAxisY", [this] (const float Value) {
 		if (IsLaserActive())
 			SetLaserLengthDelta(Value);
 	});
-	BindAxis(Pic, "LeftThumbstickAxisX", [this] (const float Value) {
+	Utils::BindAxis(Pic, "LeftThumbstickAxisX", [this] (const float Value) {
 		static bool isClicked = false;
 		if (fabsf(Value) >= 0.7f) {
 			if (!isClicked) {

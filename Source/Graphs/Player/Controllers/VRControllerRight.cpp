@@ -38,28 +38,28 @@ UVRControllerRight::UVRControllerRight(
 }
 
 void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
-	BindAction(Pic, "RightTrigger", IE_Pressed, [this] {
+	Utils::BindAction(Pic, "RightTrigger", IE_Pressed, [this] {
 		if (OnRightTriggerAction(true))
 			PlayActionHapticEffect();
 	});
-	BindAction(Pic, "RightTrigger", IE_Released, [this] {
+	Utils::BindAction(Pic, "RightTrigger", IE_Released, [this] {
 		OnRightTriggerAction(false);
 	});
-	BindAction(Pic, "RightGrip", IE_Pressed, [this] {
+	Utils::BindAction(Pic, "RightGrip", IE_Pressed, [this] {
 		if (State != ControllerState::TOOL) {
 			SelectionWidgetComponent->SetVisibility(true);
 			PlayActionHapticEffect();
 		}
 	});
-	BindAction(Pic, "RightGrip", IE_Released, [this] {
+	Utils::BindAction(Pic, "RightGrip", IE_Released, [this] {
 		if (SelectionWidgetComponent->IsVisible())
 			SelectionWidgetComponent->SetVisibility(false);
 	});
 
-	BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
+	Utils::BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
 		OnRightThumbstickY(Value);
 	});
-	BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
+	Utils::BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
 		OnRightThumbstickX(Value);
 	});
 }

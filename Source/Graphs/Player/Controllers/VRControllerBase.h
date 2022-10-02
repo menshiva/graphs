@@ -18,7 +18,7 @@ public:
 	FORCEINLINE UMotionControllerComponent *GetMotionController() const { return MotionController; }
 
 	FORCEINLINE class AVRPawn *GetVrPawn() const { return VrPawn.Get(); }
-	void SetupVrPawn(AVRPawn *Pawn);
+	FORCEINLINE void SetupVrPawn(AVRPawn *Pawn) { VrPawn = Pawn; }
 
 	bool IsLaserActive() const;
 	virtual void SetLaserActive(bool IsActive);
@@ -26,8 +26,15 @@ public:
 	FORCEINLINE const FVector &GetLaserStartPosition() const { return LaserStartPosition; }
 	FORCEINLINE FVector GetLaserEndPosition() const { return LaserStartPosition + LaserLength * LaserDirection; }
 	FORCEINLINE float GetLaserLength() const { return LaserLength; }
-	void SetLaserLength(float NewLength);
-	void SetLaserLengthDelta(float Delta);
+
+	FORCEINLINE void SetLaserLength(const float NewLength) {
+		LaserLength = FMath::Clamp(NewLength, LaserMinLength, LaserMaxLength);
+	}
+
+	FORCEINLINE void SetLaserLengthDelta(const float Delta) {
+		LaserLength = FMath::Clamp(LaserLength + Delta * LaserLengthDeltaSpeed, LaserMinLength, LaserMaxLength);
+	}
+
 	void SetLaserColor(const FLinearColor &Color) const;
 	void ForceUpdateLaserTransform();
 
@@ -38,18 +45,6 @@ protected:
 	virtual void BeginPlay() override;
 
 	FORCEINLINE UMotionControllerComponent *GetMotionControllerAim() const { return MotionControllerAim; }
-
-	static void BindAction(
-		UInputComponent *PlayerInputComponent,
-		const FName &ActionName,
-		EInputEvent InputEvent,
-		TFunction<void()> &&Func
-	);
-	static void BindAxis(
-		UInputComponent *PlayerInputComponent,
-		const FName &ActionName,
-		TFunction<void(float)> &&Func
-	);
 
 	FORCEINLINE void SetLaserMinLength(const float NewMinLength) { LaserMinLength = NewMinLength; }
 	FORCEINLINE const FVector &GetLaserDirection() const { return LaserDirection; }

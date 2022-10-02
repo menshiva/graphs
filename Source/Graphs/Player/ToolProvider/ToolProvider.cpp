@@ -149,7 +149,7 @@ void UToolProvider::BeginPlay() {
 			{6, 4},
 		};
 
-		const auto GraphId = GraphCommands::Mutable::Create(true);
+		const auto GraphId = GraphCommands::Mutable::Create(false);
 		const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 		for (size_t i = 0; i < Positions.Num(); ++i) {

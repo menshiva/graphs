@@ -27,6 +27,27 @@ namespace Utils {
 		}
 		else InFunction();
 	}
+
+	static void BindAction(
+		UInputComponent *PlayerInputComponent,
+		const char *ActionName,
+		const EInputEvent InputEvent,
+		TFunction<void()> &&Func
+	) {
+		FInputActionBinding AB(ActionName, InputEvent);
+		AB.ActionDelegate.GetDelegateForManualSet().BindLambda(Func);
+		PlayerInputComponent->AddActionBinding(MoveTemp(AB));
+	}
+
+	static void BindAxis(
+		UInputComponent *PlayerInputComponent,
+		const char *ActionName,
+		TFunction<void(float)> &&Func
+	) {
+		FInputAxisBinding AB(ActionName);
+		AB.AxisDelegate.GetDelegateForManualSet().BindLambda(Func);
+		PlayerInputComponent->AxisBindings.Push(MoveTemp(AB));
+	}
 }
 
 namespace FileConsts {

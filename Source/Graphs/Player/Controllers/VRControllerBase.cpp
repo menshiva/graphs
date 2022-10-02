@@ -43,10 +43,6 @@ UVRControllerBase::UVRControllerBase(
 	HapticEffectController = HapticEffectAsset.Object;
 }
 
-void UVRControllerBase::SetupVrPawn(AVRPawn *Pawn) {
-	VrPawn = Pawn;
-}
-
 bool UVRControllerBase::IsLaserActive() const {
 	return Laser->IsVisible();
 }
@@ -62,14 +58,6 @@ void UVRControllerBase::SetLaserActive(const bool IsActive) {
 		Laser->Deactivate();
 		Laser->SetVisibility(false);
 	}
-}
-
-void UVRControllerBase::SetLaserLength(const float NewLength) {
-	LaserLength = FMath::Clamp(NewLength, LaserMinLength, LaserMaxLength);
-}
-
-void UVRControllerBase::SetLaserLengthDelta(const float Delta) {
-	LaserLength = FMath::Clamp(LaserLength + Delta * LaserLengthDeltaSpeed, LaserMinLength, LaserMaxLength);
 }
 
 void UVRControllerBase::SetLaserColor(const FLinearColor &Color) const {
@@ -103,27 +91,6 @@ void UVRControllerBase::TickComponent(
 void UVRControllerBase::BeginPlay() {
 	Super::BeginPlay();
 	ForceUpdateLaserTransform();
-}
-
-void UVRControllerBase::BindAction(
-	UInputComponent *PlayerInputComponent,
-	const FName& ActionName,
-	const EInputEvent InputEvent,
-	TFunction<void()> &&Func
-) {
-	FInputActionBinding AB(ActionName, InputEvent);
-	AB.ActionDelegate.GetDelegateForManualSet().BindLambda(Func);
-	PlayerInputComponent->AddActionBinding(MoveTemp(AB));
-}
-
-void UVRControllerBase::BindAxis(
-	UInputComponent *PlayerInputComponent,
-	const FName &ActionName,
-	TFunction<void(float)> &&Func
-) {
-	FInputAxisBinding AB(ActionName);
-	AB.AxisDelegate.GetDelegateForManualSet().BindLambda(Func);
-	PlayerInputComponent->AxisBindings.Push(MoveTemp(AB));
 }
 
 void UVRControllerBase::SetLaserNiagaraStartEnd(UNiagaraComponent *aLaser, const FVector &Start, const FVector &End) {

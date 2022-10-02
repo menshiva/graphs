@@ -26,7 +26,7 @@ public:
 
 	void Teleport(const FVector &Location);
 
-	void QuitGame();
+	void QuitGame() const;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 	virtual bool OnRightThumbstickY(float Value) override;
