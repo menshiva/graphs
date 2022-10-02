@@ -3,7 +3,7 @@
 #include "Blueprint/UserWidget.h"
 #include "ExitPanelWidget.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UExitPanelWidget : public UUserWidget {
 	GENERATED_BODY()

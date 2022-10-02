@@ -3,7 +3,7 @@
 #include "Blueprint/UserWidget.h"
 #include "SettingsPanelWidget.generated.h"
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API USettingsPanelWidget : public UUserWidget {
 	GENERATED_BODY()
