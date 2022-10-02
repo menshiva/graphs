@@ -21,14 +21,12 @@ public:
 	void ToggleCameraFadeAnimation();
 	FORCEINLINE bool IsCameraFadeAnimationEnabled() const { return CameraFadeAnimationEnabled; }
 
-	void ToggleMenu() const;
-
 	// -1.0f for left rotation, +1.0f for right rotation
 	void Rotate(float Value);
 
 	void Teleport(const FVector &Location);
 
-	void QuitGame() const;
+	void QuitGame();
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 	virtual bool OnRightThumbstickY(float Value) override;

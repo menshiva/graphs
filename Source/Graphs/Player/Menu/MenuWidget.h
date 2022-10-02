@@ -10,12 +10,7 @@ class GRAPHS_API UMenuWidget : public UUserWidget {
 public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
-
-	void PlayShowHideAnimation(EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd);
 protected:
-	UPROPERTY(BlueprintReadOnly, Transient, meta=(BindWidgetAnim))
-	UWidgetAnimation *ShowHideAnimation;
-
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UBorder *Background;
 

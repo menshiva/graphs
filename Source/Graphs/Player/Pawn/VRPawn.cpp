@@ -32,6 +32,8 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
+	PlayerInputComponent->BindAction("Esc", IE_Pressed, this, &AVRPawn::QuitGame);
+
 	LeftVrController->SetupInputBindings(PlayerInputComponent);
 	RightVrController->SetupInputBindings(PlayerInputComponent);
 }
@@ -39,13 +41,6 @@ void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
 void AVRPawn::ToggleCameraFadeAnimation() {
 	CameraFadeAnimationEnabled = !CameraFadeAnimationEnabled;
 	SaveConfig();
-}
-
-void AVRPawn::ToggleMenu() const {
-	bool isMenuShown = Menu->IsVisible();
-	isMenuShown = !isMenuShown;
-	RightVrController->SetUiInteractionEnabled(isMenuShown);
-	Menu->SetVisble(isMenuShown);
 }
 
 void AVRPawn::Rotate(const float Value) {
@@ -64,7 +59,8 @@ void AVRPawn::Teleport(const FVector &Location) {
 	});
 }
 
-void AVRPawn::QuitGame() const {
+// ReSharper disable once CppMemberFunctionMayBeConst
+void AVRPawn::QuitGame() {
 	FTimerHandle FadeInHandle;
 	FadeCamera(1.0f);
 	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&] {

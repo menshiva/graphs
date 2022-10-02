@@ -43,11 +43,6 @@ UVRControllerLeft::UVRControllerLeft(
 }
 
 void UVRControllerLeft::SetupInputBindings(UInputComponent *Pic) {
-	BindAction(Pic, "LeftMenu", IE_Pressed, [this] {
-		GetVrPawn()->ToggleMenu();
-		PlayActionHapticEffect();
-	});
-
 	BindAction(Pic, "LeftTrigger", IE_Pressed, [this] {
 		if (IsLaserActive()) {
 			GetVrPawn()->Teleport(GetLaserEndPosition());

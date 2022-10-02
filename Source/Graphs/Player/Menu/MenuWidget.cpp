@@ -1,5 +1,4 @@
 #include "MenuWidget.h"
-#include "Animation/UMGSequencePlayer.h"
 #include "Components/Border.h"
 #include "Components/VerticalBox.h"
 #include "Components/WidgetSwitcher.h"
@@ -22,17 +21,6 @@ void UMenuWidget::NativeConstruct() {
 		MenuButton->SetBackgroundColor(MenuButtonUnselectedColor);
 	}
 	SetActivePanel(0);
-}
-
-void UMenuWidget::PlayShowHideAnimation(const EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd) {
-	PlayAnimation(ShowHideAnimation, 0, 1, Mode);
-	FTimerHandle AnimHandle;
-	GetOwningPlayerPawn()->GetWorldTimerManager().SetTimer(
-		AnimHandle,
-		FTimerDelegate::CreateLambda(OnEnd),
-		ShowHideAnimation->GetEndTime(),
-		false
-	);
 }
 
 void UMenuWidget::SetActivePanel(const size_t Index) const {

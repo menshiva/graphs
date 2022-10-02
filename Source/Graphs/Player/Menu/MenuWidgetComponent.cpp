@@ -30,21 +30,3 @@ UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectIniti
 	Cursor->SetVisibility(false);
 	Cursor->SetupAttachment(this);
 }
-
-void UMenuWidgetComponent::SetVisble(const bool Visible) {
-	const auto menuWidget = Cast<UMenuWidget>(GetWidget());
-	if (Visible) {
-		menuWidget->SetRenderOpacity(0.0f);
-		SetVisibility(Visible);
-		menuWidget->PlayShowHideAnimation(EUMGSequencePlayMode::Forward, [] {});
-	}
-	else {
-		menuWidget->PlayShowHideAnimation(
-			EUMGSequencePlayMode::Reverse,
-			[&] {
-				Cursor->SetVisibility(false);
-				SetVisibility(false);
-			}
-		);
-	}
-}
