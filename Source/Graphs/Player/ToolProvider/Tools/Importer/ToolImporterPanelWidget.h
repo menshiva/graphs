@@ -11,7 +11,7 @@ public:
 	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
-	void SetInputFiles(TArray<FString> &InputFilesPaths) const;
+	void SetInputFiles(TArray<FString> &&InputFilesPaths) const;
 
 	void ShowImportList() const;
 	void ShowSuccessPanel() const;

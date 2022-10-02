@@ -52,8 +52,7 @@ void UToolImporter::RefreshFileList() const {
 
 	TArray<FString> ImportFiles;
 	FileManager.FindFiles(ImportFiles, *ExportDirPath, TEXT(".json"));
-
-	ImporterToolPanel->SetInputFiles(ImportFiles);
+	ImporterToolPanel->SetInputFiles(MoveTemp(ImportFiles));
 }
 
 EntityId UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage) {

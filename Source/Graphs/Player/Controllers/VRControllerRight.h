@@ -54,6 +54,8 @@ public:
 	void SetToolStateEnabled(bool Enabled);
 
 	FORCEINLINE SelectionMode GetSelectionMode() const { return Selection; }
+
+	FORCEINLINE class UWidgetInteractionComponent *GetUiInteractor() const { return UiInteractor; }
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -61,7 +63,7 @@ private:
 	void OnUiHover(class UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);
 
 	UPROPERTY()
-	class UWidgetInteractionComponent *UiInteractor;
+	UWidgetInteractionComponent *UiInteractor;
 
 	UPROPERTY()
 	UWidgetComponent *SelectionWidgetComponent;

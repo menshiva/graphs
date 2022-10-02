@@ -17,23 +17,23 @@ void UMenuWidget::NativePreConstruct() {
 	SetActivePanel(0);
 }
 
-void UMenuWidget::ShowKeyboard(TFunction<void(TCHAR)> &&OnKey, TFunction<void()> &&OnDel) {
-	Keyboard->SetOnKeyEvent(MoveTemp(OnKey));
-	Keyboard->SetOnDelEvent(MoveTemp(OnDel));
-
-	KeyboardVisible = true;
-	Keyboard->SetVisibility(ESlateVisibility::Visible);
-	Keyboard->PlayShowHideAnimation(EUMGSequencePlayMode::Forward, [] {});
-}
-
-void UMenuWidget::HideKeyboard() {
-	Keyboard->PlayShowHideAnimation(
-		EUMGSequencePlayMode::Reverse,
-		[&] {
-			Keyboard->SetVisibility(ESlateVisibility::Collapsed);
-			KeyboardVisible = false;
-		}
-	);
+void UMenuWidget::SetKeyboardVisibility(const bool Visible) {
+	if (Visible == KeyboardVisible)
+		return;
+	if (Visible) {
+		KeyboardVisible = true;
+		Keyboard->SetVisibility(ESlateVisibility::Visible);
+		Keyboard->PlayShowHideAnimation(EUMGSequencePlayMode::Forward, [] {});
+	}
+	else {
+		Keyboard->PlayShowHideAnimation(
+			EUMGSequencePlayMode::Reverse,
+			[&] {
+				Keyboard->SetVisibility(ESlateVisibility::Collapsed);
+				KeyboardVisible = false;
+			}
+		);
+	}
 }
 
 void UMenuWidget::SetActivePanel(const size_t Index) const {

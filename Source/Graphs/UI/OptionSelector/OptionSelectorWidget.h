@@ -10,13 +10,15 @@ class GRAPHS_API UOptionSelectorWidget : public UUserWidget {
 public:
 	virtual void NativePreConstruct() override;
 
-	void SetOptions(std::initializer_list<FString> NewOptions);
+	void SetOptions(std::initializer_list<FString> &&NewOptions);
 	void SetSelectedOptionIndex(int32 NewIdx, bool TriggerEvent);
 	void SelectPreviousOption(bool TriggerEvent);
 	void SelectNextOption(bool TriggerEvent);
 	void SetButtonsEnabled(bool Enabled);
 
-	void SetOnSelectedOptionChangedEvent(TFunction<void(int32)> &&Event);
+	FORCEINLINE void SetOnSelectedOptionChangedEvent(TFunction<void(int32)> &&Event) {
+		OnSelectedOptionChanged = MoveTemp(Event);
+	}
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild))
 	TArray<FString> Options;

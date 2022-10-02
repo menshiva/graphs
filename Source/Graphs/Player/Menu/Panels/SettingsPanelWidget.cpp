@@ -18,7 +18,7 @@ void USettingsPanelWidget::NativePreConstruct() {
 void USettingsPanelWidget::NativeConstruct() {
 	Super::NativePreConstruct();
 
-	Pawn = Cast<AVRPawn>(GetOwningPlayerPawn());
+	Pawn = GetOwningPlayerPawn<AVRPawn>();
 	Gamemode = Cast<AVRGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 
 	if (CameraFadeAnimationTick)

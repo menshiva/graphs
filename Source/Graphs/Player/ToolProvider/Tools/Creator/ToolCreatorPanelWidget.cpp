@@ -84,7 +84,7 @@ void UToolCreatorPanelWidget::Update() const {
 			case CreationMode::VERTEX: {
 				if (!CreatorTool->IsGraphSelected()) {
 					CancelButton->SetVisibility(ESlateVisibility::Collapsed);
-					CreatorText->SetText(FText::FromString("Select a graph"));
+					CreatorText->SetText(FText::FromString("Select graph"));
 				}
 				else {
 					CancelButton->SetVisibility(ESlateVisibility::Visible);

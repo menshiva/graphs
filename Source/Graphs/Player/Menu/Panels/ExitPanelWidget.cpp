@@ -4,9 +4,6 @@
 
 void UExitPanelWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
-	if (ExitButton) {
-		ExitButton->SetOnClickEvent([&] {
-			Cast<AVRPawn>(GetOwningPlayerPawn())->QuitGame();
-		});
-	}
+	if (ExitButton)
+		ExitButton->SetOnClickEvent([&] { GetOwningPlayerPawn<AVRPawn>()->QuitGame(); });
 }

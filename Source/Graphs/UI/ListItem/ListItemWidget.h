@@ -13,7 +13,7 @@ public:
 	FString TextData;
 };
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UListItemWidget : public UUserWidget, public IUserObjectListEntry {
 	GENERATED_BODY()

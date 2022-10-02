@@ -11,7 +11,6 @@ public:
 	virtual void NativePreConstruct() override;
 
 	void SetImage(UTexture2D *NewImage) const;
-
 	void SetImageVisibility(bool Visible) const;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild, sRGB="true"))

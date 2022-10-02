@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
+#include "Components/WidgetInteractionComponent.h"
 #include "KeyboardWidget.generated.h"
 
 UCLASS(Abstract, meta=(DisableNativeTick))
@@ -8,15 +9,12 @@ UCLASS(Abstract, meta=(DisableNativeTick))
 class GRAPHS_API UKeyboardWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
-	void SetOnKeyEvent(TFunction<void(TCHAR)> &&OnKey) const;
-	void SetOnDelEvent(TFunction<void()> &&OnDel) const;
+	virtual void NativeConstruct() override;
 
 	void PlayShowHideAnimation(EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd);
 protected:
-	TStaticArray<class UTextButtonWidget*, 10> GetDigitButtons() const;
-
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	UTextButtonWidget *Button0;
+	class UTextButtonWidget *Button0;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UTextButtonWidget *Button1;
@@ -50,4 +48,6 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Transient, meta=(BindWidgetAnim))
 	UWidgetAnimation *ShowHideAnimation;
+private:
+	TWeakObjectPtr<UWidgetInteractionComponent> UiInteractor;
 };

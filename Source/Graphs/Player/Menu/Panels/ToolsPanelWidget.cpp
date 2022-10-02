@@ -25,7 +25,7 @@ void UToolsPanelWidget::NativePreConstruct() {
 
 void UToolsPanelWidget::NativeConstruct() {
 	Super::NativePreConstruct();
-	const auto Pawn = Cast<AVRPawn>(GetOwningPlayerPawn());
+	const auto Pawn = GetOwningPlayerPawn<AVRPawn>();
 	ToolProvider = Pawn->GetToolProvider();
 
 	for (size_t i = 0; i < ToolProvider->GetTools().Num(); ++i) {

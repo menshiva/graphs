@@ -14,7 +14,7 @@ public:
 	void SetBackgroundColor(const FLinearColor &NewColor);
 	void SetHoveredPressedCoefficients(float HoveredCoeff, float PressedCoeff);
 
-	void SetOnClickEvent(TFunction<void()> &&ClickEvent);
+	FORCEINLINE void SetOnClickEvent(TFunction<void()> &&ClickEvent) { OnClick = MoveTemp(ClickEvent); }
 
 	constexpr static FLinearColor DefaultBackgroundColor = FLinearColor(0.036458f, 0.036458f, 0.036458f);
 protected:

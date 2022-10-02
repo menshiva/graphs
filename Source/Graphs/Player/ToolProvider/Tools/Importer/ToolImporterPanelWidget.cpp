@@ -24,7 +24,7 @@ void UToolImporterPanelWidget::NativeConstruct() {
 	}
 }
 
-void UToolImporterPanelWidget::SetInputFiles(TArray<FString> &InputFilesPaths) const {
+void UToolImporterPanelWidget::SetInputFiles(TArray<FString> &&InputFilesPaths) const {
 	ImporterList->ClearListItems();
 	for (auto &FilePath : InputFilesPaths) {
 		const auto NewObj = NewObject<UListItemData>();
@@ -35,7 +35,7 @@ void UToolImporterPanelWidget::SetInputFiles(TArray<FString> &InputFilesPaths) c
 		check(Result);
 		FilePath.RemoveAt(0, Idx + 1, false);
 
-		NewObj->DisplayText = FilePath;
+		NewObj->DisplayText = MoveTemp(FilePath);
 		ImporterList->AddItem(NewObj);
 	}
 }

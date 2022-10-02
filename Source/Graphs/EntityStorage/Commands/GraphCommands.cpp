@@ -261,5 +261,5 @@ uint32_t GraphCommands::Const::GenerateUniqueVertexUserId(const EntityId GraphId
 				MaxUserId = Iter.Key();
 	}
 
-	return MaxUserId;
+	return MaxUserId + 1;
 }

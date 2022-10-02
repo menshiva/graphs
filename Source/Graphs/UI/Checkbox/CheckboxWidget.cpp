@@ -21,7 +21,7 @@ void UCheckboxWidget::SetTicked(const bool IsTicked) {
 
 void UCheckboxWidget::SetOnClickEvent(TFunction<void()> &&ClickEvent) {
 	if (CBButton) {
-		CBButton->SetOnClickEvent([&, ClickEvent] {
+		CBButton->SetOnClickEvent([&, ClickEvent(MoveTemp(ClickEvent))] {
 			SetTicked(!Ticked);
 			ClickEvent();
 		});

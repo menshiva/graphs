@@ -4,6 +4,7 @@
 #include "Graphs/EntityStorage/Commands/VertexCommands.h"
 #include "Kismet/GameplayStatics.h"
 #include "Tools/Creator/ToolCreator.h"
+#include "Tools/Editor/ToolEditor.h"
 #include "Tools/Importer/ToolImporter.h"
 #include "Tools/Exporter/ToolExporter.h"
 #include "Tools/Manipulator/ToolManipulator.h"
@@ -17,6 +18,7 @@ UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : USce
 	RegisterTool<UToolImporter>(ObjectInitializer, "Tool Importer");
 	RegisterTool<UToolExporter>(ObjectInitializer, "Tool Exporter");
 	RegisterTool<UToolCreator>(ObjectInitializer, "Tool Creator");
+	RegisterTool<UToolEditor>(ObjectInitializer, "Tool Editor");
 	RegisterTool<UToolManipulator>(ObjectInitializer, "Tool Manipulator");
 	RegisterTool<UToolRemover>(ObjectInitializer, "Tool Remover");
 }

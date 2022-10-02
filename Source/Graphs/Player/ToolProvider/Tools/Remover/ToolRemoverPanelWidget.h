@@ -11,7 +11,7 @@ public:
 	virtual void NativePreConstruct() override;
 
 	void SetButtonsEnabled(bool IsEnabled) const;
-	FORCEINLINE void SetLoadingStatus(const bool Loading) const;
+	void SetLoadingStatus(const bool Loading) const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UWidgetSwitcher *RemoverPanelSwitcher;

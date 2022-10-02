@@ -9,6 +9,8 @@ class GRAPHS_API UTextButtonWidget : public UButtonWidget {
 	GENERATED_BODY()
 public:
 	virtual void NativePreConstruct() override;
+
+	FORCEINLINE const FString &GetTextStr() const { return Text.ToString(); }
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild, sRGB="true"))
 	FLinearColor TextColor = FLinearColor::White;

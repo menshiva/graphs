@@ -11,8 +11,7 @@ public:
 	virtual void NativePreConstruct() override;
 
 	FORCEINLINE bool IsKeyboardVisible() const { return KeyboardVisible; }
-	void ShowKeyboard(TFunction<void(TCHAR)> &&OnKey, TFunction<void()> &&OnDel);
-	void HideKeyboard();
+	void SetKeyboardVisibility(bool Visible);
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UBorder *Background;
