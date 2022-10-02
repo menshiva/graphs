@@ -251,8 +251,15 @@ DECLARE_CYCLE_STAT(TEXT("GraphCommands::Const::GenerateUniqueVertexUserId"), STA
 uint32_t GraphCommands::Const::GenerateUniqueVertexUserId(const EntityId GraphId) {
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Const_GenerateUniqueVertexUserId);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
-	uint32_t UserId = FMath::Rand();
-	while (Graph.VerticesCustomIdToEntityId.Contains(UserId))
-		UserId = FMath::Rand();
-	return UserId;
+
+	uint32_t MaxUserId = -1;
+	if (Graph.VerticesCustomIdToEntityId.Num() > 0) {
+		auto Iter = Graph.VerticesCustomIdToEntityId.CreateConstIterator();
+		MaxUserId = Iter.Key();
+		for (++Iter; Iter; ++Iter)
+			if (Iter.Key() > MaxUserId)
+				MaxUserId = Iter.Key();
+	}
+
+	return MaxUserId;
 }
