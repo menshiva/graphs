@@ -16,6 +16,7 @@ UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectIniti
 	SetGenerateOverlapEvents(false);
 	CanCharacterStepUpOn = ECB_No;
 	UPrimitiveComponent::SetCollisionProfileName("VRUI");
+	SetWindowFocusable(false);
 
 	const ConstructorHelpers::FObjectFinder<UStaticMesh> CursorShape(TEXT("/Engine/BasicShapes/Plane"));
 	const ConstructorHelpers::FObjectFinder<UMaterial> CursorMaterial(TEXT("/Game/Graphs/Materials/CursorMaterial"));

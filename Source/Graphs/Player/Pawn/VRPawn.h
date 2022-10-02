@@ -11,9 +11,9 @@ public:
 	explicit AVRPawn(const FObjectInitializer &ObjectInitializer);
 	virtual void SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) override;
 
-	FORCEINLINE APlayerController *GetPlayerController() const { return Cast<APlayerController>(Controller); }
 	FORCEINLINE UVRControllerRight *GetRightVrController() const { return RightVrController; }
 	FORCEINLINE class UToolProvider *GetToolProvider() const { return ToolProvider; }
+	class UMenuWidget *GetMenuWidget() const;
 
 	// https://docs.unrealengine.com/4.27/en-US/SharingAndReleasing/XRDevelopment/VR/VRPlatforms/SteamVR/HowTo/SeatedCamera/#:~:text=Z%20value%20to-,121,-.
 	FORCEINLINE static float GetHeight() { return 121.0f; }

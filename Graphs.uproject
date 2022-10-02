@@ -225,14 +225,6 @@
 			]
 		},
 		{
-			"Name": "WindowsMixedReality",
-			"Enabled": true,
-			"SupportedTargetPlatforms": [
-				"Win64",
-				"HoloLens"
-			]
-		},
-		{
 			"Name": "Niagara",
 			"Enabled": true
 		},
@@ -242,7 +234,7 @@
 		},
 		{
 			"Name": "XRVisualization",
-			"Enabled": true
+			"Enabled": false
 		},
 		{
 			"Name": "OculusVR",
@@ -440,6 +432,10 @@
 		},
 		{
 			"Name": "ActorLayerUtilities",
+			"Enabled": false
+		},
+		{
+			"Name": "ProceduralMeshComponent",
 			"Enabled": false
 		}
 	],

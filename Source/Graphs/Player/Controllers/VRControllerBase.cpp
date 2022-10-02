@@ -82,7 +82,7 @@ void UVRControllerBase::ForceUpdateLaserTransform() {
 }
 
 void UVRControllerBase::PlayActionHapticEffect() const {
-	VrPawn->GetPlayerController()->PlayHapticEffect(HapticEffectController, Type, ActionHapticScale);
+	VrPawn->GetController<APlayerController>()->PlayHapticEffect(HapticEffectController, Type, ActionHapticScale);
 }
 
 void UVRControllerBase::TickComponent(

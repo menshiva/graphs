@@ -24,7 +24,7 @@ void UButtonWidget::NativePreConstruct() {
 void UButtonWidget::NativeConstruct() {
 	Super::NativeConstruct();
 	if (BButton)
-		BButton->OnClicked.AddDynamic(this, &UButtonWidget::HandleClicked);
+		BButton->OnPressed.AddDynamic(this, &UButtonWidget::HandleClicked);
 }
 
 void UButtonWidget::SetBackgroundColor(const FLinearColor &NewColor) {

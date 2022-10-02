@@ -9,7 +9,10 @@ class GRAPHS_API UMenuWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
 	virtual void NativePreConstruct() override;
-	virtual void NativeConstruct() override;
+
+	FORCEINLINE bool IsKeyboardVisible() const { return KeyboardVisible; }
+	void ShowKeyboard(TFunction<void(TCHAR)> &&OnKey, TFunction<void()> &&OnDel);
+	void HideKeyboard();
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UBorder *Background;
@@ -18,9 +21,14 @@ protected:
 	class UWidgetSwitcher *ActivePanelSwitcher;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UVerticalBox *MenuButtonHolder;
+	class UHorizontalBox *MenuButtonHolder;
+
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	class UKeyboardWidget *Keyboard;
 private:
 	void SetActivePanel(size_t Index) const;
 
 	constexpr static FLinearColor MenuButtonUnselectedColor = FLinearColor(0.03125f, 0.03125f, 0.03125f, 1.0f);
+
+	bool KeyboardVisible = false;
 };

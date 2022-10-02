@@ -1,6 +1,7 @@
 #include "VRPawn.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
+#include "Graphs/Player/Menu/MenuWidget.h"
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -38,6 +39,10 @@ void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
 	RightVrController->SetupInputBindings(PlayerInputComponent);
 }
 
+UMenuWidget *AVRPawn::GetMenuWidget() const {
+	return Cast<UMenuWidget>(Menu->GetWidget());
+}
+
 void AVRPawn::ToggleCameraFadeAnimation() {
 	CameraFadeAnimationEnabled = !CameraFadeAnimationEnabled;
 	SaveConfig();
@@ -64,7 +69,10 @@ void AVRPawn::QuitGame() {
 	FTimerHandle FadeInHandle;
 	FadeCamera(1.0f);
 	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&] {
-		UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
+		UKismetSystemLibrary::QuitGame(
+			GetWorld(), GetController<APlayerController>(),
+			EQuitPreference::Type::Quit, false
+		);
 	}), ScreenFadeDuration, false);
 }
 
@@ -117,7 +125,7 @@ void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
 }
 
 void AVRPawn::FadeCamera(const float ToValue) const {
-	GetPlayerController()->PlayerCameraManager->StartCameraFade(
+	GetController<APlayerController>()->PlayerCameraManager->StartCameraFade(
 		1.0 - ToValue, ToValue,
 		ScreenFadeDuration, FColor::Black,
 		false, static_cast<bool>(ToValue)
