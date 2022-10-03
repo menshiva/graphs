@@ -6,11 +6,7 @@
 void UToolCreatorPanelWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	if (ModeSelector) {
-		ModeSelector->SetOptions({
-			"Vertex",
-			"Edge",
-			"Graph"
-		});
+		ModeSelector->SetOptions({"Vertex", "Edge", "Graph"});
 		ModeSelector->SetSelectedOptionIndex(0, false);
 	}
 }
@@ -37,7 +33,7 @@ void UToolCreatorPanelWidget::NativeConstruct() {
 				check(false);
 			}
 		}
-		Update();
+		Update(CreatorTool);
 	});
 	ModeSelector->SetSelectedOptionIndex(0, true);
 
@@ -78,8 +74,7 @@ void UToolCreatorPanelWidget::UpdateModeViaSelector(const CreationMode NewMode) 
 	}
 }
 
-void UToolCreatorPanelWidget::Update() const {
-	const auto CreatorTool = GetTool<UToolCreator>();
+void UToolCreatorPanelWidget::Update(const UToolCreator *CreatorTool) const {
 	switch (CreatorTool->GetMode()) {
 		case CreationMode::VERTEX: {
 			if (!CreatorTool->IsGraphSelected()) {

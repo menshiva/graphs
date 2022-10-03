@@ -63,9 +63,8 @@ void UToolEditorPanelWidget::NativeTick(const FGeometry &MyGeometry, const float
 	}
 }
 
-void UToolEditorPanelWidget::Update() {
-	const auto SelectedId = GetTool<UToolEditor>()->GetSelectedEntityId();
-
+void UToolEditorPanelWidget::Update(const UToolEditor *EditorTool) {
+	const auto SelectedId = EditorTool->GetSelectedEntityId();
 	if (SelectedId == EntityId::NONE()) {
 		EditorPanelSwitcher->SetActiveWidgetIndex(0);
 		IsDataChanged = false;

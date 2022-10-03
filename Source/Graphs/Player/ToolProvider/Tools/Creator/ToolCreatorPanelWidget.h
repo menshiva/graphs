@@ -13,7 +13,7 @@ public:
 	virtual void NativeConstruct() override;
 
 	void UpdateModeViaSelector(CreationMode NewMode) const;
-	void Update() const;
+	void Update(const UToolCreator *CreatorTool) const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UOptionSelectorWidget *ModeSelector;

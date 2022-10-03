@@ -25,7 +25,7 @@ namespace GraphCommands {
 
 		void Move(EntityId GraphId, const FVector &Delta);
 
-		void Rotate(EntityId GraphId, const FVector &Origin, float Angle);
+		void Rotate(EntityId GraphId, const FVector &Origin, const FVector &Axis, float Angle);
 
 		void CompactSets(EntityId GraphId);
 

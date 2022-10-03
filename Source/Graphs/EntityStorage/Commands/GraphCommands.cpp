@@ -111,14 +111,18 @@ void GraphCommands::Mutable::Move(const EntityId GraphId, const FVector &Delta) 
 }
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::Rotate"), STAT_GraphCommands_Mutable_Rotate, STATGROUP_GRAPHS_PERF_COMMANDS);
-void GraphCommands::Mutable::Rotate(const EntityId GraphId, const FVector &Origin, const float Angle) {
+void GraphCommands::Mutable::Rotate(
+	const EntityId GraphId,
+	const FVector &Origin, const FVector &Axis,
+	const float Angle
+) {
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Mutable_Rotate);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 	check(Graph.Vertices.Num() > 0);
-	ParallelFor(Graph.Vertices.Num(), [&Graph, &Origin, Angle] (const int32_t Idx) {
+	ParallelFor(Graph.Vertices.Num(), [&Graph, &Origin, &Axis, Angle] (const int32_t Idx) {
 		auto &Vertex = ES::GetEntityMut<VertexEntity>(Graph.Vertices[FSetElementId::FromInteger(Idx)]);
-		Vertex.Position = (Vertex.Position - Origin).RotateAngleAxis(Angle, FVector::DownVector) + Origin;
+		Vertex.Position = (Vertex.Position - Origin).RotateAngleAxis(Angle, Axis) + Origin;
 	});
 }
 

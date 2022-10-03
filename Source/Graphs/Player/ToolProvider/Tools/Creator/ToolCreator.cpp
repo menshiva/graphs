@@ -101,7 +101,7 @@ void UToolCreator::SetGraphSelection(const EntityId GraphId) {
 	}
 
 	SelectedGraphId = GraphId;
-	GetToolPanel<UToolCreatorPanelWidget>()->Update();
+	GetToolPanel<UToolCreatorPanelWidget>()->Update(this);
 }
 
 void UToolCreator::SetVertexSelection(const EntityId VertexId) {
@@ -122,7 +122,7 @@ void UToolCreator::SetVertexSelection(const EntityId VertexId) {
 	}
 
 	SelectedVertexId = VertexId;
-	GetToolPanel<UToolCreatorPanelWidget>()->Update();
+	GetToolPanel<UToolCreatorPanelWidget>()->Update(this);
 }
 
 void UToolCreator::OnAttach() {

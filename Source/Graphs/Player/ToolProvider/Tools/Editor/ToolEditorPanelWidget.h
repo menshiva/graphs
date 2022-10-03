@@ -11,7 +11,7 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry &MyGeometry, float InDeltaTime) override;
 
-	void Update();
+	void Update(const class UToolEditor *EditorTool);
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UWidgetSwitcher *EditorPanelSwitcher;

@@ -55,7 +55,7 @@ void UToolEditor::SelectEntity(const EntityId NewEntityId) {
 		GetVrRightController()->SetLaserActive(true);
 	}
 
-	GetToolPanel<UToolEditorPanelWidget>()->Update();
+	GetToolPanel<UToolEditorPanelWidget>()->Update(this);
 }
 
 bool UToolEditor::InvertGraphColorful() const {

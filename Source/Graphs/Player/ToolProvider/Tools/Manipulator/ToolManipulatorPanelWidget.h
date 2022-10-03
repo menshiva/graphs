@@ -8,14 +8,17 @@ UCLASS(Abstract, meta=(DisableNativeTick))
 class GRAPHS_API UToolManipulatorPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
+	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 
-	void SetTextSelectEntity() const;
-	void SetTextActionEntity() const;
+	void Update(const class UToolManipulator *ManipulatorTool) const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UOptionSelectorWidget *ModeSelector;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UTextBlock *ManipulatorText;
+	UOptionSelectorWidget *RotationModeSelector;
+
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	UTextBlock *ManipulatorText;
 };
