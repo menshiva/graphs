@@ -22,5 +22,5 @@ protected:
 	class UTextButtonWidget *CancelButton;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UTextBlock *CreatorText;
+	UTextBlock *CreatorText;
 };
