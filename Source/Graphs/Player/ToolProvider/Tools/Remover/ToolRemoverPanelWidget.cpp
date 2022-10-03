@@ -5,11 +5,22 @@
 
 void UToolRemoverPanelWidget::NativePreConstruct() {
 	Super::NativeConstruct();
-	if (RemoverRemoveButton)
-		RemoverRemoveButton->SetOnClickEvent([&] { GetTool<UToolRemover>()->RemoveSelectedEntities(); });
-	if (RemoverDeselectButton)
-		RemoverDeselectButton->SetOnClickEvent([&] { GetTool<UToolRemover>()->DeselectEntities(); });
 	SetButtonsEnabled(false);
+}
+
+void UToolRemoverPanelWidget::NativeConstruct() {
+	Super::NativeConstruct();
+	const auto RemoverTool = GetTool<UToolRemover>();
+
+	RemoverRemoveButton->SetOnClickEvent([&, RemoverTool] {
+		RemoverTool->RemoveSelectedEntities();
+		SetButtonsEnabled(false);
+	});
+
+	RemoverDeselectButton->SetOnClickEvent([&, RemoverTool] {
+		RemoverTool->DeselectEntities();
+		SetButtonsEnabled(false);
+	});
 }
 
 void UToolRemoverPanelWidget::SetLoadingStatus(const bool Loading) const {
