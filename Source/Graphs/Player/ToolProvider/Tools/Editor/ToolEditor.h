@@ -23,7 +23,7 @@ public:
 	void RandomizeVerticesColors() const;
 
 	void SetVertexColor(const FColor &Color) const;
-	FORCEINLINE void SetVertexValue(const int32_t Value) const {
+	FORCEINLINE void SetVertexValue(const double Value) const {
 		VertexCommands::Mutable::SetValue(SelectedEntityId, Value);
 	}
 
@@ -39,7 +39,7 @@ private:
 
 	struct VertexCache {
 		FColor Color;
-		int32_t Value;
+		double Value;
 	};
 
 	EntityId SelectedEntityId = EntityId::NONE();

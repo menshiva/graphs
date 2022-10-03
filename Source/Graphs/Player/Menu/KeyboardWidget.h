@@ -46,6 +46,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UTextButtonWidget *ButtonDel;
 
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	UTextButtonWidget *ButtonDot;
+
 	UPROPERTY(BlueprintReadOnly, Transient, meta=(BindWidgetAnim))
 	UWidgetAnimation *ShowHideAnimation;
 private:

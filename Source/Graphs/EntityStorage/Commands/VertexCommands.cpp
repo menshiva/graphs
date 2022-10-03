@@ -5,7 +5,7 @@
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::Mutable::Create"), STAT_VertexCommands_Mutable_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 EntityId VertexCommands::Mutable::Create(
 	const EntityId GraphId,
-	const uint32_t CustomVertexId, const FVector &Position, const FColor &Color, const int32_t Value
+	const uint32_t CustomVertexId, const FVector &Position, const FColor &Color, const double Value
 ) {
 	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Mutable_Create);
 
@@ -99,29 +99,31 @@ bool VertexCommands::Mutable::Deserialize(const rapidjson::Value &DomVertex, con
 		}
 	}
 
-	FColor Color;
+	FColor Color = ColorConsts::VertexDefaultColor;
 	{
 		const auto &ColorMember = DomVertex.FindMember("color");
-		if (ColorMember == DomVertex.MemberEnd() || !ColorMember->value.IsString()) {
-			ErrorMessage = "Object should have \"color\" string.";
-			return false;
-		}
-		Color = FColor::FromHex(FString(ColorMember->value.GetString()));
-		if (Color == FColor(ForceInitToZero)) {
-			ErrorMessage = "\"color\" shoud be in #RRGGBB format.";
-			return false;
+		if (ColorMember != DomVertex.MemberEnd()) {
+			if (!ColorMember->value.IsString() || ColorMember->value.GetStringLength() != 7) {
+				ErrorMessage = "\"color\" shoud be a string in \"#RRGGBB\" format.";
+				return false;
+			}
+			Color = FColor::FromHex(FString(ColorMember->value.GetString()));
+			if (Color == FColor(ForceInitToZero)) {
+				ErrorMessage = "\"color\" shoud be in #RRGGBB format.";
+				return false;
+			}
 		}
 	}
 
-	int32_t Value = 0;
+	double Value = 0.0;
 	{
 		const auto &ValueMember = DomVertex.FindMember("value");
 		if (ValueMember != DomVertex.MemberEnd()) {
-			if (!ValueMember->value.IsInt()) {
-				ErrorMessage = "\"value\" should be an integer number.";
+			if (!ValueMember->value.IsDouble()) {
+				ErrorMessage = "\"value\" should be a floating point number.";
 				return false;
 			}
-			Value = ValueMember->value.GetInt();
+			Value = ValueMember->value.GetDouble();
 		}
 	}
 
@@ -160,9 +162,9 @@ void VertexCommands::Const::Serialize(const EntityId VertexId, rapidjson::Pretty
 	}
 
 	// value
-	if (Vertex.Value != 0) {
+	{
 		Writer.Key("value");
-		Writer.Int(Vertex.Value);
+		Writer.Double(Vertex.Value);
 	}
 
 	Writer.EndObject();

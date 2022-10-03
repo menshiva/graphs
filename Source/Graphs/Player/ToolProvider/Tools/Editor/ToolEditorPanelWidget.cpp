@@ -84,8 +84,12 @@ void UToolEditorPanelWidget::Update() {
 			ColorHolderPanelSwitcher->SetActiveWidgetIndex(Graph.Colorful);
 			ColorHolder->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
-			VertexDataInput->SetText(FText::FromString(FString::FromInt(Vertex.Value)));
+			VertexDataInput->SetText(FText::FromString(FString::SanitizeFloat(Vertex.Value, 0)));
 			VertexValueHolder->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+
+			// reset IsDataChanged because of VertexDataInput->SetText above
+			IsDataChanged = false;
+			EditorSaveButton->SetIsEnabled(false);
 		}
 		else if (ES::IsValid<GraphEntity>(SelectedId)) {
 			const auto &Graph = ES::GetEntity<GraphEntity>(SelectedId);
@@ -115,7 +119,14 @@ void UToolEditorPanelWidget::Update() {
 
 void UToolEditorPanelWidget::OnEditTextChanged(const FText &Text) {
 	SetDataChanged();
-	GetTool<UToolEditor>()->SetVertexValue(FCString::Atoi(*Text.ToString()));
+
+	if (Text.ToString().Len() > 80) {
+		auto TrimmedStr = Text.ToString();
+		TrimmedStr.RemoveAt(80, 1, false);
+		VertexDataInput->SetText(FText::FromString(MoveTemp(TrimmedStr)));
+	}
+
+	GetTool<UToolEditor>()->SetVertexValue(atof(TCHAR_TO_ANSI(ToCStr(Text.ToString()))));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

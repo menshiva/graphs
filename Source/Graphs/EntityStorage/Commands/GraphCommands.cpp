@@ -152,14 +152,16 @@ EntityId GraphCommands::Mutable::Deserialize(const FString &JsonStr, FString &Er
 		return EntityId::NONE();
 	}
 
-	bool Colorful;
+	bool Colorful = true;
 	{
 		const auto &ColorfulMember = DomGraph.FindMember("colorful");
-		if (ColorfulMember == DomGraph.MemberEnd() || !ColorfulMember->value.IsBool()) {
-			ErrorMessage = "Graph error: Should have \"colorful\" boolean.";
-			return EntityId::NONE();
+		if (ColorfulMember != DomGraph.MemberEnd()) {
+			if (!ColorfulMember->value.IsBool()) {
+				ErrorMessage = "Graph error: \"colorful\" should be a boolean.";
+				return EntityId::NONE();
+			}
+			Colorful = ColorfulMember->value.GetBool();
 		}
-		Colorful = ColorfulMember->value.GetBool();
 	}
 
 	const auto GraphId = Create(Colorful);

@@ -21,6 +21,10 @@ void UKeyboardWidget::NativeConstruct() {
 	ButtonDel->SetOnClickEvent([UiInteractor = UiInteractor.Get()] {
 		UiInteractor->PressAndReleaseKey(EKeys::BackSpace);
 	});
+
+	ButtonDot->SetOnClickEvent([UiInteractor = UiInteractor.Get()] {
+		UiInteractor->PressAndReleaseKey(EKeys::Period);
+	});
 }
 
 void UKeyboardWidget::PlayShowHideAnimation(const EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd) {
