@@ -4,40 +4,33 @@
 #include "Components/WidgetSwitcher.h"
 #include "Graphs/UI/Button/TextButtonWidget.h"
 
-void UToolExporterPanelWidget::NativePreConstruct() {
+void UToolExporterPanelWidget::NativeConstruct() {
 	Super::NativeConstruct();
-	if (ExporterConfirmButton)
-		ExporterConfirmButton->SetOnClickEvent([&] { GetTool<UToolExporter>()->OnAttach(); });
+	ExporterConfirmButton->SetOnClickEvent([ExporterTool = GetTool<UToolExporter>()] {
+		ExporterTool->OnAttach();
+	});
 }
 
 void UToolExporterPanelWidget::ShowExportPanel() const {
 	SetCloseToolButtonVisible(true);
-	if (ExporterPanelSwitcher)
-		ExporterPanelSwitcher->SetActiveWidgetIndex(0);
+	ExporterPanelSwitcher->SetActiveWidgetIndex(0);
 }
 
 void UToolExporterPanelWidget::ShowSuccessPanel(const FString &ExportPath) const {
 	SetCloseToolButtonVisible(true);
-	if (ExporterText)
-		ExporterText->SetText(FText::FromString("Selected graph has been successfuly\nexported to:\n\n" + ExportPath));
-	if (ExporterConfirmButton)
-		ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
-	if (ExporterPanelSwitcher)
-		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
+	ExporterText->SetText(FText::FromString("Selected graph has been successfuly\nexported to:\n\n" + ExportPath));
+	ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
+	ExporterPanelSwitcher->SetActiveWidgetIndex(1);
 }
 
-void UToolExporterPanelWidget::ShowErrorPanel(const FString &ErrorDesc) const {
+void UToolExporterPanelWidget::ShowErrorPanel(const FStringView &ErrorDesc) const {
 	SetCloseToolButtonVisible(true);
-	if (ExporterText)
-		ExporterText->SetText(FText::FromString("Error while exporting selected graph:\n\n" + ErrorDesc));
-	if (ExporterConfirmButton)
-		ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
-	if (ExporterPanelSwitcher)
-		ExporterPanelSwitcher->SetActiveWidgetIndex(1);
+	ExporterText->SetText(FText::FromString(FString("Error while exporting selected graph:\n\n") + ErrorDesc.GetData()));
+	ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
+	ExporterPanelSwitcher->SetActiveWidgetIndex(1);
 }
 
 void UToolExporterPanelWidget::ShowLoadingPanel() const {
 	SetCloseToolButtonVisible(false);
-	if (ExporterPanelSwitcher)
-		ExporterPanelSwitcher->SetActiveWidgetIndex(2);
+	ExporterPanelSwitcher->SetActiveWidgetIndex(2);
 }

@@ -14,15 +14,6 @@ public:
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 private:
-	static FString GenerateJsonFileNameInDirectory(
-		IPlatformFile &FileManager,
-		const FString &DirPath,
-		const FString &FilePrefix
-	);
-
-	static bool ExportGraph(
-		EntityId GraphId,
-		const FString &OutputPath,
-		FString &ErrorMessage
-	);
+	static FString GenerateJsonFileNameInDirectory(const FString &DirPath, const FString &FilePrefix);
+	static FString ExportGraph(EntityId GraphId, const FString &OutputPath);
 };
