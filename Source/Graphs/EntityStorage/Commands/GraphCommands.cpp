@@ -21,7 +21,6 @@ void GraphCommands::Mutable::Remove(const EntityId GraphId) {
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Mutable_Remove);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	check(Graph.Vertices.Num() > 0);
 	for (const auto VertexId : Graph.Vertices)
 		ES::RemoveEntity<VertexEntity>(VertexId);
 	for (const auto EdgeId : Graph.Edges)

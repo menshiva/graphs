@@ -81,7 +81,7 @@ bool VertexCommands::Mutable::Deserialize(const rapidjson::Value &DomVertex, con
 		}
 		CustomId = IdMember->value.GetUint();
 		if (Graph.VerticesCustomIdToEntityId.Contains(CustomId)) {
-			ErrorMessage = "\"id\" (" + FString::FromInt(CustomId) + ") is not unique.";
+			ErrorMessage = "\"id\" is not unique.";
 			return false;
 		}
 	}

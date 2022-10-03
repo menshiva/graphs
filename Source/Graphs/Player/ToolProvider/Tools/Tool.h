@@ -13,7 +13,7 @@ public:
 
 	FORCEINLINE void SetupToolProvider(UToolProvider *Provider) { ToolProvider = Provider; }
 
-	FORCEINLINE const FString &GetToolName() const { return ToolName; }
+	FORCEINLINE const char *GetToolName() const { return ToolName; }
 	FORCEINLINE UTexture2D *GetToolImage() const { return ToolImage; }
 	FORCEINLINE const TSubclassOf<class UToolWidget> &GetToolPanelClass() const { return ToolPanelClass; }
 
@@ -40,7 +40,7 @@ protected:
 private:
 	TWeakObjectPtr<UToolProvider> ToolProvider;
 
-	FString ToolName;
+	const char *ToolName;
 
 	UPROPERTY()
 	UTexture2D *ToolImage;

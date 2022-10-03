@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
-#include "Graphs/UI/Button/ImageButtonWidget.h"
 #include "ToolsPanelWidget.generated.h"
 
 UCLASS(Abstract, meta=(DisableNativeTick))
@@ -12,9 +11,7 @@ public:
 	explicit UToolsPanelWidget(const FObjectInitializer &ObjectInitializer);
 	virtual void NativeConstruct() override;
 
-	FORCEINLINE void SetCloseToolButtonVisible(const bool Visible) const {
-		CloseToolButton->SetVisibility(Visible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
-	}
+	void SetCloseToolButtonVisible(const bool Visible) const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UWidgetSwitcher *ToolPanelSwitcher;
@@ -26,7 +23,7 @@ protected:
 	class UUniformGridPanel *ToolButtonsHolder;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	UImageButtonWidget *CloseToolButton;
+	class UImageButtonWidget *CloseToolButton;
 private:
 	TSubclassOf<UUserWidget> ToolButtonWidgetClass;
 };

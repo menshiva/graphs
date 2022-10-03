@@ -13,21 +13,22 @@ UVRControllerBase::UVRControllerBase(
 ) : Type(aControllerType) {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	FString ControllerName = StaticEnum<EControllerHand>()->GetNameStringByValue(Utils::EnumUnderlyingValue(aControllerType));
+	const auto ControllerName = StaticEnum<EControllerHand>()
+		->GetNameStringByValue(Utils::EnumUnderlyingValue(aControllerType));
 
 	MotionController = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
 		this,
 		"MotionController"
 	);
 	MotionController->SetShowDeviceModel(true);
-	MotionController->SetTrackingMotionSource(FName(GetData(ControllerName)));
+	MotionController->SetTrackingMotionSource(FName(*ControllerName));
 	MotionController->SetupAttachment(this);
 
 	MotionControllerAim = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
 		this,
 		"MotionControllerAim"
 	);
-	MotionControllerAim->SetTrackingMotionSource(FName(GetData(ControllerName + "Aim")));
+	MotionControllerAim->SetTrackingMotionSource(FName(*(ControllerName + "Aim")));
 	MotionControllerAim->SetupAttachment(this);
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));

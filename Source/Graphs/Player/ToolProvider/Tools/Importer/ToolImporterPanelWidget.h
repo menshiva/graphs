@@ -8,14 +8,11 @@ UCLASS(Abstract, meta=(DisableNativeTick))
 class GRAPHS_API UToolImporterPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
-	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
-
-	void SetInputFiles(TArray<FString> &&InputFilesPaths) const;
 
 	void ShowImportList() const;
 	void ShowSuccessPanel() const;
-	void ShowErrorPanel(const FString &ErrorDesc) const;
+	void ShowErrorPanel(const FStringView &ErrorDesc) const;
 	void ShowLoadingPanel() const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
@@ -28,8 +25,10 @@ protected:
 	class UTextButtonWidget *ImporterRefreshButton;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UTextBlock *ImporterText;
+	UTextBlock *ImporterText;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UTextButtonWidget *ImporterConfirmButton;
+private:
+	bool RefreshList() const;
 };

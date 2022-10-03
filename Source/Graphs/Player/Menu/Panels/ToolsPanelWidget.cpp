@@ -24,7 +24,7 @@ void UToolsPanelWidget::NativeConstruct() {
 		const auto ToolBtn = CreateWidget<UToolButtonWidget>(
 			this,
 			ToolButtonWidgetClass,
-			FName(Tool->GetToolName() + "ToolBtn")
+			FName(FString(Tool->GetToolName()) + "ToolBtn")
 		);
 
 		const auto NewSlot = ToolButtonsHolder->AddChildToUniformGrid(ToolBtn, i / MaxToolsInRow, i % MaxToolsInRow);
@@ -36,14 +36,14 @@ void UToolsPanelWidget::NativeConstruct() {
 		ToolBtn->SetOnClickEvent([&, ToolProvider, Tool, i] {
 			ToolProvider->SetActiveTool(Tool);
 			ToolPanelSwitcher->SetActiveWidgetIndex(i + 1);
-			ToolName->SetText(FText::FromString("Tool: " + Tool->GetToolName()));
+			ToolName->SetText(FText::FromString(FString("Tool: ") + Tool->GetToolName()));
 			SetCloseToolButtonVisible(true);
 		});
 
 		const auto ToolPanel = Cast<UToolWidget>(CreateWidget(
 			this,
 			Tool->GetToolPanelClass(),
-			FName(Tool->GetToolName() + "ToolPanel")
+			FName(FString(Tool->GetToolName()) + "ToolPanel")
 		));
 		Tool->SetToolPanel(this, ToolPanel);
 		const auto ToolPanelSlot = Cast<UWidgetSwitcherSlot>(ToolPanelSwitcher->AddChild(ToolPanel));
@@ -57,4 +57,9 @@ void UToolsPanelWidget::NativeConstruct() {
 		ToolName->SetText(FText::FromString("Tools"));
 		SetCloseToolButtonVisible(false);
 	});
+}
+
+void UToolsPanelWidget::SetCloseToolButtonVisible(const bool Visible) const {
+	if (CloseToolButton)
+		CloseToolButton->SetVisibility(Visible ? ESlateVisibility::SelfHitTestInvisible : ESlateVisibility::Hidden);
 }

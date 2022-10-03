@@ -10,8 +10,12 @@ public:
 	UToolImporter();
 
 	virtual void OnAttach() override;
-	void OnImportClick(const FString &FilePath) const;
+	virtual void OnDetach() override;
 
-	void RefreshFileList() const;
-	static EntityId ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage);
+	void ImportFromFile(const FString &FilePath);
+	void DeselectImportedGraph();
+private:
+	FString ImportFromFileImpl(const FString &FilePath);
+
+	EntityId ImportedGraphId = EntityId::NONE();
 };
