@@ -1,7 +1,6 @@
 #include "VRPawn.h"
 #include "HeadMountedDisplayFunctionLibrary.h"
 #include "Camera/CameraComponent.h"
-#include "Graphs/Player/Menu/MenuWidget.h"
 #include "Graphs/Player/Menu/MenuWidgetComponent.h"
 #include "Graphs/Player/ToolProvider/ToolProvider.h"
 #include "Kismet/KismetSystemLibrary.h"
@@ -25,11 +24,11 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 	RightVrController->SetupVrPawn(this);
 	RightVrController->SetupAttachment(RootComponent);
 
-	Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
-	Menu->SetupAttachment(LeftVrController->GetMotionController());
-
 	ToolProvider = ObjectInitializer.CreateDefaultSubobject<UToolProvider>(this, "ToolProvider");
 	ToolProvider->SetupPawn(this);
+
+	Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
+	Menu->SetupAttachment(LeftVrController->GetMotionController());
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
@@ -39,10 +38,6 @@ void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
 
 	LeftVrController->SetupInputBindings(PlayerInputComponent);
 	RightVrController->SetupInputBindings(PlayerInputComponent);
-}
-
-UMenuWidget *AVRPawn::GetMenuWidget() const {
-	return Cast<UMenuWidget>(Menu->GetWidget());
 }
 
 void AVRPawn::ToggleCameraFadeAnimation() {
@@ -95,6 +90,9 @@ bool AVRPawn::OnRightThumbstickXAction(const float Value) {
 
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
+
+	MenuWidget = Cast<UMenuWidget>(Menu->GetWidget());
+
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()
 		&& UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
 	{

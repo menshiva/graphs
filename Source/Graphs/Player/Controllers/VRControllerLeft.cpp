@@ -94,7 +94,7 @@ void UVRControllerLeft::TickComponent(
 	if (IsLaserActive()) {
 		auto TeleportLocation = GetLaserEndPosition();
 		TeleportPreviewMesh->SetWorldLocation(TeleportLocation);
-		TeleportLocation.Z -= AVRPawn::GetHeight();
+		TeleportLocation.Z -= AVRPawn::Height;
 		TeleportRing->SetWorldLocation(TeleportLocation);
 	}
 }

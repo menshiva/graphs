@@ -13,22 +13,9 @@ UToolsPanelWidget::UToolsPanelWidget(const FObjectInitializer &ObjectInitializer
 	ToolButtonWidgetClass = ToolButton.Class;
 }
 
-void UToolsPanelWidget::NativePreConstruct() {
-	Super::NativePreConstruct();
-	if (CloseToolButton) {
-		CloseToolButton->SetOnClickEvent([&] {
-			ToolProvider->SetActiveTool(nullptr);
-			ToolPanelSwitcher->SetActiveWidgetIndex(0);
-			ToolName->SetText(FText::FromString("Tools"));
-			SetCloseToolButtonVisible(false);
-		});
-	}
-}
-
 void UToolsPanelWidget::NativeConstruct() {
 	Super::NativePreConstruct();
-	const auto Pawn = GetOwningPlayerPawn<AVRPawn>();
-	ToolProvider = Pawn->GetToolProvider();
+	const auto ToolProvider = GetOwningPlayerPawn<AVRPawn>()->GetToolProvider();
 
 	for (size_t i = 0; i < ToolProvider->GetTools().Num(); ++i) {
 		constexpr static size_t MaxToolsInRow = 3;
@@ -46,7 +33,7 @@ void UToolsPanelWidget::NativeConstruct() {
 
 		ToolBtn->SetToolImage(Tool->GetToolImage());
 		ToolBtn->SetToolNameText(FText::FromString(Tool->GetToolName()));
-		ToolBtn->SetOnClickEvent([&, Tool, i] {
+		ToolBtn->SetOnClickEvent([&, ToolProvider, Tool, i] {
 			ToolProvider->SetActiveTool(Tool);
 			ToolPanelSwitcher->SetActiveWidgetIndex(i + 1);
 			ToolName->SetText(FText::FromString("Tool: " + Tool->GetToolName()));
@@ -63,9 +50,11 @@ void UToolsPanelWidget::NativeConstruct() {
 		ToolPanelSlot->SetHorizontalAlignment(HAlign_Fill);
 		ToolPanelSlot->SetVerticalAlignment(VAlign_Fill);
 	}
-}
 
-void UToolsPanelWidget::SetCloseToolButtonVisible(const bool Visible) const {
-	if (CloseToolButton)
-		CloseToolButton->SetVisibility(Visible ? ESlateVisibility::Visible : ESlateVisibility::Collapsed);
+	CloseToolButton->SetOnClickEvent([&, ToolProvider] {
+		ToolProvider->SetActiveTool(nullptr);
+		ToolPanelSwitcher->SetActiveWidgetIndex(0);
+		ToolName->SetText(FText::FromString("Tools"));
+		SetCloseToolButtonVisible(false);
+	});
 }

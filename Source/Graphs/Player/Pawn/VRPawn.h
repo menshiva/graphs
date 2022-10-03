@@ -2,6 +2,7 @@
 
 #include "Graphs/Player/Controllers/VRControllerLeft.h"
 #include "Graphs/Player/Controllers/VRControllerRight.h"
+#include "Graphs/Player/Menu/MenuWidget.h"
 #include "VRPawn.generated.h"
 
 UCLASS(Config = UserPreferences)
@@ -13,10 +14,7 @@ public:
 
 	FORCEINLINE UVRControllerRight *GetRightVrController() const { return RightVrController; }
 	FORCEINLINE class UToolProvider *GetToolProvider() const { return ToolProvider; }
-	class UMenuWidget *GetMenuWidget() const;
-
-	// https://docs.unrealengine.com/4.27/en-US/SharingAndReleasing/XRDevelopment/VR/VRPlatforms/SteamVR/HowTo/SeatedCamera/#:~:text=Z%20value%20to-,121,-.
-	FORCEINLINE static float GetHeight() { return 121.0f; }
+	FORCEINLINE UMenuWidget *GetMenuWidget() const { return MenuWidget.Get(); }
 
 	void ToggleCameraFadeAnimation();
 	FORCEINLINE bool IsCameraFadeAnimationEnabled() const { return CameraFadeAnimationEnabled; }
@@ -32,6 +30,9 @@ public:
 	virtual bool OnRightThumbstickY(float Value) override;
 	virtual bool OnRightThumbstickX(float Value) override;
 	virtual bool OnRightThumbstickXAction(float Value) override;
+
+	// https://docs.unrealengine.com/4.27/en-US/SharingAndReleasing/XRDevelopment/VR/VRPlatforms/SteamVR/HowTo/SeatedCamera/#:~:text=Z%20value%20to-,121,-.
+	constexpr static float Height = 121.0f;
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -51,6 +52,8 @@ private:
 
 	UPROPERTY()
 	class UMenuWidgetComponent *Menu;
+
+	TWeakObjectPtr<UMenuWidget> MenuWidget;
 
 	UPROPERTY()
 	UToolProvider *ToolProvider;

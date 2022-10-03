@@ -9,7 +9,6 @@ class GRAPHS_API UToolProvider final : public USceneComponent, public RightContr
 	GENERATED_BODY()
 public:
 	explicit UToolProvider(const FObjectInitializer &ObjectInitializer);
-
 	FORCEINLINE void SetupPawn(AVRPawn *Pawn) { VrPawn = Pawn; }
 
 	FORCEINLINE AVRPawn *GetVrPawn() const { return VrPawn.Get(); }

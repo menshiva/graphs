@@ -8,7 +8,7 @@ UCLASS(Abstract, meta=(DisableNativeTick))
 class GRAPHS_API UExitPanelWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
-	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextButtonWidget *ExitButton;

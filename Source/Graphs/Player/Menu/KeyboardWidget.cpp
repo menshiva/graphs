@@ -1,10 +1,11 @@
 #include "KeyboardWidget.h"
+#include "Components/WidgetInteractionComponent.h"
 #include "Graphs/Player/Pawn/VRPawn.h"
 #include "Graphs/UI/Button/TextButtonWidget.h"
 
 void UKeyboardWidget::NativeConstruct() {
 	Super::NativeConstruct();
-	UiInteractor = GetOwningPlayerPawn<AVRPawn>()->GetRightVrController()->GetUiInteractor();
+	const auto UiInteractor = GetOwningPlayerPawn<AVRPawn>()->GetRightVrController()->GetUiInteractor();
 
 	const auto DigitButtons = {
 		Button0, Button1, Button2,
@@ -13,16 +14,16 @@ void UKeyboardWidget::NativeConstruct() {
 		Button9
 	};
 	for (const auto DigitButton : DigitButtons) {
-		DigitButton->SetOnClickEvent([UiInteractor = UiInteractor.Get(), CharStr(DigitButton->GetTextStr())] {
+		DigitButton->SetOnClickEvent([UiInteractor, CharStr(DigitButton->GetTextStr())] {
 			UiInteractor->SendKeyChar(CharStr);
 		});
 	}
 
-	ButtonDel->SetOnClickEvent([UiInteractor = UiInteractor.Get()] {
+	ButtonDel->SetOnClickEvent([UiInteractor] {
 		UiInteractor->PressAndReleaseKey(EKeys::BackSpace);
 	});
 
-	ButtonDot->SetOnClickEvent([UiInteractor = UiInteractor.Get()] {
+	ButtonDot->SetOnClickEvent([UiInteractor] {
 		UiInteractor->PressAndReleaseKey(EKeys::Period);
 	});
 }

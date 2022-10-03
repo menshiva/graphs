@@ -1,5 +1,4 @@
 #include "MenuWidgetComponent.h"
-#include "MenuWidget.h"
 
 UMenuWidgetComponent::UMenuWidgetComponent(const FObjectInitializer &ObjectInitializer) : UWidgetComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;

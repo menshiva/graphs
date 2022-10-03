@@ -2,7 +2,6 @@
 #include "Graphs/EntityStorage/Commands/EdgeCommands.h"
 #include "Graphs/EntityStorage/Commands/GraphCommands.h"
 #include "Graphs/EntityStorage/Commands/VertexCommands.h"
-#include "Graphs/Player/Menu/MenuWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Tools/Creator/ToolCreator.h"
 #include "Tools/Editor/ToolEditor.h"
@@ -51,7 +50,7 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 				const auto &Vertex = ES::GetEntity<VertexEntity>(HitEntityId);
 				GetVrPawn()->GetMenuWidget()->SetHitEntity(
 					"Vertex",
-					FString("Id: ") + FString::FromInt(Vertex.CustomId)
+					FString("Id: #") + FString::FromInt(Vertex.CustomId)
 					+ FString("\nValue: ") + FString::SanitizeFloat(Vertex.Value, 0)
 				);
 			}
@@ -61,8 +60,8 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 				const auto &SecondVertex = ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[1]);
 				GetVrPawn()->GetMenuWidget()->SetHitEntity(
 					"Edge",
-					FString("From: ") + FString::FromInt(FirstVertex.CustomId)
-					+ FString("\nTo: ") + FString::FromInt(SecondVertex.CustomId)
+					FString("From: Vertex #") + FString::FromInt(FirstVertex.CustomId)
+					+ FString("\nTo: Vertex #") + FString::FromInt(SecondVertex.CustomId)
 				);
 			}
 			else {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "Blueprint/UserWidget.h"
-#include "Components/WidgetInteractionComponent.h"
 #include "KeyboardWidget.generated.h"
 
 UCLASS(Abstract, meta=(DisableNativeTick))
@@ -10,7 +9,6 @@ class GRAPHS_API UKeyboardWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
 	virtual void NativeConstruct() override;
-
 	void PlayShowHideAnimation(EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd);
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
@@ -51,6 +49,4 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Transient, meta=(BindWidgetAnim))
 	UWidgetAnimation *ShowHideAnimation;
-private:
-	TWeakObjectPtr<UWidgetInteractionComponent> UiInteractor;
 };

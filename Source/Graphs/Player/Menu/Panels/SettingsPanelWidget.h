@@ -8,7 +8,6 @@ UCLASS(Abstract, meta=(DisableNativeTick))
 class GRAPHS_API USettingsPanelWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
-	virtual void NativePreConstruct() override;
 	virtual void NativeConstruct() override;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
@@ -19,7 +18,4 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UCheckboxWidget *UnitStatsTick;
-private:
-	TWeakObjectPtr<class AVRPawn> Pawn;
-	TWeakObjectPtr<class AVRGameMode> Gamemode;
 };

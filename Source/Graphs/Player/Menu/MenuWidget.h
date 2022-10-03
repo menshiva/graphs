@@ -9,6 +9,7 @@ class GRAPHS_API UMenuWidget : public UUserWidget {
 	GENERATED_BODY()
 public:
 	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
 
 	FORCEINLINE bool IsKeyboardVisible() const { return KeyboardVisible; }
 	void SetKeyboardVisibility(bool Visible);

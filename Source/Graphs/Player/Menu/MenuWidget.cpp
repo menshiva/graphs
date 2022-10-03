@@ -8,14 +8,17 @@
 
 void UMenuWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
+	for (const auto MenuChild : MenuButtonHolder->GetAllChildren())
+		Cast<UImageButtonWidget>(MenuChild)->SetBackgroundColor(MenuButtonUnselectedColor);
+	SetActivePanel(0);
+}
+
+void UMenuWidget::NativeConstruct() {
+	Super::NativeConstruct();
 	for (size_t i = 0; i < MenuButtonHolder->GetChildrenCount(); ++i) {
 		const auto MenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(i));
-		MenuButton->SetOnClickEvent([&, i] {
-			SetActivePanel(i);
-		});
-		MenuButton->SetBackgroundColor(MenuButtonUnselectedColor);
+		MenuButton->SetOnClickEvent([&, i] { SetActivePanel(i); });
 	}
-	SetActivePanel(0);
 }
 
 void UMenuWidget::SetKeyboardVisibility(const bool Visible) {
@@ -23,7 +26,7 @@ void UMenuWidget::SetKeyboardVisibility(const bool Visible) {
 		return;
 	if (Visible) {
 		KeyboardVisible = true;
-		Keyboard->SetVisibility(ESlateVisibility::Visible);
+		Keyboard->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		Keyboard->PlayShowHideAnimation(EUMGSequencePlayMode::Forward, [] {});
 	}
 	else {
