@@ -5,7 +5,7 @@
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::Mutable::Create"), STAT_VertexCommands_Mutable_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 EntityId VertexCommands::Mutable::Create(
 	const EntityId GraphId,
-	const uint32_t CustomVertexId, const FVector &Position, const FColor &Color
+	const uint32_t CustomVertexId, const FVector &Position, const FColor &Color, const int32_t Value
 ) {
 	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Mutable_Create);
 
@@ -20,6 +20,7 @@ EntityId VertexCommands::Mutable::Create(
 	Vertex.CustomId = CustomVertexId;
 	Vertex.Position = Position;
 	Vertex.Color = Color;
+	Vertex.Value = Value;
 
 	// add new entity to parent graph
 	auto &Graph = ES::GetEntityMut<GraphEntity>(GraphId);
@@ -112,7 +113,19 @@ bool VertexCommands::Mutable::Deserialize(const rapidjson::Value &DomVertex, con
 		}
 	}
 
-	Create(GraphId, CustomId, Position, Color);
+	int32_t Value = 0;
+	{
+		const auto &ValueMember = DomVertex.FindMember("value");
+		if (ValueMember != DomVertex.MemberEnd()) {
+			if (!ValueMember->value.IsInt()) {
+				ErrorMessage = "\"value\" should be an integer number.";
+				return false;
+			}
+			Value = ValueMember->value.GetInt();
+		}
+	}
+
+	Create(GraphId, CustomId, Position, Color, Value);
 	return true;
 }
 
@@ -144,6 +157,12 @@ void VertexCommands::Const::Serialize(const EntityId VertexId, rapidjson::Pretty
 		const FTCHARToUTF8 ColorStrUTF(*ColorStr);
 		Writer.Key("color");
 		Writer.String(ColorStrUTF.Get(), ColorStrUTF.Length());
+	}
+
+	// value
+	if (Vertex.Value != 0) {
+		Writer.Key("value");
+		Writer.Int(Vertex.Value);
 	}
 
 	Writer.EndObject();

@@ -19,6 +19,9 @@ protected:
 	class UWidgetSwitcher *ToolPanelSwitcher;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	class UTextBlock *ToolName;
+
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UUniformGridPanel *ToolButtonsHolder;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))

@@ -9,7 +9,17 @@ namespace GraphCommands {
 
 		void Remove(EntityId GraphId);
 
+		FORCEINLINE void SetColorful(const EntityId GraphId, const bool Colorful) {
+			ES::GetEntityMut<GraphEntity>(GraphId).Colorful = Colorful;
+		}
+
 		void SetHit(EntityId GraphId, bool IsHit);
+
+		void SetColor(EntityId GraphId, const FColor &Color);
+
+		void SetColor(EntityId GraphId, const TArray<FColor> &Colors);
+
+		void RandomizeVerticesColors(EntityId GraphId);
 
 		void SetOverrideColor(EntityId GraphId, const FColor &OverrideColor);
 

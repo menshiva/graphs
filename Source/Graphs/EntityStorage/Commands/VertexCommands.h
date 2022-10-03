@@ -10,7 +10,8 @@ namespace VertexCommands {
 			EntityId GraphId,
 			uint32_t CustomVertexId,
 			const FVector &Position,
-			const FColor &Color
+			const FColor &Color,
+			int32_t Value
 		);
 
 		void Remove(EntityId VertexId);
@@ -19,8 +20,16 @@ namespace VertexCommands {
 			ES::GetEntityMut<VertexEntity>(VertexId).IsHit = IsHit;
 		}
 
+		FORCEINLINE void SetColor(const EntityId VertexId, const FColor &Color) {
+			ES::GetEntityMut<VertexEntity>(VertexId).Color = Color;
+		}
+
 		FORCEINLINE void SetOverrideColor(const EntityId VertexId, const FColor &OverrideColor) {
 			ES::GetEntityMut<VertexEntity>(VertexId).OverrideColor = OverrideColor;
+		}
+
+		FORCEINLINE void SetValue(const EntityId VertexId, const int32_t Value) {
+			ES::GetEntityMut<VertexEntity>(VertexId).Value = Value;
 		}
 
 		FORCEINLINE void Move(const EntityId VertexId, const FVector &Delta) {

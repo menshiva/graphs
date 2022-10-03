@@ -5,6 +5,8 @@
 void UCheckboxWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	SetTicked(Ticked);
+	if (CBButton)
+		CBButton->SetOnClickEvent([&] { SetTicked(!Ticked); });
 	if (CBText)
 		CBText->SetText(Text);
 }

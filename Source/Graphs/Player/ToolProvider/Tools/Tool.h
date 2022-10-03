@@ -9,11 +9,11 @@ class GRAPHS_API UTool : public USceneComponent, public RightControllerInputInte
 	GENERATED_BODY()
 public:
 	UTool();
-	UTool(const FName &ToolName, const TCHAR *ToolImageAssetPath, const TCHAR *ToolPanelAssetPath);
+	UTool(const char *ToolName, const TCHAR *ToolImageAssetPath, const TCHAR *ToolPanelAssetPath);
 
 	FORCEINLINE void SetupToolProvider(UToolProvider *Provider) { ToolProvider = Provider; }
 
-	FORCEINLINE const FName &GetToolName() const { return ToolName; }
+	FORCEINLINE const FString &GetToolName() const { return ToolName; }
 	FORCEINLINE UTexture2D *GetToolImage() const { return ToolImage; }
 	FORCEINLINE const TSubclassOf<class UToolWidget> &GetToolPanelClass() const { return ToolPanelClass; }
 
@@ -40,7 +40,7 @@ protected:
 private:
 	TWeakObjectPtr<UToolProvider> ToolProvider;
 
-	FName ToolName;
+	FString ToolName;
 
 	UPROPERTY()
 	UTexture2D *ToolImage;

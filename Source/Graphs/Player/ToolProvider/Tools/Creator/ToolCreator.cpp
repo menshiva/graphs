@@ -226,7 +226,8 @@ bool UToolCreator::OnRightTriggerAction(const bool IsPressed) {
 				SelectedGraphId,
 				GraphCommands::Const::GenerateUniqueVertexUserId(SelectedGraphId),
 				GetVrRightController()->GetLaserEndPosition(),
-				ColorConsts::VertexDefaultColor
+				ColorConsts::VertexDefaultColor,
+				0
 			);
 			VertexCommands::Mutable::SetOverrideColor(VertexId, ColorConsts::GreenColor);
 			GetGraphsRenderers()->AddVertexToChunk(VertexId);
@@ -259,7 +260,8 @@ bool UToolCreator::OnRightTriggerAction(const bool IsPressed) {
 			GraphId,
 			GraphCommands::Const::GenerateUniqueVertexUserId(GraphId),
 			GetVrRightController()->GetLaserEndPosition(),
-			ColorConsts::VertexDefaultColor
+			ColorConsts::VertexDefaultColor,
+			0
 		);
 		GetGraphsRenderers()->ConstructGraphChunks(GraphId);
 		GetToolPanel<UToolCreatorPanelWidget>()->UpdateModeViaSelector(CreationMode::VERTEX);

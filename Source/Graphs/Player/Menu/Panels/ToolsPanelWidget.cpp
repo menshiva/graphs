@@ -1,4 +1,5 @@
 #include "ToolsPanelWidget.h"
+#include "Components/TextBlock.h"
 #include "Components/UniformGridPanel.h"
 #include "Components/UniformGridSlot.h"
 #include "Components/WidgetSwitcher.h"
@@ -18,6 +19,7 @@ void UToolsPanelWidget::NativePreConstruct() {
 		CloseToolButton->SetOnClickEvent([&] {
 			ToolProvider->SetActiveTool(nullptr);
 			ToolPanelSwitcher->SetActiveWidgetIndex(0);
+			ToolName->SetText(FText::FromString("Tools"));
 			SetCloseToolButtonVisible(false);
 		});
 	}
@@ -35,7 +37,7 @@ void UToolsPanelWidget::NativeConstruct() {
 		const auto ToolBtn = CreateWidget<UToolButtonWidget>(
 			this,
 			ToolButtonWidgetClass,
-			FName(Tool->GetToolName().ToString() + "ToolBtn")
+			FName(Tool->GetToolName() + "ToolBtn")
 		);
 
 		const auto NewSlot = ToolButtonsHolder->AddChildToUniformGrid(ToolBtn, i / MaxToolsInRow, i % MaxToolsInRow);
@@ -43,17 +45,18 @@ void UToolsPanelWidget::NativeConstruct() {
 		NewSlot->SetVerticalAlignment(VAlign_Top);
 
 		ToolBtn->SetToolImage(Tool->GetToolImage());
-		ToolBtn->SetToolNameText(FText::FromName(Tool->GetToolName()));
+		ToolBtn->SetToolNameText(FText::FromString(Tool->GetToolName()));
 		ToolBtn->SetOnClickEvent([&, Tool, i] {
 			ToolProvider->SetActiveTool(Tool);
 			ToolPanelSwitcher->SetActiveWidgetIndex(i + 1);
+			ToolName->SetText(FText::FromString("Tool: " + Tool->GetToolName()));
 			SetCloseToolButtonVisible(true);
 		});
 
 		const auto ToolPanel = Cast<UToolWidget>(CreateWidget(
 			this,
 			Tool->GetToolPanelClass(),
-			FName(Tool->GetToolName().ToString() + "ToolPanel")
+			FName(Tool->GetToolName() + "ToolPanel")
 		));
 		Tool->SetToolPanel(this, ToolPanel);
 		const auto ToolPanelSlot = Cast<UWidgetSwitcherSlot>(ToolPanelSwitcher->AddChild(ToolPanel));
