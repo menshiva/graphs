@@ -2,6 +2,7 @@
 #include "KeyboardWidget.h"
 #include "Components/Border.h"
 #include "Components/HorizontalBox.h"
+#include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
 #include "Graphs/UI/Button/ImageButtonWidget.h"
 
@@ -34,6 +35,11 @@ void UMenuWidget::SetKeyboardVisibility(const bool Visible) {
 			}
 		);
 	}
+}
+
+void UMenuWidget::SetHitEntity(const char *EntityName, FString &&EntityCaption) const {
+	HitEntityTitle->SetText(FText::FromString(FString("Hit entity: ") + EntityName));
+	HitEntityCaption->SetText(FText::FromString(MoveTemp(EntityCaption)));
 }
 
 void UMenuWidget::SetActivePanel(const size_t Index) const {

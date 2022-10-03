@@ -12,7 +12,12 @@ public:
 
 	FORCEINLINE bool IsKeyboardVisible() const { return KeyboardVisible; }
 	void SetKeyboardVisibility(bool Visible);
+
+	void SetHitEntity(const char *EntityName, FString &&EntityCaption) const;
 protected:
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	class UHorizontalBox *MenuButtonHolder;
+
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UBorder *Background;
 
@@ -20,7 +25,10 @@ protected:
 	class UWidgetSwitcher *ActivePanelSwitcher;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UHorizontalBox *MenuButtonHolder;
+	class UTextBlock *HitEntityTitle;
+
+	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
+	UTextBlock *HitEntityCaption;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UKeyboardWidget *Keyboard;

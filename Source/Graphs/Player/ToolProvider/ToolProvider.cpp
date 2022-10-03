@@ -2,6 +2,7 @@
 #include "Graphs/EntityStorage/Commands/EdgeCommands.h"
 #include "Graphs/EntityStorage/Commands/GraphCommands.h"
 #include "Graphs/EntityStorage/Commands/VertexCommands.h"
+#include "Graphs/Player/Menu/MenuWidget.h"
 #include "Kismet/GameplayStatics.h"
 #include "Tools/Creator/ToolCreator.h"
 #include "Tools/Editor/ToolEditor.h"
@@ -45,6 +46,37 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 		if (NewHitEntityId != EntityId::NONE() && ActiveTool.IsValid() && ActiveTool->SupportsEntity(NewHitEntityId)) {
 			HitEntityId = NewHitEntityId;
 			ExecuteHitCommandBasedOnHitEntity(true);
+
+			if (ES::IsValid<VertexEntity>(HitEntityId)) {
+				const auto &Vertex = ES::GetEntity<VertexEntity>(HitEntityId);
+				GetVrPawn()->GetMenuWidget()->SetHitEntity(
+					"Vertex",
+					FString("Id: ") + FString::FromInt(Vertex.CustomId)
+					+ FString("\nValue: ") + FString::SanitizeFloat(Vertex.Value, 0)
+				);
+			}
+			else if (ES::IsValid<EdgeEntity>(HitEntityId)) {
+				const auto &Edge = ES::GetEntity<EdgeEntity>(HitEntityId);
+				const auto &FirstVertex = ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[0]);
+				const auto &SecondVertex = ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[1]);
+				GetVrPawn()->GetMenuWidget()->SetHitEntity(
+					"Edge",
+					FString("From: ") + FString::FromInt(FirstVertex.CustomId)
+					+ FString("\nTo: ") + FString::FromInt(SecondVertex.CustomId)
+				);
+			}
+			else {
+				const auto &Graph = ES::GetEntity<GraphEntity>(HitEntityId);
+				GetVrPawn()->GetMenuWidget()->SetHitEntity(
+					"Graph",
+					FString("Colorful: ") + (Graph.Colorful ? "true" : "false")
+					+ FString("\nVertices: ") + FString::FromInt(Graph.Vertices.Num())
+					+ FString("\nEdges: ") + FString::FromInt(Graph.Edges.Num())
+				);
+			}
+		}
+		else {
+			GetVrPawn()->GetMenuWidget()->SetHitEntity("None", "");
 		}
 	}
 }
@@ -158,7 +190,7 @@ void UToolProvider::BeginPlay() {
 				i,
 				Positions[i],
 				FLinearColor::MakeRandomColor().ToFColor(false),
-				1337
+				1337.0
 			);
 		}
 
