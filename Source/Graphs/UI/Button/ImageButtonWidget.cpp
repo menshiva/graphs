@@ -3,10 +3,9 @@
 
 void UImageButtonWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
-	if (IBImage) {
-		IBImage->SetBrushFromTexture(Image, true);
+	SetImage(Image);
+	if (IBImage)
 		IBImage->SetBrushTintColor(ImageColor);
-	}
 }
 
 void UImageButtonWidget::SetImage(UTexture2D *NewImage) const {
