@@ -9,9 +9,10 @@ DECLARE_CYCLE_STAT(TEXT("UVRControllerRight::Tick"), STAT_UVRControllerRight_Tic
 UVRControllerRight::UVRControllerRight(
 	const FObjectInitializer &ObjectInitializer
 ) : UVRControllerBase(ObjectInitializer, EControllerHand::Right) {
-	SetLaserNiagaraColor(ColorConsts::BlueColor.ReinterpretAsLinear());
+	SetLaserColor(ColorConsts::BlueColor.ReinterpretAsLinear());
+	SetLaserMinLength(UVerticesRenderer::MeshScale);
 	SetLaserLength(MeshInteractionLaserMaxDistance);
-	UVRControllerBase::SetLaserActive(LaserVisibleFlag);
+	UVRControllerBase::SetLaserActive(true);
 
 	UiInteractor = ObjectInitializer.CreateDefaultSubobject<UWidgetInteractionComponent>(this, "UiInteractor");
 	UiInteractor->PointerIndex = 1;
@@ -37,28 +38,28 @@ UVRControllerRight::UVRControllerRight(
 }
 
 void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
-	BindAction(Pic, "RightTrigger", IE_Pressed, [this] {
+	Utils::BindAction(Pic, "RightTrigger", IE_Pressed, [this] {
 		if (OnRightTriggerAction(true))
 			PlayActionHapticEffect();
 	});
-	BindAction(Pic, "RightTrigger", IE_Released, [this] {
+	Utils::BindAction(Pic, "RightTrigger", IE_Released, [this] {
 		OnRightTriggerAction(false);
 	});
-	BindAction(Pic, "RightGrip", IE_Pressed, [this] {
+	Utils::BindAction(Pic, "RightGrip", IE_Pressed, [this] {
 		if (State != ControllerState::TOOL) {
 			SelectionWidgetComponent->SetVisibility(true);
 			PlayActionHapticEffect();
 		}
 	});
-	BindAction(Pic, "RightGrip", IE_Released, [this] {
+	Utils::BindAction(Pic, "RightGrip", IE_Released, [this] {
 		if (SelectionWidgetComponent->IsVisible())
 			SelectionWidgetComponent->SetVisibility(false);
 	});
 
-	BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
+	Utils::BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
 		OnRightThumbstickY(Value);
 	});
-	BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
+	Utils::BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
 		OnRightThumbstickX(Value);
 	});
 }
@@ -76,7 +77,7 @@ void UVRControllerRight::TickComponent(
 		if (const auto Menu = Cast<UMenuWidgetComponent>(UiHitResult.Component.Get()))
 			Menu->SetCursorLocation(UiHitResult.ImpactPoint);
 	}
-	else if (State == ControllerState::NONE && IsLaserActive()) {
+	else if (CastEnabled && State == ControllerState::NONE && IsLaserActive()) {
 		FHitResult NewHitResult;
 		FCollisionQueryParams QueryParams;
 		QueryParams.bReturnFaceIndex = true;
@@ -220,6 +221,8 @@ void UVRControllerRight::BeginPlay() {
 		"Selection Mode: Graph"
 	});
 	SelectorWidget->SetSelectedOptionIndex(0, true);
+
+	UVRControllerBase::SetLaserActive(LaserVisibleFlag);
 }
 
 void UVRControllerRight::OnUiHover(UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent) {

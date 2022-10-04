@@ -23,13 +23,11 @@ void UButtonWidget::NativePreConstruct() {
 
 void UButtonWidget::NativeConstruct() {
 	Super::NativeConstruct();
-	if (BButton)
-		BButton->OnClicked.AddDynamic(this, &UButtonWidget::HandleClicked);
+	BButton->OnPressed.AddDynamic(this, &UButtonWidget::HandleClicked);
 }
 
 void UButtonWidget::SetBackgroundColor(const FLinearColor &NewColor) {
 	BackgroundColor = NewColor;
-
 	if (BButton) {
 		FButtonStyle Style = BButton->WidgetStyle;
 		const FVector ColorVector{NewColor};
@@ -44,10 +42,6 @@ void UButtonWidget::SetHoveredPressedCoefficients(const float HoveredCoeff, cons
 	HoveredCoefficient = HoveredCoeff;
 	PressedCoefficient = PressedCoeff;
 	SetBackgroundColor(BackgroundColor);
-}
-
-void UButtonWidget::SetOnClickEvent(TFunction<void()> &&ClickEvent) {
-	OnClick = ClickEvent;
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst

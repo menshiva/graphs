@@ -18,7 +18,7 @@ public:
 	FORCEINLINE UMotionControllerComponent *GetMotionController() const { return MotionController; }
 
 	FORCEINLINE class AVRPawn *GetVrPawn() const { return VrPawn.Get(); }
-	void SetupVrPawn(AVRPawn *Pawn);
+	FORCEINLINE void SetupVrPawn(AVRPawn *Pawn) { VrPawn = Pawn; }
 
 	bool IsLaserActive() const;
 	virtual void SetLaserActive(bool IsActive);
@@ -26,8 +26,16 @@ public:
 	FORCEINLINE const FVector &GetLaserStartPosition() const { return LaserStartPosition; }
 	FORCEINLINE FVector GetLaserEndPosition() const { return LaserStartPosition + LaserLength * LaserDirection; }
 	FORCEINLINE float GetLaserLength() const { return LaserLength; }
-	void SetLaserLength(float NewLength);
-	void SetLaserLengthDelta(float Delta);
+
+	FORCEINLINE void SetLaserLength(const float NewLength) {
+		LaserLength = FMath::Clamp(NewLength, LaserMinLength, LaserMaxLength);
+	}
+
+	FORCEINLINE void SetLaserLengthDelta(const float Delta) {
+		LaserLength = FMath::Clamp(LaserLength + Delta * LaserLengthDeltaSpeed, LaserMinLength, LaserMaxLength);
+	}
+
+	void SetLaserColor(const FLinearColor &Color) const;
 	void ForceUpdateLaserTransform();
 
 	void PlayActionHapticEffect() const;
@@ -38,19 +46,7 @@ protected:
 
 	FORCEINLINE UMotionControllerComponent *GetMotionControllerAim() const { return MotionControllerAim; }
 
-	static void BindAction(
-		UInputComponent *PlayerInputComponent,
-		const FName &ActionName,
-		EInputEvent InputEvent,
-		TFunction<void()> &&Func
-	);
-	static void BindAxis(
-		UInputComponent *PlayerInputComponent,
-		const FName &ActionName,
-		TFunction<void(float)> &&Func
-	);
-
-	void SetLaserNiagaraColor(const FLinearColor &Color) const;
+	FORCEINLINE void SetLaserMinLength(const float NewMinLength) { LaserMinLength = NewMinLength; }
 	FORCEINLINE const FVector &GetLaserDirection() const { return LaserDirection; }
 private:
 	static void SetLaserNiagaraStartEnd(class UNiagaraComponent *aLaser, const FVector &Start, const FVector &End);
@@ -73,10 +69,10 @@ private:
 
 	FVector LaserStartPosition;
 	FVector LaserDirection;
+	float LaserMinLength = 0;
 	float LaserLength = 0;
 
 	constexpr static float ActionHapticScale = 0.15f;
-	constexpr static float LaserMinLength = 15.0f;
-	constexpr static float LaserMaxLength = 7500.0f;
+	constexpr static float LaserMaxLength = 15000.0f;
 	constexpr static float LaserLengthDeltaSpeed = 10.0f;
 };

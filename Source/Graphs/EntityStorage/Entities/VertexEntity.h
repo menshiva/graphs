@@ -14,4 +14,5 @@ struct VertexEntity {
 	uint32_t CustomId;
 	FVector Position;
 	FColor Color;
+	double Value;
 };

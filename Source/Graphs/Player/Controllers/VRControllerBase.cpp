@@ -13,21 +13,22 @@ UVRControllerBase::UVRControllerBase(
 ) : Type(aControllerType) {
 	PrimaryComponentTick.bCanEverTick = true;
 
-	FString ControllerName = StaticEnum<EControllerHand>()->GetNameStringByValue(Utils::EnumUnderlyingValue(aControllerType));
+	const auto ControllerName = StaticEnum<EControllerHand>()
+		->GetNameStringByValue(Utils::EnumUnderlyingValue(aControllerType));
 
 	MotionController = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
 		this,
 		"MotionController"
 	);
 	MotionController->SetShowDeviceModel(true);
-	MotionController->SetTrackingMotionSource(FName(GetData(ControllerName)));
+	MotionController->SetTrackingMotionSource(FName(*ControllerName));
 	MotionController->SetupAttachment(this);
 
 	MotionControllerAim = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
 		this,
 		"MotionControllerAim"
 	);
-	MotionControllerAim->SetTrackingMotionSource(FName(GetData(ControllerName + "Aim")));
+	MotionControllerAim->SetTrackingMotionSource(FName(*(ControllerName + "Aim")));
 	MotionControllerAim->SetupAttachment(this);
 
 	const ConstructorHelpers::FObjectFinder<UNiagaraSystem> LaserAsset(TEXT("/Game/Graphs/VFX/LaserTrace"));
@@ -41,10 +42,6 @@ UVRControllerBase::UVRControllerBase(
 		"/Game/Graphs/Haptics/ControllerActionHapticEffect"
 	));
 	HapticEffectController = HapticEffectAsset.Object;
-}
-
-void UVRControllerBase::SetupVrPawn(AVRPawn *Pawn) {
-	VrPawn = Pawn;
 }
 
 bool UVRControllerBase::IsLaserActive() const {
@@ -64,12 +61,8 @@ void UVRControllerBase::SetLaserActive(const bool IsActive) {
 	}
 }
 
-void UVRControllerBase::SetLaserLength(const float NewLength) {
-	LaserLength = FMath::Clamp(NewLength, LaserMinLength, LaserMaxLength);
-}
-
-void UVRControllerBase::SetLaserLengthDelta(const float Delta) {
-	LaserLength = FMath::Clamp(LaserLength + Delta * LaserLengthDeltaSpeed, LaserMinLength, LaserMaxLength);
+void UVRControllerBase::SetLaserColor(const FLinearColor &Color) const {
+	Laser->SetColorParameter("User.CustomColor", Color);
 }
 
 void UVRControllerBase::ForceUpdateLaserTransform() {
@@ -78,7 +71,7 @@ void UVRControllerBase::ForceUpdateLaserTransform() {
 }
 
 void UVRControllerBase::PlayActionHapticEffect() const {
-	VrPawn->GetPlayerController()->PlayHapticEffect(HapticEffectController, Type, ActionHapticScale);
+	VrPawn->GetController<APlayerController>()->PlayHapticEffect(HapticEffectController, Type, ActionHapticScale);
 }
 
 void UVRControllerBase::TickComponent(
@@ -99,31 +92,6 @@ void UVRControllerBase::TickComponent(
 void UVRControllerBase::BeginPlay() {
 	Super::BeginPlay();
 	ForceUpdateLaserTransform();
-}
-
-void UVRControllerBase::BindAction(
-	UInputComponent *PlayerInputComponent,
-	const FName& ActionName,
-	const EInputEvent InputEvent,
-	TFunction<void()> &&Func
-) {
-	FInputActionBinding AB(ActionName, InputEvent);
-	AB.ActionDelegate.GetDelegateForManualSet().BindLambda(Func);
-	PlayerInputComponent->AddActionBinding(MoveTemp(AB));
-}
-
-void UVRControllerBase::BindAxis(
-	UInputComponent *PlayerInputComponent,
-	const FName &ActionName,
-	TFunction<void(float)> &&Func
-) {
-	FInputAxisBinding AB(ActionName);
-	AB.AxisDelegate.GetDelegateForManualSet().BindLambda(Func);
-	PlayerInputComponent->AxisBindings.Push(MoveTemp(AB));
-}
-
-void UVRControllerBase::SetLaserNiagaraColor(const FLinearColor &Color) const {
-	Laser->SetColorParameter("User.CustomColor", Color);
 }
 
 void UVRControllerBase::SetLaserNiagaraStartEnd(UNiagaraComponent *aLaser, const FVector &Start, const FVector &End) {

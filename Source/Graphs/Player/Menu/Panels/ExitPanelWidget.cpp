@@ -2,11 +2,7 @@
 #include "Graphs/Player/Pawn/VRPawn.h"
 #include "Graphs/UI/Button/TextButtonWidget.h"
 
-void UExitPanelWidget::NativePreConstruct() {
-	Super::NativePreConstruct();
-	if (ExitButton) {
-		ExitButton->SetOnClickEvent([&] {
-			Cast<AVRPawn>(GetOwningPlayerPawn())->QuitGame();
-		});
-	}
+void UExitPanelWidget::NativeConstruct() {
+	Super::NativeConstruct();
+	ExitButton->SetOnClickEvent([Pawn = GetOwningPlayerPawn<AVRPawn>()] { Pawn->QuitGame(); });
 }

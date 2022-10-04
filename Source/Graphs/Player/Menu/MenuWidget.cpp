@@ -1,38 +1,48 @@
 #include "MenuWidget.h"
-#include "Animation/UMGSequencePlayer.h"
+#include "KeyboardWidget.h"
 #include "Components/Border.h"
-#include "Components/VerticalBox.h"
+#include "Components/HorizontalBox.h"
+#include "Components/TextBlock.h"
 #include "Components/WidgetSwitcher.h"
 #include "Graphs/UI/Button/ImageButtonWidget.h"
 
 void UMenuWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
-	for (size_t i = 0; i < MenuButtonHolder->GetChildrenCount(); ++i) {
-		const auto MenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(i));
-		MenuButton->SetOnClickEvent([&, i] {
-			SetActivePanel(i);
-		});
-	}
+	for (const auto MenuChild : MenuButtonHolder->GetAllChildren())
+		Cast<UImageButtonWidget>(MenuChild)->SetBackgroundColor(MenuButtonUnselectedColor);
+	SetActivePanel(0);
 }
 
 void UMenuWidget::NativeConstruct() {
 	Super::NativeConstruct();
 	for (size_t i = 0; i < MenuButtonHolder->GetChildrenCount(); ++i) {
 		const auto MenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(i));
-		MenuButton->SetBackgroundColor(MenuButtonUnselectedColor);
+		MenuButton->SetOnClickEvent([&, i] { SetActivePanel(i); });
 	}
-	SetActivePanel(0);
 }
 
-void UMenuWidget::PlayShowHideAnimation(const EUMGSequencePlayMode::Type Mode, TFunction<void()> &&OnEnd) {
-	PlayAnimation(ShowHideAnimation, 0, 1, Mode);
-	FTimerHandle AnimHandle;
-	GetOwningPlayerPawn()->GetWorldTimerManager().SetTimer(
-		AnimHandle,
-		FTimerDelegate::CreateLambda(OnEnd),
-		ShowHideAnimation->GetEndTime(),
-		false
-	);
+void UMenuWidget::SetKeyboardVisibility(const bool Visible) {
+	if (Visible == KeyboardVisible)
+		return;
+	if (Visible) {
+		KeyboardVisible = true;
+		Keyboard->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+		Keyboard->PlayShowHideAnimation(EUMGSequencePlayMode::Forward, [] {});
+	}
+	else {
+		Keyboard->PlayShowHideAnimation(
+			EUMGSequencePlayMode::Reverse,
+			[&] {
+				Keyboard->SetVisibility(ESlateVisibility::Collapsed);
+				KeyboardVisible = false;
+			}
+		);
+	}
+}
+
+void UMenuWidget::SetHitEntity(const char *EntityName, FString &&EntityCaption) const {
+	HitEntityTitle->SetText(FText::FromString(FString("Hit entity: ") + EntityName));
+	HitEntityCaption->SetText(FText::FromString(MoveTemp(EntityCaption)));
 }
 
 void UMenuWidget::SetActivePanel(const size_t Index) const {

@@ -5,15 +5,15 @@
 #include "Tool.generated.h"
 
 UCLASS(Abstract)
-class GRAPHS_API UTool : public UActorComponent, public RightControllerInputInterface {
+class GRAPHS_API UTool : public USceneComponent, public RightControllerInputInterface {
 	GENERATED_BODY()
 public:
 	UTool();
-	UTool(const FName &ToolName, const TCHAR *ToolImageAssetPath, const TCHAR *ToolPanelAssetPath);
+	UTool(const char *ToolName, const TCHAR *ToolImageAssetPath, const TCHAR *ToolPanelAssetPath);
 
 	FORCEINLINE void SetupToolProvider(UToolProvider *Provider) { ToolProvider = Provider; }
 
-	FORCEINLINE const FName &GetToolName() const { return ToolName; }
+	FORCEINLINE const char *GetToolName() const { return ToolName; }
 	FORCEINLINE UTexture2D *GetToolImage() const { return ToolImage; }
 	FORCEINLINE const TSubclassOf<class UToolWidget> &GetToolPanelClass() const { return ToolPanelClass; }
 
@@ -28,7 +28,7 @@ public:
 	virtual void TickTool() {}
 protected:
 	FORCEINLINE UVRControllerRight *GetVrRightController() const { return ToolProvider->GetVrPawn()->GetRightVrController(); }
-	FORCEINLINE const UToolProvider *GetToolProvider() const { return ToolProvider.Get(); }
+	FORCEINLINE UToolProvider *GetToolProvider() const { return ToolProvider.Get(); }
 	FORCEINLINE AGraphsRenderers *GetGraphsRenderers() const { return ToolProvider->GetGraphsRenderers(); }
 
 	FORCEINLINE EntityId GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
@@ -40,7 +40,7 @@ protected:
 private:
 	TWeakObjectPtr<UToolProvider> ToolProvider;
 
-	FName ToolName;
+	const char *ToolName;
 
 	UPROPERTY()
 	UTexture2D *ToolImage;

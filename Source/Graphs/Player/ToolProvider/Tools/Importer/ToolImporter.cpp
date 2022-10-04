@@ -12,27 +12,32 @@ UToolImporter::UToolImporter() : UTool(
 
 void UToolImporter::OnAttach() {
 	Super::OnAttach();
-	RefreshFileList();
 	GetToolPanel<UToolImporterPanelWidget>()->ShowImportList();
 }
 
-void UToolImporter::OnImportClick(const FString &FilePath) const {
+void UToolImporter::OnDetach() {
+	Super::OnDetach();
+	DeselectImportedGraph();
+}
+
+void UToolImporter::ImportFromFile(const FString &FilePath) {
 	const auto GraphRenderers = GetGraphsRenderers();
 	const auto ImporterToolPanel = GetToolPanel<UToolImporterPanelWidget>();
 	ImporterToolPanel->ShowLoadingPanel();
 
 	AsyncTask(
 		ENamedThreads::AnyBackgroundHiPriTask,
-		[GraphRenderers, &FilePath, ImporterToolPanel] {
-			FString ErrorMessage;
-			const auto GraphId = ImportGraphFromFile(FilePath, ErrorMessage);
-
-			Utils::DoOnGameThread([=, ErrorMessage(MoveTemp(ErrorMessage))] {
-				if (GraphId != EntityId::NONE()) {
+		[&, GraphRenderers, ImporterToolPanel] {
+			auto ErrorMessage = ImportFromFileImpl(FilePath);
+			Utils::DoOnGameThread([&, GraphRenderers, ImporterToolPanel, ErrorMessage(MoveTemp(ErrorMessage))] {
+				if (ImportedGraphId != EntityId::NONE()) {
+					check(ErrorMessage.IsEmpty());
 					ImporterToolPanel->ShowSuccessPanel();
-					GraphRenderers->ConstructGraphChunks(GraphId);
+					GraphCommands::Mutable::SetOverrideColor(ImportedGraphId, ColorConsts::GreenColor);
+					GraphRenderers->ConstructGraphChunks(ImportedGraphId);
 				}
 				else {
+					check(!ErrorMessage.IsEmpty());
 					ImporterToolPanel->ShowErrorPanel("Error while importing graph:\n\n" + ErrorMessage);
 				}
 			});
@@ -40,38 +45,33 @@ void UToolImporter::OnImportClick(const FString &FilePath) const {
 	);
 }
 
-void UToolImporter::RefreshFileList() const {
-	const auto ImporterToolPanel = GetToolPanel<UToolImporterPanelWidget>();
-	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
-	const auto ExportDirPath = FPaths::LaunchDir() + FileConsts::ExportDirName;
-
-	if (!FileManager.CreateDirectoryTree(*ExportDirPath)) {
-		ImporterToolPanel->ShowErrorPanel("Failed to create export directory.");
-		return;
+void UToolImporter::DeselectImportedGraph() {
+	if (ImportedGraphId != EntityId::NONE()) {
+		GraphCommands::Mutable::SetOverrideColor(ImportedGraphId, ColorConsts::OverrideColorNone);
+		GetGraphsRenderers()->MarkGraphDirty(
+			ImportedGraphId,
+			true, false,
+			true, false
+		);
+		GetGraphsRenderers()->RedrawGraphChunksIfDirty(ImportedGraphId);
+		ImportedGraphId = EntityId::NONE();
 	}
-
-	TArray<FString> ImportFiles;
-	FileManager.FindFiles(ImportFiles, *ExportDirPath, TEXT(".json"));
-
-	ImporterToolPanel->SetInputFiles(ImportFiles);
 }
 
-EntityId UToolImporter::ImportGraphFromFile(const FString &FilePath, FString &ErrorMessage) {
+FString UToolImporter::ImportFromFileImpl(const FString &FilePath) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolImporter_ImportGraphFromFile);
 
 	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 	check(FilePath.EndsWith(".json"));
 
-	if (!FileManager.FileExists(*FilePath)) {
-		ErrorMessage = "File does not exist.";
-		return EntityId::NONE();
-	}
+	if (!FileManager.FileExists(*FilePath))
+		return "File does not exist.";
 
 	FString JsonStr;
-	if (!FFileHelper::LoadFileToString(JsonStr, &FileManager, *FilePath)) {
-		ErrorMessage = "Failed to read from file.";
-		return EntityId::NONE();
-	}
+	if (!FFileHelper::LoadFileToString(JsonStr, &FileManager, *FilePath))
+		return "Failed to read from file.";
 
-	return GraphCommands::Mutable::Deserialize(JsonStr, ErrorMessage);
+	FString ErrorMessage;
+	ImportedGraphId = GraphCommands::Mutable::Deserialize(JsonStr, ErrorMessage);
+	return ErrorMessage;
 }

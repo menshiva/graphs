@@ -5,11 +5,10 @@
 #include "ToolProvider.generated.h"
 
 UCLASS()
-class GRAPHS_API UToolProvider final : public UActorComponent, public RightControllerInputInterface {
+class GRAPHS_API UToolProvider final : public USceneComponent, public RightControllerInputInterface {
 	GENERATED_BODY()
 public:
 	explicit UToolProvider(const FObjectInitializer &ObjectInitializer);
-
 	FORCEINLINE void SetupPawn(AVRPawn *Pawn) { VrPawn = Pawn; }
 
 	FORCEINLINE AVRPawn *GetVrPawn() const { return VrPawn.Get(); }
@@ -39,6 +38,7 @@ private:
 	void RegisterTool(const FObjectInitializer &ObjectInitializer, const FName &ToolObjectName) {
 		const auto Tool = ObjectInitializer.CreateDefaultSubobject<T>(this, ToolObjectName);
 		Tool->SetupToolProvider(this);
+		Tool->SetupAttachment(this);
 		Tools.Push(Tool);
 	}
 

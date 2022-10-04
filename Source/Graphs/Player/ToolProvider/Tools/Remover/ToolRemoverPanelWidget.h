@@ -9,9 +9,10 @@ class GRAPHS_API UToolRemoverPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
 	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
 
 	void SetButtonsEnabled(bool IsEnabled) const;
-	FORCEINLINE void SetLoadingStatus(const bool Loading) const;
+	void SetLoadingStatus(const bool Loading) const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UWidgetSwitcher *RemoverPanelSwitcher;

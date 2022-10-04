@@ -10,8 +10,9 @@ class GRAPHS_API UImageButtonWidget : public UButtonWidget {
 public:
 	virtual void NativePreConstruct() override;
 
-	void SetImage(UTexture2D *NewImage) const;
+	FORCEINLINE const FLinearColor &GetImageColor() const { return ImageColor; }
 
+	void SetImage(UTexture2D *NewImage) const;
 	void SetImageVisibility(bool Visible) const;
 protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, meta=(DesignerRebuild, sRGB="true"))

@@ -1,12 +1,7 @@
 ﻿#include "RendererBase.h"
 #include "VerticesRenderer.h"
 
-URendererBase::URendererBase() {
-	const static ConstructorHelpers::FObjectFinder<UMaterial> GraphMaterialAsset(
-		TEXT("/Game/Graphs/Materials/GraphMaterial")
-	);
-	MeshMaterial = GraphMaterialAsset.Object;
-}
+URendererBase::URendererBase() : URuntimeMeshProvider() {}
 
 void URendererBase::SetInitRenderData(RenderData &&InRenderData) {
 	Data = MoveTemp(InRenderData);
@@ -14,9 +9,6 @@ void URendererBase::SetInitRenderData(RenderData &&InRenderData) {
 }
 
 void URendererBase::Initialize() {
-	Super::Initialize();
-	SetupMaterialSlot(0, "Mesh Material", MeshMaterial);
-
 	// TODO: more LODs?
 	FRuntimeMeshLODProperties LODProperties;
 	LODProperties.ScreenSize = 0.0f;

@@ -4,42 +4,68 @@
 #include "Graphs/UI/OptionSelector/OptionSelectorWidget.h"
 
 void UToolManipulatorPanelWidget::NativePreConstruct() {
-	Super::NativeConstruct();
+	Super::NativePreConstruct();
+
 	if (ModeSelector) {
-		ModeSelector->SetOnSelectedOptionChangedEvent([&] (const int32 SelectedIdx) {
-			if (SelectedIdx == 0)
-				GetTool<UToolManipulator>()->SetMode(ManipulationMode::MOVE);
-			else if (SelectedIdx == 1)
-				GetTool<UToolManipulator>()->SetMode(ManipulationMode::ROTATE);
-			else {
-				check(false);
-			}
-			SetTextSelectEntity();
-		});
-		ModeSelector->SetOptions({
-			"Mode: Move",
-			"Mode: Rotate"
-		});
-		ModeSelector->SetSelectedOptionIndex(0, true);
+		ModeSelector->SetOptions({"Move", "Rotate"});
+		ModeSelector->SetSelectedOptionIndex(0, false);
+	}
+
+	if (RotationModeSelector) {
+		RotationModeSelector->SetOptions({"Along Y axis", "Along Z axis"});
+		RotationModeSelector->SetSelectedOptionIndex(0, false);
 	}
 }
 
-void UToolManipulatorPanelWidget::SetTextSelectEntity() const {
-	if (ManipulatorText) {
+void UToolManipulatorPanelWidget::NativeConstruct() {
+	Super::NativeConstruct();
+	const auto ManipulatorTool = GetTool<UToolManipulator>();
+
+	ModeSelector->SetOnSelectedOptionChangedEvent([&, ManipulatorTool] (const int32 SelectedIdx) {
+		if (SelectedIdx == 0)
+			ManipulatorTool->SetManipulationMode(ManipulationMode::MOVE);
+		else if (SelectedIdx == 1)
+			ManipulatorTool->SetManipulationMode(ManipulationMode::ROTATE);
+		else {
+			check(false);
+		}
+		Update(ManipulatorTool);
+	});
+	ModeSelector->SetSelectedOptionIndex(0, true);
+
+	RotationModeSelector->SetOnSelectedOptionChangedEvent([&, ManipulatorTool] (const int32 SelectedIdx) {
+		if (SelectedIdx == 0)
+			ManipulatorTool->SetRotationMode(RotationMode::Y_AXIS);
+		else if (SelectedIdx == 1)
+			ManipulatorTool->SetRotationMode(RotationMode::Z_AXIS);
+		else {
+			check(false);
+		}
+	});
+	RotationModeSelector->SetSelectedOptionIndex(0, true);
+}
+
+void UToolManipulatorPanelWidget::Update(const UToolManipulator *ManipulatorTool) const {
+	const bool IsInMoveMode = ManipulatorTool->GetManipulationMode() == ManipulationMode::MOVE;
+
+	if (ManipulatorTool->GetManipulationEntity() == EntityId::NONE()) {
 		ManipulatorText->SetText(
-			GetTool<UToolManipulator>()->GetMode() == ManipulationMode::MOVE
-				? FText::FromString("Select vertex, edge or graph")
+			IsInMoveMode
+				? FText::FromString("Select vertex / edge / graph")
 				: FText::FromString("Select graph")
 		);
 	}
-}
-
-void UToolManipulatorPanelWidget::SetTextActionEntity() const {
-	if (ManipulatorText) {
+	else {
 		ManipulatorText->SetText(
-			GetTool<UToolManipulator>()->GetMode() == ManipulationMode::MOVE
-				? FText::FromString("Move controller or thumbstick up / down to move selected entity")
-				: FText::FromString("Move thumbstick left / right to rotate selected entity")
+			IsInMoveMode
+				? FText::FromString("Move controller or thumbstick up / down to move")
+				: FText::FromString("Move thumbstick to rotate")
 		);
 	}
+
+	RotationModeSelector->SetVisibility(
+		IsInMoveMode
+			? ESlateVisibility::Collapsed
+			: ESlateVisibility::SelfHitTestInvisible
+	);
 }

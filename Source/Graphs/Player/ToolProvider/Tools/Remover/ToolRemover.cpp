@@ -100,7 +100,6 @@ void UToolRemover::RemoveSelectedEntities() {
 	const auto RightVrController = GetVrRightController();
 	RightVrController->SetLaserActive(false);
 	RemoverToolPanel->SetLoadingStatus(true);
-	RemoverToolPanel->SetButtonsEnabled(false);
 
 	AsyncTask(
 		ENamedThreads::AnyBackgroundHiPriTask,
@@ -167,7 +166,5 @@ void UToolRemover::DeselectEntities() {
 			GetGraphsRenderers()->RedrawGraphChunksIfDirty(P.Key);
 		}
 	}
-
 	GraphsRemoveData.Reset();
-	GetToolPanel<UToolRemoverPanelWidget>()->SetButtonsEnabled(false);
 }

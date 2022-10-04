@@ -25,7 +25,7 @@ void GenerateEdgeFaces(
 	check(FVector::Orthogonal(ForwardDir, RightDir));
 
 	// offset vertex positions almost by vertex mesh scale
-	const auto Offset = ForwardDir * UVerticesRenderer::MeshScale * 0.7f;
+	const auto Offset = ForwardDir * UVerticesRenderer::MeshScale * 0.95f;
 	FirstVertexPos += Offset;
 	SecondVertexPos -= Offset;
 
@@ -39,7 +39,15 @@ void GenerateEdgeFaces(
 	}
 }
 
-UEdgesRenderer::UEdgesRenderer() : URendererBase() {}
+UEdgesRenderer::UEdgesRenderer() : URendererBase() {
+	const static ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(TEXT("/Game/Graphs/Materials/EdgesMaterial"));
+	MeshMaterial = MaterialAsset.Object;
+}
+
+void UEdgesRenderer::Initialize() {
+	SetupMaterialSlot(0, "Edges Mesh Material", MeshMaterial);
+	Super::Initialize();
+}
 
 bool UEdgesRenderer::GetSectionMeshForLOD(
 	const int32 LODIndex,
@@ -95,8 +103,8 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 		GenerateEdgeFaces<MeshQuality>(FirstVertexPos, SecondVertexPos, Positions);
 
 		for (uint32_t i = 0; i < MeshQuality; ++i) {
-			Colors.Add(FirstVertexColor);
-			Colors.Add(SecondVertexColor);
+			Colors.Add(FirstVertexColor.WithAlpha(MeshAlpha));
+			Colors.Add(SecondVertexColor.WithAlpha(MeshAlpha));
 		}
 
 		for (int32 i = 1; i < MeshQuality * 2; i += 2) {

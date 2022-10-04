@@ -8,18 +8,18 @@ UCLASS(Abstract, meta=(DisableNativeTick))
 class GRAPHS_API UToolExporterPanelWidget : public UToolWidget {
 	GENERATED_BODY()
 public:
-	virtual void NativePreConstruct() override;
+	virtual void NativeConstruct() override;
 
 	void ShowExportPanel() const;
 	void ShowSuccessPanel(const FString &ExportPath) const;
-	void ShowErrorPanel(const FString &ErrorDesc) const;
+	void ShowErrorPanel(const FStringView &ErrorDesc) const;
 	void ShowLoadingPanel() const;
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UWidgetSwitcher *ExporterPanelSwitcher;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UTextBlock *ExporterText;
+	UTextBlock *ExporterText;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	class UTextButtonWidget *ExporterConfirmButton;

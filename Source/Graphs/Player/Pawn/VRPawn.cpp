@@ -24,14 +24,18 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 	RightVrController->SetupVrPawn(this);
 	RightVrController->SetupAttachment(RootComponent);
 
-	Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
-	Menu->SetupAttachment(LeftVrController->GetMotionController());
-
 	ToolProvider = ObjectInitializer.CreateDefaultSubobject<UToolProvider>(this, "ToolProvider");
 	ToolProvider->SetupPawn(this);
+
+	Menu = ObjectInitializer.CreateDefaultSubobject<UMenuWidgetComponent>(this, "Menu");
+	Menu->SetupAttachment(LeftVrController->GetMotionController());
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
+	Utils::BindAction(PlayerInputComponent, "Esc", IE_Pressed, [&] {
+		QuitGame();
+	});
+
 	LeftVrController->SetupInputBindings(PlayerInputComponent);
 	RightVrController->SetupInputBindings(PlayerInputComponent);
 }
@@ -39,13 +43,6 @@ void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
 void AVRPawn::ToggleCameraFadeAnimation() {
 	CameraFadeAnimationEnabled = !CameraFadeAnimationEnabled;
 	SaveConfig();
-}
-
-void AVRPawn::ToggleMenu() const {
-	bool isMenuShown = Menu->IsVisible();
-	isMenuShown = !isMenuShown;
-	RightVrController->SetUiInteractionEnabled(isMenuShown);
-	Menu->SetVisble(isMenuShown);
 }
 
 void AVRPawn::Rotate(const float Value) {
@@ -68,7 +65,10 @@ void AVRPawn::QuitGame() const {
 	FTimerHandle FadeInHandle;
 	FadeCamera(1.0f);
 	GetWorldTimerManager().SetTimer(FadeInHandle, FTimerDelegate::CreateLambda([&] {
-		UKismetSystemLibrary::QuitGame(GetWorld(), GetPlayerController(), EQuitPreference::Type::Quit, false);
+		UKismetSystemLibrary::QuitGame(
+			GetWorld(), GetController<APlayerController>(),
+			EQuitPreference::Type::Quit, false
+		);
 	}), ScreenFadeDuration, false);
 }
 
@@ -90,6 +90,9 @@ bool AVRPawn::OnRightThumbstickXAction(const float Value) {
 
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
+
+	MenuWidget = Cast<UMenuWidget>(Menu->GetWidget());
+
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()
 		&& UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())
 	{
@@ -121,7 +124,7 @@ void AVRPawn::CameraTeleportAnimation(TFunction<void()> &&DoAfterFadeIn) {
 }
 
 void AVRPawn::FadeCamera(const float ToValue) const {
-	GetPlayerController()->PlayerCameraManager->StartCameraFade(
+	GetController<APlayerController>()->PlayerCameraManager->StartCameraFade(
 		1.0 - ToValue, ToValue,
 		ScreenFadeDuration, FColor::Black,
 		false, static_cast<bool>(ToValue)

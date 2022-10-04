@@ -15,7 +15,7 @@ void UOptionSelectorWidget::NativePreConstruct() {
 	SetButtonsEnabled(ButtonsEnabled);
 }
 
-void UOptionSelectorWidget::SetOptions(const std::initializer_list<FString> NewOptions) {
+void UOptionSelectorWidget::SetOptions(std::initializer_list<FString> &&NewOptions) {
 	Options.Empty(NewOptions.size());
 	for (const auto &Item : NewOptions)
 		Options.Push(Item);
@@ -64,8 +64,4 @@ void UOptionSelectorWidget::SetButtonsEnabled(const bool Enabled) {
 			SelectorNextButton->SetHoveredPressedCoefficients(0.0f, 0.0f);
 		SelectorNextButton->SetBackgroundColor(NewColor);
 	}
-}
-
-void UOptionSelectorWidget::SetOnSelectedOptionChangedEvent(TFunction<void(int32)> &&Event) {
-	OnSelectedOptionChanged = Event;
 }

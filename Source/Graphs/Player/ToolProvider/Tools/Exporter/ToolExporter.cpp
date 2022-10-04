@@ -35,15 +35,11 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 		const auto ExportDirPath = FPaths::LaunchDir() + ExportDirName;
 
 		if (!FileManager.CreateDirectoryTree(*ExportDirPath)) {
-			ExporterToolPanel->ShowErrorPanel("Failed to create export directory.");
+			ExporterToolPanel->ShowErrorPanel(TEXT("Failed to create export directory."));
 			return false;
 		}
 
-		const auto NewFileName = GenerateJsonFileNameInDirectory(
-			FileManager,
-			ExportDirPath,
-			FileConsts::ExportFilePrefix
-		);
+		const auto NewFileName = GenerateJsonFileNameInDirectory(ExportDirPath, FileConsts::ExportFilePrefix);
 
 		auto OutputPath = ExportDirPath + NewFileName;
 		auto OutputDisplayPath = ExportDirName + NewFileName;
@@ -55,8 +51,8 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 		AsyncTask(
 			ENamedThreads::AnyBackgroundHiPriTask,
 			[GraphId, OutputPath(MoveTemp(OutputPath)), OutputDisplayPath(MoveTemp(OutputDisplayPath)), ExporterToolPanel] () mutable {
-				FString ErrorMessage;
-				if (ExportGraph(GraphId, OutputPath, ErrorMessage)) {
+				FString ErrorMessage = ExportGraph(GraphId, OutputPath);
+				if (ErrorMessage.IsEmpty()) {
 					Utils::DoOnGameThread([OutputDisplayPath(MoveTemp(OutputDisplayPath)), ExporterToolPanel] {
 						ExporterToolPanel->ShowSuccessPanel(OutputDisplayPath);
 					});
@@ -75,11 +71,8 @@ bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {
 	return Super::OnRightTriggerAction(IsPressed);
 }
 
-FString UToolExporter::GenerateJsonFileNameInDirectory(
-	IPlatformFile &FileManager,
-	const FString &DirPath,
-	const FString &FilePrefix
-) {
+FString UToolExporter::GenerateJsonFileNameInDirectory(const FString &DirPath, const FString &FilePrefix) {
+	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 	check(FileManager.DirectoryExists(*DirPath));
 
 	FString NewFileName;
@@ -97,19 +90,13 @@ FString UToolExporter::GenerateJsonFileNameInDirectory(
 	return NewFileName;
 }
 
-bool UToolExporter::ExportGraph(
-	const EntityId GraphId,
-	const FString &OutputPath,
-	FString &ErrorMessage
-) {
+FString UToolExporter::ExportGraph(const EntityId GraphId, const FString &OutputPath) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolExporter_ExportGraph);
 	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
 
 	TUniquePtr<IFileHandle> OutputFileHandler(FileManager.OpenWrite(*OutputPath, false, false));
-	if (!OutputFileHandler.IsValid()) {
-		ErrorMessage = "Failed to create a new file.";
-		return false;
-	}
+	if (!OutputFileHandler.IsValid())
+		return "Failed to create a new file.";
 
 	rapidjson::StringBuffer SBuffer;
 	rapidjson::PrettyWriter Writer(SBuffer);
@@ -120,10 +107,9 @@ bool UToolExporter::ExportGraph(
 	if (!OutputFileHandler->Write(reinterpret_cast<const uint8*>(SBuffer.GetString()), SBuffer.GetSize())) {
 		OutputFileHandler.Reset();
 		FileManager.DeleteFile(*OutputPath);
-		ErrorMessage = "Failed to write data to a new file.";
-		return false;
+		return "Failed to write data to a new file.";
 	}
 	OutputFileHandler->Flush();
 
-	return true;
+	return "";
 }

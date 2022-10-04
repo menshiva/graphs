@@ -45,13 +45,17 @@ public:
 	virtual bool OnRightThumbstickXAction(float Value) override;
 
 	virtual void SetLaserActive(bool IsActive) override;
+	FORCEINLINE void SetCastEnabled(const bool Enable) { CastEnabled = Enable; }
 
 	void SetUiInteractionEnabled(bool Enabled);
 
+	FORCEINLINE bool IsInUiState() const { return State == ControllerState::UI; }
 	FORCEINLINE bool IsInToolState() const { return State == ControllerState::TOOL; }
 	void SetToolStateEnabled(bool Enabled);
 
 	FORCEINLINE SelectionMode GetSelectionMode() const { return Selection; }
+
+	FORCEINLINE class UWidgetInteractionComponent *GetUiInteractor() const { return UiInteractor; }
 protected:
 	virtual void BeginPlay() override;
 private:
@@ -59,7 +63,7 @@ private:
 	void OnUiHover(class UWidgetComponent *WidgetComponent, UWidgetComponent *PreviousWidgetComponent);
 
 	UPROPERTY()
-	class UWidgetInteractionComponent *UiInteractor;
+	UWidgetInteractionComponent *UiInteractor;
 
 	UPROPERTY()
 	UWidgetComponent *SelectionWidgetComponent;
@@ -67,10 +71,10 @@ private:
 	ControllerState State = ControllerState::NONE;
 
 	bool TriggerPressed = false;
-
 	bool LaserVisibleFlag = false;
+	bool CastEnabled = true;
 
 	SelectionMode Selection = SelectionMode::VERTEX_EDGE;
 
-	constexpr static float MeshInteractionLaserMaxDistance = 7500.0f;
+	constexpr static float MeshInteractionLaserMaxDistance = 15000.0f;
 };

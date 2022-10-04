@@ -5,7 +5,7 @@
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::Mutable::Create"), STAT_VertexCommands_Mutable_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 EntityId VertexCommands::Mutable::Create(
 	const EntityId GraphId,
-	const uint32_t CustomVertexId, const FVector &Position, const FColor &Color
+	const uint32_t CustomVertexId, const FVector &Position, const FColor &Color, const double Value
 ) {
 	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Mutable_Create);
 
@@ -20,6 +20,7 @@ EntityId VertexCommands::Mutable::Create(
 	Vertex.CustomId = CustomVertexId;
 	Vertex.Position = Position;
 	Vertex.Color = Color;
+	Vertex.Value = Value;
 
 	// add new entity to parent graph
 	auto &Graph = ES::GetEntityMut<GraphEntity>(GraphId);
@@ -80,7 +81,7 @@ bool VertexCommands::Mutable::Deserialize(const rapidjson::Value &DomVertex, con
 		}
 		CustomId = IdMember->value.GetUint();
 		if (Graph.VerticesCustomIdToEntityId.Contains(CustomId)) {
-			ErrorMessage = "\"id\" (" + FString::FromInt(CustomId) + ") is not unique.";
+			ErrorMessage = "\"id\" is not unique.";
 			return false;
 		}
 	}
@@ -98,21 +99,35 @@ bool VertexCommands::Mutable::Deserialize(const rapidjson::Value &DomVertex, con
 		}
 	}
 
-	FColor Color;
+	FColor Color = ColorConsts::VertexDefaultColor;
 	{
 		const auto &ColorMember = DomVertex.FindMember("color");
-		if (ColorMember == DomVertex.MemberEnd() || !ColorMember->value.IsString()) {
-			ErrorMessage = "Object should have \"color\" string.";
-			return false;
-		}
-		Color = FColor::FromHex(FString(ColorMember->value.GetString()));
-		if (Color == FColor(ForceInitToZero)) {
-			ErrorMessage = "\"color\" shoud be in #RRGGBB format.";
-			return false;
+		if (ColorMember != DomVertex.MemberEnd()) {
+			if (!ColorMember->value.IsString() || ColorMember->value.GetStringLength() != 7) {
+				ErrorMessage = "\"color\" shoud be a string in \"#RRGGBB\" format.";
+				return false;
+			}
+			Color = FColor::FromHex(FString(ColorMember->value.GetString()));
+			if (Color == FColor(ForceInitToZero)) {
+				ErrorMessage = "\"color\" shoud be in #RRGGBB format.";
+				return false;
+			}
 		}
 	}
 
-	Create(GraphId, CustomId, Position, Color);
+	double Value = 0.0;
+	{
+		const auto &ValueMember = DomVertex.FindMember("value");
+		if (ValueMember != DomVertex.MemberEnd()) {
+			if (!ValueMember->value.IsDouble()) {
+				ErrorMessage = "\"value\" should be a floating point number.";
+				return false;
+			}
+			Value = ValueMember->value.GetDouble();
+		}
+	}
+
+	Create(GraphId, CustomId, Position, Color, Value);
 	return true;
 }
 
@@ -146,5 +161,33 @@ void VertexCommands::Const::Serialize(const EntityId VertexId, rapidjson::Pretty
 		Writer.String(ColorStrUTF.Get(), ColorStrUTF.Length());
 	}
 
+	// value
+	{
+		Writer.Key("value");
+		Writer.Double(Vertex.Value);
+	}
+
 	Writer.EndObject();
+}
+
+DECLARE_CYCLE_STAT(TEXT("VertexCommands::Const::AreConnected"), STAT_VertexCommands_Const_AreConnected, STATGROUP_GRAPHS_PERF_COMMANDS);
+bool VertexCommands::Const::AreConnected(const EntityId FirstVertexId, const EntityId SecondVertexId) {
+	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Const_AreConnected);
+	check(FirstVertexId != SecondVertexId);
+
+	const auto &FirstVertex = ES::GetEntity<VertexEntity>(FirstVertexId);
+	const auto &SecondVertex = ES::GetEntity<VertexEntity>(SecondVertexId);
+
+	if (FirstVertex.GraphId != SecondVertex.GraphId)
+		return false;
+
+	for (const auto EdgeId : FirstVertex.ConnectedEdges) {
+		const auto &Edge = ES::GetEntity<EdgeEntity>(EdgeId);
+		if (Edge.ConnectedVertices[0] == SecondVertexId || Edge.ConnectedVertices[1] == SecondVertexId) {
+			check(SecondVertex.ConnectedEdges.Contains(EdgeId));
+			return true;
+		}
+	}
+
+	return false;
 }

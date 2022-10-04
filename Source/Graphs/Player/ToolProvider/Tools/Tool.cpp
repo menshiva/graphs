@@ -5,7 +5,7 @@ UTool::UTool() {
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-UTool::UTool(const FName &ToolName, const TCHAR *ToolImageAssetPath, const TCHAR *ToolPanelAssetPath): ToolName(ToolName) {
+UTool::UTool(const char *ToolName, const TCHAR *ToolImageAssetPath, const TCHAR *ToolPanelAssetPath): ToolName(ToolName) {
 	PrimaryComponentTick.bCanEverTick = false;
 
 	const ConstructorHelpers::FObjectFinder<UTexture2D> ToolImageAsset(ToolImageAssetPath);

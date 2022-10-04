@@ -3,6 +3,8 @@
 #include "Graphs/EntityStorage/Commands/GraphCommands.h"
 #include "Graphs/EntityStorage/Commands/VertexCommands.h"
 #include "Kismet/GameplayStatics.h"
+#include "Tools/Creator/ToolCreator.h"
+#include "Tools/Editor/ToolEditor.h"
 #include "Tools/Importer/ToolImporter.h"
 #include "Tools/Exporter/ToolExporter.h"
 #include "Tools/Manipulator/ToolManipulator.h"
@@ -10,11 +12,13 @@
 
 DECLARE_CYCLE_STAT(TEXT("UToolProvider::Tick"), STAT_UToolProvider_Tick, STATGROUP_GRAPHS_PERF);
 
-UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : UActorComponent(ObjectInitializer) {
+UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : USceneComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
 
 	RegisterTool<UToolImporter>(ObjectInitializer, "Tool Importer");
 	RegisterTool<UToolExporter>(ObjectInitializer, "Tool Exporter");
+	RegisterTool<UToolCreator>(ObjectInitializer, "Tool Creator");
+	RegisterTool<UToolEditor>(ObjectInitializer, "Tool Editor");
 	RegisterTool<UToolManipulator>(ObjectInitializer, "Tool Manipulator");
 	RegisterTool<UToolRemover>(ObjectInitializer, "Tool Remover");
 }
@@ -41,6 +45,37 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 		if (NewHitEntityId != EntityId::NONE() && ActiveTool.IsValid() && ActiveTool->SupportsEntity(NewHitEntityId)) {
 			HitEntityId = NewHitEntityId;
 			ExecuteHitCommandBasedOnHitEntity(true);
+
+			if (ES::IsValid<VertexEntity>(HitEntityId)) {
+				const auto &Vertex = ES::GetEntity<VertexEntity>(HitEntityId);
+				GetVrPawn()->GetMenuWidget()->SetHitEntity(
+					"Vertex",
+					FString("Id: #") + FString::FromInt(Vertex.CustomId)
+					+ FString("\nValue: ") + FString::SanitizeFloat(Vertex.Value, 0)
+				);
+			}
+			else if (ES::IsValid<EdgeEntity>(HitEntityId)) {
+				const auto &Edge = ES::GetEntity<EdgeEntity>(HitEntityId);
+				const auto &FirstVertex = ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[0]);
+				const auto &SecondVertex = ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[1]);
+				GetVrPawn()->GetMenuWidget()->SetHitEntity(
+					"Edge",
+					FString("From: Vertex #") + FString::FromInt(FirstVertex.CustomId)
+					+ FString("\nTo: Vertex #") + FString::FromInt(SecondVertex.CustomId)
+				);
+			}
+			else {
+				const auto &Graph = ES::GetEntity<GraphEntity>(HitEntityId);
+				GetVrPawn()->GetMenuWidget()->SetHitEntity(
+					"Graph",
+					FString("Colorful: ") + (Graph.Colorful ? "true" : "false")
+					+ FString("\nVertices: ") + FString::FromInt(Graph.Vertices.Num())
+					+ FString("\nEdges: ") + FString::FromInt(Graph.Edges.Num())
+				);
+			}
+		}
+		else {
+			GetVrPawn()->GetMenuWidget()->SetHitEntity("None", "");
 		}
 	}
 }
@@ -124,14 +159,6 @@ void UToolProvider::BeginPlay() {
 		ES::Clear<EdgeEntity>();
 		ES::Clear<GraphEntity>();
 
-		/*const auto ImporterTool = Cast<UToolImporter>(Tools[0]);
-		FString ErrorMessage;
-		const bool Result = ImporterTool->ImportGraphFromFile(
-			FPaths::LaunchDir() + FileConsts::ExportDirName + "Test_8_Vertices_8_Edges.json",
-			ErrorMessage
-		);
-		check(Result && ErrorMessage.Len() == 0);*/
-
 		const TArray<FVector> Positions = {
 			{437.109619f, 225.096985f, 50.0f},
 			{748.974915f, 345.263428f, 260.0f},
@@ -153,7 +180,7 @@ void UToolProvider::BeginPlay() {
 			{6, 4},
 		};
 
-		const EntityId GraphId = GraphCommands::Mutable::Create(true);
+		const auto GraphId = GraphCommands::Mutable::Create(false);
 		const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 		for (size_t i = 0; i < Positions.Num(); ++i) {
@@ -161,7 +188,8 @@ void UToolProvider::BeginPlay() {
 				GraphId,
 				i,
 				Positions[i],
-				FLinearColor::MakeRandomColor().ToFColor(false)
+				FLinearColor::MakeRandomColor().ToFColor(false),
+				1337.0
 			);
 		}
 

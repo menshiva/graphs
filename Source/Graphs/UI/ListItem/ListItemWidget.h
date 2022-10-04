@@ -13,7 +13,7 @@ public:
 	FString TextData;
 };
 
-UCLASS(Abstract)
+UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UListItemWidget : public UUserWidget, public IUserObjectListEntry {
 	GENERATED_BODY()
@@ -21,7 +21,7 @@ protected:
 	virtual void NativeOnListItemObjectSet(UObject *ListItemObject) override;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UTextBlock *DisplayText;
+	UTextBlock *DisplayText;
 
 	UPROPERTY()
 	UListItemData *Data;
