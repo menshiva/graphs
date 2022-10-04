@@ -31,7 +31,12 @@ public:
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 	virtual bool OnRightThumbstickY(float Value) override;
 private:
-	bool CheckVertexPreviewValidity() const;
+	FORCEINLINE bool CheckVertexPreviewValidity() const {
+		return !GetVrRightController()->IsInUiState()
+		&& (Mode == CreationMode::GRAPH
+			|| (Mode == CreationMode::VERTEX && SelectedGraphId != EntityId::NONE()));
+	}
+
 	bool CheckEdgePreviewValidity() const;
 
 	UPROPERTY()
@@ -46,4 +51,5 @@ private:
 	EntityId SelectedVertexId = EntityId::NONE();
 
 	constexpr static float DefaultPreviewDistance = 300.0f;
+	float PreviewDistance = DefaultPreviewDistance;
 };

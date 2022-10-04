@@ -160,6 +160,11 @@ void UVRControllerRight::SetLaserActive(const bool IsActive) {
 		GetVrPawn()->GetToolProvider()->ResetHitResult();
 }
 
+void UVRControllerRight::SetCastEnabled(const bool Enable) {
+	CastEnabled = Enable;
+	GetVrPawn()->GetToolProvider()->ResetHitResult();
+}
+
 void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
 	if (Enabled) {
 		UiInteractor->Activate();

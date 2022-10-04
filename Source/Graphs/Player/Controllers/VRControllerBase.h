@@ -27,14 +27,8 @@ public:
 	FORCEINLINE FVector GetLaserEndPosition() const { return LaserStartPosition + LaserLength * LaserDirection; }
 	FORCEINLINE float GetLaserLength() const { return LaserLength; }
 
-	FORCEINLINE void SetLaserLength(const float NewLength) {
-		LaserLength = FMath::Clamp(NewLength, LaserMinLength, LaserMaxLength);
-	}
-
-	FORCEINLINE void SetLaserLengthDelta(const float Delta) {
-		LaserLength = FMath::Clamp(LaserLength + Delta * LaserLengthDeltaSpeed, LaserMinLength, LaserMaxLength);
-	}
-
+	float SetLaserLength(const float NewLength);
+	float SetLaserLengthDelta(const float Delta);
 	void SetLaserColor(const FLinearColor &Color) const;
 	void ForceUpdateLaserTransform();
 

@@ -61,6 +61,16 @@ void UVRControllerBase::SetLaserActive(const bool IsActive) {
 	}
 }
 
+float UVRControllerBase::SetLaserLength(const float NewLength) {
+	LaserLength = FMath::Clamp(NewLength, LaserMinLength, LaserMaxLength);
+	return LaserLength;
+}
+
+float UVRControllerBase::SetLaserLengthDelta(const float Delta) {
+	LaserLength = FMath::Clamp(LaserLength + Delta * LaserLengthDeltaSpeed, LaserMinLength, LaserMaxLength);
+	return LaserLength;
+}
+
 void UVRControllerBase::SetLaserColor(const FLinearColor &Color) const {
 	Laser->SetColorParameter("User.CustomColor", Color);
 }

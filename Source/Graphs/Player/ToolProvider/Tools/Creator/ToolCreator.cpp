@@ -153,7 +153,7 @@ void UToolCreator::TickTool() {
 			if (!VertexPreviewMesh->IsVisible()) {
 				GetVrRightController()->SetCastEnabled(false);
 				GetVrRightController()->SetLaserColor(ColorConsts::GreenColor.ReinterpretAsLinear());
-				GetVrRightController()->SetLaserLength(DefaultPreviewDistance);
+				GetVrRightController()->SetLaserLength(PreviewDistance);
 				VertexPreviewMesh->SetVisibility(true);
 			}
 		}
@@ -273,17 +273,11 @@ bool UToolCreator::OnRightTriggerAction(const bool IsPressed) {
 }
 
 bool UToolCreator::OnRightThumbstickY(const float Value) {
-	if (CheckVertexPreviewValidity()) {
-		GetVrRightController()->SetLaserLengthDelta(Value);
+	if (Value != 0.0f && CheckVertexPreviewValidity()) {
+		PreviewDistance = GetVrRightController()->SetLaserLengthDelta(Value);
 		return true;
 	}
 	return Super::OnRightThumbstickY(Value);
-}
-
-bool UToolCreator::CheckVertexPreviewValidity() const {
-	return !GetVrRightController()->IsInUiState()
-		&& (Mode == CreationMode::GRAPH
-			|| (Mode == CreationMode::VERTEX && SelectedGraphId != EntityId::NONE()));
 }
 
 bool UToolCreator::CheckEdgePreviewValidity() const {

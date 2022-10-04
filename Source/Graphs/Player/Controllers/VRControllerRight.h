@@ -45,7 +45,7 @@ public:
 	virtual bool OnRightThumbstickXAction(float Value) override;
 
 	virtual void SetLaserActive(bool IsActive) override;
-	FORCEINLINE void SetCastEnabled(const bool Enable) { CastEnabled = Enable; }
+	void SetCastEnabled(bool Enable);
 
 	void SetUiInteractionEnabled(bool Enabled);
 
