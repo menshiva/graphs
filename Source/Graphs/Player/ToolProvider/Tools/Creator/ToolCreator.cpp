@@ -216,8 +216,9 @@ bool UToolCreator::OnRightTriggerAction(const bool IsPressed) {
 	if (Mode == CreationMode::VERTEX) {
 		if (SelectedGraphId == EntityId::NONE()) {
 			if (GetHitEntityId() != EntityId::NONE()) {
+				const auto HitGraphId = GetHitEntityId();
 				GetVrRightController()->SetCastEnabled(false);
-				SetGraphSelection(GetHitEntityId());
+				SetGraphSelection(HitGraphId);
 				return true;
 			}
 		}
