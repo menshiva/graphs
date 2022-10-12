@@ -5,7 +5,9 @@ DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetSectionMeshForLOD"), STAT_UVertic
 DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetCollisionMesh"), STAT_UVerticesRenderer_GetCollisionMesh, GRAPHS_PERF_VERTICES_RENDERER);
 
 UVerticesRenderer::UVerticesRenderer() : URendererBase() {
-	const static ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(TEXT("/Game/Graphs/Materials/VerticesMaterial"));
+	const static ConstructorHelpers::FObjectFinder<UMaterialInstance> MaterialAsset(
+		TEXT("/Game/Graphs/Materials/VerticesMaterialInst")
+	);
 	MeshMaterial = MaterialAsset.Object;
 }
 
@@ -64,7 +66,7 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 
 		for (const auto &VertexColor : TmpData.Colors) {
 			TArray<FColor, TFixedAllocator<IcosahedronMesh.Vertices.size()>> VertexMeshColors;
-			VertexMeshColors.Init(VertexColor.WithAlpha(MeshAlpha), IcosahedronMesh.Vertices.size());
+			VertexMeshColors.Init(VertexColor, IcosahedronMesh.Vertices.size());
 			Colors.Append(MoveTemp(VertexMeshColors));
 		}
 

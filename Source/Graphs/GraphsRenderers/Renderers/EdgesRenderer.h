@@ -20,7 +20,5 @@ public:
 	constexpr static int32 CollisionQuality = 3;
 private:
 	UPROPERTY()
-	UMaterial *MeshMaterial;
-
-	static inline uint8 MeshAlpha = roundf(255.0f * 0.7f);
+	UMaterialInstance *MeshMaterial;
 };

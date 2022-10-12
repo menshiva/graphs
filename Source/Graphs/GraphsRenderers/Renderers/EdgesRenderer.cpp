@@ -40,7 +40,9 @@ void GenerateEdgeFaces(
 }
 
 UEdgesRenderer::UEdgesRenderer() : URendererBase() {
-	const static ConstructorHelpers::FObjectFinder<UMaterial> MaterialAsset(TEXT("/Game/Graphs/Materials/EdgesMaterial"));
+	const static ConstructorHelpers::FObjectFinder<UMaterialInstance> MaterialAsset(
+		TEXT("/Game/Graphs/Materials/EdgesMaterialInst")
+	);
 	MeshMaterial = MaterialAsset.Object;
 }
 
@@ -103,8 +105,8 @@ bool UEdgesRenderer::GetSectionMeshForLOD(
 		GenerateEdgeFaces<MeshQuality>(FirstVertexPos, SecondVertexPos, Positions);
 
 		for (uint32_t i = 0; i < MeshQuality; ++i) {
-			Colors.Add(FirstVertexColor.WithAlpha(MeshAlpha));
-			Colors.Add(SecondVertexColor.WithAlpha(MeshAlpha));
+			Colors.Add(FirstVertexColor);
+			Colors.Add(SecondVertexColor);
 		}
 
 		for (int32 i = 1; i < MeshQuality * 2; i += 2) {
