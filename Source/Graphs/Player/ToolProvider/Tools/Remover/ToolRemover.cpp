@@ -124,7 +124,6 @@ void UToolRemover::RemoveSelectedEntities() {
 						}
 					}
 					GraphsRenderer->RedrawGraphChunksIfDirty(P.Key);
-					GraphCommands::Mutable::CompactSets(P.Key);
 				}
 			}
 

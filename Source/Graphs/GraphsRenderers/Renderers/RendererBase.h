@@ -13,11 +13,10 @@ UCLASS(Abstract)
 class GRAPHS_API URendererBase : public URuntimeMeshProvider {
 	GENERATED_BODY()
 public:
-	URendererBase();
-	void SetInitRenderData(RenderData &&InRenderData);
 	virtual void Initialize() override;
-
 	virtual FBoxSphereBounds GetBounds() override;
+
+	FORCEINLINE void SetInitRenderData(RenderData &&InRenderData) { Data = MoveTemp(InRenderData); }
 	void SetRenderData(RenderData &&InRenderData, bool MarkLODs, bool MarkCollision);
 
 	virtual FRuntimeMeshCollisionSettings GetCollisionSettings() override;

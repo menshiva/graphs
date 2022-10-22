@@ -18,6 +18,7 @@ AGraphChunkRenderer::AGraphChunkRenderer(const FObjectInitializer &ObjectInitial
     VerticesRuntimeMeshComponent->CanCharacterStepUpOn = ECB_No;
     VerticesRuntimeMeshComponent->SetCollisionProfileName("Graph");
     VerticesRuntimeMeshComponent->SetCastShadow(false);
+	VerticesRuntimeMeshComponent->SetGenerateOverlapEvents(false);
 	RootComponent = VerticesRuntimeMeshComponent;
 
     EdgesRuntimeMeshComponent = ObjectInitializer.CreateDefaultSubobject<URuntimeMeshComponent>(
@@ -31,6 +32,7 @@ AGraphChunkRenderer::AGraphChunkRenderer(const FObjectInitializer &ObjectInitial
     EdgesRuntimeMeshComponent->CanCharacterStepUpOn = ECB_No;
     EdgesRuntimeMeshComponent->SetCollisionProfileName("Graph");
     EdgesRuntimeMeshComponent->SetCastShadow(false);
+	EdgesRuntimeMeshComponent->SetGenerateOverlapEvents(false);
 	EdgesRuntimeMeshComponent->SetupAttachment(RootComponent);
 }
 
@@ -104,20 +106,6 @@ void AGraphChunkRenderer::MarkAllEdgesDirty(const bool MarkMesh, const bool Mark
 	CollisionDirty[EDGE] = CollisionDirty[EDGE] | MarkCollision;
 }
 
-bool AGraphChunkRenderer::RemoveVertex(const EntityId VertexId) {
-	const bool Res = VerticesToDraw.Remove(VertexId) == 1;
-	if (Res) // make set be a contiguous range
-		VerticesToDraw.Compact();
-	return Res;
-}
-
-bool AGraphChunkRenderer::RemoveEdge(const EntityId EdgeId) {
-	const bool Res = EdgesToDraw.Remove(EdgeId) == 1;
-	if (Res) // make set be a contiguous range
-		EdgesToDraw.Compact();
-	return Res;
-}
-
 void AGraphChunkRenderer::RedrawIfDirty() {
 	SCOPE_CYCLE_COUNTER(STAT_AGraphChunkRenderer_RedrawIfDirty);
 
@@ -150,21 +138,23 @@ RenderData AGraphChunkRenderer::GenerateVerticesRenderData(const GraphEntity &Gr
 	RenderData.Positions.SetNumUninitialized(VerticesToDraw.Num());
 	RenderData.Colors.SetNumUninitialized(VerticesToDraw.Num());
 
-	ParallelFor(VerticesToDraw.Num(), [&] (const int32 Idx) {
-		const auto VertexId = VerticesToDraw[FSetElementId::FromInteger(Idx)];
+	auto StorageIdIter = RenderData.StorageIds.CreateIterator();
+	auto PositionIter = RenderData.Positions.CreateIterator();
+	auto ColorIter = RenderData.Colors.CreateIterator();
+	for (const auto VertexId : VerticesToDraw) {
 		const auto &Vertex = ES::GetEntity<VertexEntity>(VertexId);
 		check(Vertex.GraphId == GraphId);
 
-		RenderData.StorageIds[Idx] = VertexId.GetIndex();
-		RenderData.Positions[Idx] = Vertex.Position;
-		RenderData.Colors[Idx] = Vertex.IsHit
+		*StorageIdIter++ = VertexId.GetIndex();
+		*PositionIter++ = Vertex.Position;
+		*ColorIter++ = Vertex.IsHit
 			? ColorConsts::BlueColor
 			: Vertex.OverrideColor != ColorConsts::OverrideColorNone
 				? Vertex.OverrideColor
 				: Graph.Colorful
 					? Vertex.Color
 					: ColorConsts::VertexDefaultColor;
-	});
+	}
 
 	return RenderData;
 }
@@ -177,36 +167,38 @@ RenderData AGraphChunkRenderer::GenerateEdgesRenderData(const GraphEntity &Graph
 	RenderData.Positions.SetNumUninitialized(EdgesToDraw.Num() * 2);
 	RenderData.Colors.SetNumUninitialized(EdgesToDraw.Num() * 2);
 
-	ParallelFor(EdgesToDraw.Num(), [&] (const int32 Idx) {
-		const auto EdgeId = EdgesToDraw[FSetElementId::FromInteger(Idx)];
+	auto StorageIdIter = RenderData.StorageIds.CreateIterator();
+	auto PositionIter = RenderData.Positions.CreateIterator();
+	auto ColorIter = RenderData.Colors.CreateIterator();
+	for (const auto EdgeId : EdgesToDraw) {
 		const auto &Edge = ES::GetEntity<EdgeEntity>(EdgeId);
-		check(Edge.GraphId == GraphId);
 		const auto &FirstVertex = ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[0]);
 		const auto &SecondVertex = ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[1]);
+		check(Edge.GraphId == GraphId);
 
-		auto FirstColor = FirstVertex.Color;
-		auto SecondColor = SecondVertex.Color;
+		auto FirstColor = &FirstVertex.Color;
+		auto SecondColor = &SecondVertex.Color;
 		if (Edge.IsHit) {
-			FirstColor = ColorConsts::BlueColor;
+			FirstColor = &ColorConsts::BlueColor;
 			SecondColor = FirstColor;
 		}
 		else if (Edge.OverrideColor != ColorConsts::OverrideColorNone) {
-			FirstColor = Edge.OverrideColor;
+			FirstColor = &Edge.OverrideColor;
 			SecondColor = FirstColor;
 		}
 		else if (!Graph.Colorful) {
-			FirstColor = ColorConsts::VertexDefaultColor;
+			FirstColor = &ColorConsts::VertexDefaultColor;
 			SecondColor = FirstColor;
 		}
 
-		RenderData.StorageIds[Idx] = EdgeId.GetIndex();
+		*StorageIdIter++ = EdgeId.GetIndex();
 
-		RenderData.Positions[Idx * 2 + 0] = FirstVertex.Position;
-		RenderData.Positions[Idx * 2 + 1] = SecondVertex.Position;
+		*PositionIter++ = FirstVertex.Position;
+		*PositionIter++ = SecondVertex.Position;
 
-		RenderData.Colors[Idx * 2 + 0] = FirstColor;
-		RenderData.Colors[Idx * 2 + 1] = SecondColor;
-	});
+		*ColorIter++ = *FirstColor;
+		*ColorIter++ = *SecondColor;
+	}
 
 	return RenderData;
 }

@@ -148,7 +148,7 @@ void UToolProvider::ExecuteHitCommandBasedOnHitEntity(const bool IsHit) const {
 void UToolProvider::BeginPlay() {
 	Super::BeginPlay();
 
-	GraphsRenderers = Cast<AGraphsRenderers>(UGameplayStatics::GetActorOfClass(
+	GraphsRenderers = CastChecked<AGraphsRenderers>(UGameplayStatics::GetActorOfClass(
 		GetWorld(),
 		AGraphsRenderers::StaticClass()
 	));

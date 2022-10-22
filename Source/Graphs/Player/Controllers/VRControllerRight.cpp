@@ -139,7 +139,7 @@ bool UVRControllerRight::OnRightThumbstickX(const float Value) {
 bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
 	if (SelectionWidgetComponent->IsVisible()) {
 		check(State != ControllerState::TOOL);
-		const auto SelectorWidget = Cast<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
+		const auto SelectorWidget = CastChecked<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
 		if (Value < 0.0f)
 			SelectorWidget->SelectPreviousOption(true);
 		else if (Value > 0.0f)
@@ -206,7 +206,7 @@ void UVRControllerRight::BeginPlay() {
 	if (!SelectionWidgetComponent->GetWidget())
 		SelectionWidgetComponent->InitWidget();
 
-	const auto SelectorWidget = Cast<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
+	const auto SelectorWidget = CastChecked<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
 	SelectorWidget->SetOnSelectedOptionChangedEvent([&] (const int32 SelectedIdx) {
 		if (SelectedIdx == 0)
 			Selection = SelectionMode::VERTEX_EDGE;

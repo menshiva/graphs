@@ -27,8 +27,6 @@ namespace GraphCommands {
 
 		void Rotate(EntityId GraphId, const FVector &Origin, const FVector &Axis, float Angle);
 
-		void CompactSets(EntityId GraphId);
-
 		EntityId Deserialize(const FString &JsonStr, FString &ErrorMessage);
 	}
 

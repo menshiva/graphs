@@ -12,7 +12,7 @@ void UToolImporterPanelWidget::NativeConstruct() {
 	const auto ImportTool = GetTool<UToolImporter>();
 
 	ImporterList->OnItemClicked().AddLambda([ImportTool] (const UObject *Item) {
-		ImportTool->ImportFromFile(Cast<UListItemData>(Item)->TextData);
+		ImportTool->ImportFromFile(CastChecked<UListItemData>(Item)->TextData);
 	});
 
 	ImporterRefreshButton->SetOnClickEvent([&] {

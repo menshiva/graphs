@@ -91,7 +91,7 @@ bool AVRPawn::OnRightThumbstickXAction(const float Value) {
 void AVRPawn::BeginPlay() {
 	Super::BeginPlay();
 
-	MenuWidget = Cast<UMenuWidget>(Menu->GetWidget());
+	MenuWidget = CastChecked<UMenuWidget>(Menu->GetWidget());
 
 	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled()
 		&& UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayConnected())

@@ -7,8 +7,6 @@ UCLASS()
 class GRAPHS_API UEdgesRenderer final : public URendererBase {
 	GENERATED_BODY()
 public:
-	UEdgesRenderer();
-
 	virtual void Initialize() override;
 
 	virtual bool GetSectionMeshForLOD(int32 LODIndex, int32 SectionId, FRuntimeMeshRenderableMeshData &MeshData) override;
@@ -18,7 +16,4 @@ public:
 	constexpr static float MeshScale = 10.0f;
 
 	constexpr static int32 CollisionQuality = 3;
-private:
-	UPROPERTY()
-	UMaterialInstance *MeshMaterial;
 };

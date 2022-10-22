@@ -1,13 +1,6 @@
 ﻿#include "RendererBase.h"
 #include "VerticesRenderer.h"
 
-URendererBase::URendererBase() : URuntimeMeshProvider() {}
-
-void URendererBase::SetInitRenderData(RenderData &&InRenderData) {
-	Data = MoveTemp(InRenderData);
-	check(InRenderData.StorageIds.Num() == 0 && InRenderData.Positions.Num() == 0 && InRenderData.Colors.Num() == 0);
-}
-
 void URendererBase::Initialize() {
 	// TODO: more LODs?
 	FRuntimeMeshLODProperties LODProperties;
@@ -38,7 +31,6 @@ void URendererBase::SetRenderData(RenderData &&InRenderData, const bool MarkLODs
 	{
 		FScopeLock Lock(&DataSyncRoot);
 		Data = MoveTemp(InRenderData);
-		check(InRenderData.StorageIds.Num() == 0 && InRenderData.Positions.Num() == 0 && InRenderData.Colors.Num() == 0);
 	}
 	if (MarkLODs)
 		MarkSectionDirty(0, 0);

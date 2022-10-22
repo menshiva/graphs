@@ -4,15 +4,12 @@
 DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetSectionMeshForLOD"), STAT_UVerticesRenderer_GetSectionMeshForLOD, GRAPHS_PERF_VERTICES_RENDERER);
 DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetCollisionMesh"), STAT_UVerticesRenderer_GetCollisionMesh, GRAPHS_PERF_VERTICES_RENDERER);
 
-UVerticesRenderer::UVerticesRenderer() : URendererBase() {
-	const static ConstructorHelpers::FObjectFinder<UMaterialInstance> MaterialAsset(
-		TEXT("/Game/Graphs/Materials/VerticesMaterialInst")
-	);
-	MeshMaterial = MaterialAsset.Object;
-}
-
 void UVerticesRenderer::Initialize() {
-	SetupMaterialSlot(0, "Vertices Mesh Material", MeshMaterial);
+	const FSoftObjectPath VerticesMeshMaterialAsset(TEXT("/Game/Graphs/Materials/VerticesMaterialInst"));
+	auto VerticesMeshMaterial = Cast<UMaterialInstance>(VerticesMeshMaterialAsset.ResolveObject());
+	if (!VerticesMeshMaterial)
+		VerticesMeshMaterial = CastChecked<UMaterialInstance>(VerticesMeshMaterialAsset.TryLoad());
+	SetupMaterialSlot(0, "Vertices Mesh Material", VerticesMeshMaterial);
 	Super::Initialize();
 }
 
