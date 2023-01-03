@@ -7,10 +7,10 @@ DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::Create"), STAT_GraphCommands_Mu
 EntityId GraphCommands::Mutable::Create(const bool Colorful) {
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Mutable_Create);
 
-	// create new graph entity
+	// create a new graph entity
 	const auto GraphId = ES::NewEntity<GraphEntity>();
 
-	// fill new entity with given properties
+	// fill the new entity with given properties
 	ES::GetEntityMut<GraphEntity>(GraphId).Colorful = Colorful;
 
 	return GraphId;
@@ -20,7 +20,6 @@ DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::Remove"), STAT_GraphCommands_Mu
 void GraphCommands::Mutable::Remove(const EntityId GraphId) {
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Mutable_Remove);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
-
 	for (const auto VertexId : Graph.Vertices)
 		ES::RemoveEntity<VertexEntity>(VertexId);
 	for (const auto EdgeId : Graph.Edges)
@@ -164,7 +163,7 @@ EntityId GraphCommands::Mutable::Deserialize(const FString &JsonStr, FString &Er
 		}
 
 		ES::Reserve<VertexEntity>(DomVerticesArray.Size());
-		Graph.VerticesCustomIdToEntityId.Reserve(DomVerticesArray.Size());
+		Graph.VerticesLabelToEntityId.Reserve(DomVerticesArray.Size());
 		Graph.Vertices.Reserve(DomVerticesArray.Size());
 
 		size_t VertexI = 0;
@@ -226,15 +225,15 @@ void GraphCommands::Const::Serialize(const EntityId GraphId, rapidjson::PrettyWr
 	{
 		check(Graph.Vertices.Num() > 0);
 
-		// copy vertices ids and sort them by CustomId
-		auto VerticesSortedByCustomId = Graph.Vertices.Array();
-		VerticesSortedByCustomId.Sort([] (const EntityId F, const EntityId S) {
-			return ES::GetEntity<VertexEntity>(F).CustomId < ES::GetEntity<VertexEntity>(S).CustomId;
+		// copy vertices ids and sort them by the vertex' label so that vertices are arranged in ascending order in the file
+		auto VerticesSortedByLabel = Graph.Vertices.Array();
+		VerticesSortedByLabel.Sort([] (const EntityId F, const EntityId S) {
+			return ES::GetEntity<VertexEntity>(F).Label < ES::GetEntity<VertexEntity>(S).Label;
 		});
 
 		Writer.Key("vertices");
 		Writer.StartArray();
-		for (const auto VertexId : VerticesSortedByCustomId)
+		for (const auto VertexId : VerticesSortedByLabel)
 			VertexCommands::Const::Serialize(VertexId, Writer);
 		Writer.EndArray();
 	}
@@ -266,19 +265,21 @@ FVector GraphCommands::Const::ComputeCenterPosition(const EntityId GraphId) {
 	return Center;
 }
 
-DECLARE_CYCLE_STAT(TEXT("GraphCommands::Const::GenerateUniqueVertexUserId"), STAT_GraphCommands_Const_GenerateUniqueVertexUserId, STATGROUP_GRAPHS_PERF_COMMANDS);
-uint32_t GraphCommands::Const::GenerateUniqueVertexUserId(const EntityId GraphId) {
-	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Const_GenerateUniqueVertexUserId);
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Const::GenerateUniqueVertexUserId"), STAT_GraphCommands_Const_GenerateUniqueVertexLabel, STATGROUP_GRAPHS_PERF_COMMANDS);
+uint32_t GraphCommands::Const::GenerateUniqueVertexLabel(const EntityId GraphId) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Const_GenerateUniqueVertexLabel);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	uint32_t MaxUserId = -1;
-	if (Graph.VerticesCustomIdToEntityId.Num() > 0) {
-		auto Iter = Graph.VerticesCustomIdToEntityId.CreateConstIterator();
-		MaxUserId = Iter.Key();
+	// we simply try to find the highest vertex label in the graph
+	uint32_t MaxLabel = -1;
+	if (Graph.VerticesLabelToEntityId.Num() > 0) {
+		auto Iter = Graph.VerticesLabelToEntityId.CreateConstIterator();
+		MaxLabel = Iter.Key();
 		for (++Iter; Iter; ++Iter)
-			if (Iter.Key() > MaxUserId)
-				MaxUserId = Iter.Key();
+			if (Iter.Key() > MaxLabel)
+				MaxLabel = Iter.Key();
 	}
 
-	return MaxUserId + 1;
+	// and then return it + 1
+	return MaxLabel + 1;
 }

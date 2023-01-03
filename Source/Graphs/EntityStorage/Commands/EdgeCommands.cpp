@@ -2,23 +2,29 @@
 #include "VertexCommands.h"
 
 DECLARE_CYCLE_STAT(TEXT("EdgeCommands::Mutable::Create"), STAT_EdgeCommands_Mutable_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
-EntityId EdgeCommands::Mutable::Create(const EntityId GraphId, const EntityId FromVertexId, const EntityId ToVertexId) {
+EntityId EdgeCommands::Mutable::Create(
+	const EntityId GraphId,
+	const EntityId FromVertexId, const EntityId ToVertexId,
+	const float Weight
+) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Mutable_Create);
 
 	// create new edge entity
 	const auto EdgeId = ES::NewEntity<EdgeEntity>();
 
-	// fill new entity with given properties
+	// fill new entity with default and given properties
 	auto &Edge = ES::GetEntityMut<EdgeEntity>(EdgeId);
 	Edge.GraphId = GraphId;
 	Edge.IsHit = false;
 	Edge.OverrideColor = ColorConsts::OverrideColorNone;
 	Edge.ConnectedVertices[0] = FromVertexId;
 	Edge.ConnectedVertices[1] = ToVertexId;
+	Edge.Weight = Weight;
 
 	// add new entity to parent graph
 	auto &Graph = ES::GetEntityMut<GraphEntity>(GraphId);
 	bool AlreadyInSet = false;
+	// store its hash so that we can fastly determine if undirected (FromVertexId, ToVertexId) edge is already in the graph
 	Graph.EdgesHashes.Add(Const::ComputeHash(Edge, false), &AlreadyInSet);
 	check(!AlreadyInSet);
 	check(!Graph.EdgesHashes.Contains(Const::ComputeHash(Edge, true)));
@@ -28,11 +34,11 @@ EntityId EdgeCommands::Mutable::Create(const EntityId GraphId, const EntityId Fr
 	// add to connected vertices
 	auto &FirstVertex = ES::GetEntityMut<VertexEntity>(FromVertexId);
 	auto &SecondVertex = ES::GetEntityMut<VertexEntity>(ToVertexId);
+	check(FirstVertex.GraphId == SecondVertex.GraphId); // check so that the 2 given vertices are from the same graph
 	FirstVertex.ConnectedEdges.Add(EdgeId, &AlreadyInSet);
 	check(!AlreadyInSet);
 	SecondVertex.ConnectedEdges.Add(EdgeId, &AlreadyInSet);
 	check(!AlreadyInSet);
-	check(FirstVertex.GraphId == SecondVertex.GraphId);
 
 	return EdgeId;
 }
@@ -42,7 +48,7 @@ void EdgeCommands::Mutable::Remove(const EntityId EdgeId) {
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Mutable_Remove);
 	const auto &Edge = ES::GetEntity<EdgeEntity>(EdgeId);
 
-	// remove from associated parent graph
+	// remove from the associated parent graph
 	auto &Graph = ES::GetEntityMut<GraphEntity>(Edge.GraphId);
 	auto CheckNum = Graph.EdgesHashes.Remove(Const::ComputeHash(Edge, false));
 	check(CheckNum == 1);
@@ -50,7 +56,7 @@ void EdgeCommands::Mutable::Remove(const EntityId EdgeId) {
 	CheckNum = Graph.Edges.Remove(EdgeId);
 	check(CheckNum == 1);
 
-	// remove from connected vertices
+	// remove from the connected vertices
 	for (const auto VertexId : Edge.ConnectedVertices)
 		ES::GetEntityMut<VertexEntity>(VertexId).ConnectedEdges.Remove(EdgeId);
 
@@ -70,25 +76,24 @@ bool EdgeCommands::Mutable::Deserialize(const rapidjson::Value &DomEdge, const E
 	SCOPE_CYCLE_COUNTER(STAT_EdgeCommands_Mutable_Deserialize);
 
 	if (!DomEdge.IsObject()) {
-		ErrorMessage = "Should be an object.";
+		ErrorMessage = "Should be a JSON object.";
 		return false;
 	}
-	
-	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
+	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 	EdgeEntity NewEdge;
 
-	// from vertex id
+	// from vertex
 	{
-		const auto &FromIdMember = DomEdge.FindMember("from_id");
-		if (FromIdMember == DomEdge.MemberEnd() || !FromIdMember->value.IsUint()) {
-			ErrorMessage = "Object should have \"from_id\" integer number.";
+		const auto &FromMember = DomEdge.FindMember("from");
+		if (FromMember == DomEdge.MemberEnd() || !FromMember->value.IsUint()) {
+			ErrorMessage = "Object's \"from\" attribute should exist and have an integer number.";
 			return false;
 		}
-		const uint32_t FromVertexCustomId = FromIdMember->value.GetUint();
-		const auto FromVertexId = Graph.VerticesCustomIdToEntityId.Find(FromVertexCustomId);
+		const uint32_t FromVertexLabel = FromMember->value.GetUint();
+		const auto FromVertexId = Graph.VerticesLabelToEntityId.Find(FromVertexLabel);
 		if (!FromVertexId) {
-			ErrorMessage = "Vertex with \"id\" " + FString::FromInt(FromVertexCustomId) + "not found.";
+			ErrorMessage = "Vertex with \"label\" " + FString::FromInt(FromVertexLabel) + "not found.";
 			return false;
 		}
 		NewEdge.ConnectedVertices[0] = *FromVertexId;
@@ -96,21 +101,33 @@ bool EdgeCommands::Mutable::Deserialize(const rapidjson::Value &DomEdge, const E
 
 	// to vertex id
 	{
-		const auto &ToIdMember = DomEdge.FindMember("to_id");
-		if (ToIdMember == DomEdge.MemberEnd() || !ToIdMember->value.IsUint()) {
-			ErrorMessage = "Object should have \"to_id\" integer number.";
+		const auto &ToMember = DomEdge.FindMember("to");
+		if (ToMember == DomEdge.MemberEnd() || !ToMember->value.IsUint()) {
+			ErrorMessage = "Object's \"to\" attribute should exist and have an integer number.";
 			return false;
 		}
-		const uint32_t ToVertexCustomId = ToIdMember->value.GetUint();
-		const auto ToVertexId = Graph.VerticesCustomIdToEntityId.Find(ToVertexCustomId);
+		const uint32_t ToVertexLabel = ToMember->value.GetUint();
+		const auto ToVertexId = Graph.VerticesLabelToEntityId.Find(ToVertexLabel);
 		if (!ToVertexId) {
-			ErrorMessage = "Vertex with \"id\" " + FString::FromInt(ToVertexCustomId) + "not found.";
+			ErrorMessage = "Vertex with \"label\" " + FString::FromInt(ToVertexLabel) + "not found.";
 			return false;
 		}
 		NewEdge.ConnectedVertices[1] = *ToVertexId;
 	}
 
-	// check if edge is not unique
+	// weight
+	{
+		const auto &WeightMember = DomEdge.FindMember("weight");
+		if (WeightMember != DomEdge.MemberEnd()) {
+			if (!WeightMember->value.IsFloat()) {
+				ErrorMessage = "Object's \"weight\" value should be a floating-point number.";
+				return false;
+			}
+			NewEdge.Weight = WeightMember->value.GetFloat();
+		}
+	}
+
+	// check if edge is unique
 	if (Graph.EdgesHashes.Contains(Const::ComputeHash(NewEdge, false))
 		|| Graph.EdgesHashes.Contains(Const::ComputeHash(NewEdge, true)))
 	{
@@ -118,7 +135,7 @@ bool EdgeCommands::Mutable::Deserialize(const rapidjson::Value &DomEdge, const E
 		return false;
 	}
 
-	Create(GraphId, NewEdge.ConnectedVertices[0], NewEdge.ConnectedVertices[1]);
+	Create(GraphId, NewEdge.ConnectedVertices[0], NewEdge.ConnectedVertices[1], NewEdge.Weight);
 	return true;
 }
 
@@ -130,12 +147,18 @@ void EdgeCommands::Const::Serialize(const EntityId EdgeId, rapidjson::PrettyWrit
 	Writer.StartObject();
 
 	// from vertex custom id
-	Writer.Key("from_id");
-	Writer.Uint(ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[0]).CustomId);
+	Writer.Key("from");
+	Writer.Uint(ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[0]).Label);
 
 	// to vertex custom id
-	Writer.Key("to_id");
-	Writer.Uint(ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[1]).CustomId);
+	Writer.Key("to");
+	Writer.Uint(ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[1]).Label);
+
+	// weight
+	if (Edge.Weight != 0.0f) {
+		Writer.Key("weight");
+		Writer.Double(Edge.Weight);
+	}
 
 	Writer.EndObject();
 }
@@ -149,6 +172,5 @@ uint32_t EdgeCommands::Const::ComputeHash(const EdgeEntity &Edge, const bool Rev
 
 	if (!ReverseVerticesIds)
 		return Utils::CantorPair(EntityId::Hash(FromVertexId), EntityId::Hash(ToVertexId));
-
 	return Utils::CantorPair(EntityId::Hash(ToVertexId), EntityId::Hash(FromVertexId));
 }
