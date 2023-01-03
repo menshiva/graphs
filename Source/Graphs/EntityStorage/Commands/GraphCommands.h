@@ -7,6 +7,7 @@ namespace GraphCommands {
 	namespace Mutable {
 		/**
 		  * Creates a new empty graph entity.
+		  * 
 		  * @param Colorful Whether the graph should be colorful.
 		  * @return The ID of the newly created graph entity.
 		 */
@@ -14,6 +15,7 @@ namespace GraphCommands {
 
 		/**
 		 * Removes a graph entity, including all its vertices and edges.
+		 * 
 		 * @param GraphId The ID of the graph entity to remove.
 		 */
 		void Remove(EntityId GraphId);
@@ -24,6 +26,7 @@ namespace GraphCommands {
 
 		/**
 		 * Sets the hit flag for all vertices and edges in the specified graph.
+		 * 
 		 * @param GraphId The ID of the graph.
 		 * @param IsHit The new hit flag.
 		 */
@@ -31,6 +34,7 @@ namespace GraphCommands {
 
 		/**
 		 * Sets the color of all vertices in the graph to the specified value.
+		 * 
 		 * @param GraphId The ID of the graph to set the color of.
 		 * @param Color Value to set the color to.
 		 */
@@ -38,7 +42,9 @@ namespace GraphCommands {
 
 		/**
 		 * Sets the color of all vertices in the graph to the given array of colors.
+		 * 
 		 * The number of colors must be equal to the number of vertices in the graph.
+		 * 
 		 * @param GraphId Entity ID of the graph to set the color of.
 		 * @param Colors Array of colors to set the vertices to.
 		 */
@@ -46,12 +52,14 @@ namespace GraphCommands {
 
 		/**
 		 * Sets the color of each vertex in the specified graph to a random color.
+		 * 
 		 * @param GraphId The ID of the graph whose vertex colors to randomize.
 		 */
 		void RandomizeVerticesColors(EntityId GraphId);
 
 		/**
 		 * Sets the override color of all vertices and edges in the given graph.
+		 * 
 		 * @param GraphId The entity ID of the graph.
 		 * @param OverrideColor The color to set.
 		 */
@@ -59,6 +67,7 @@ namespace GraphCommands {
 
 		/**
 		 * Moves all vertices in the graph by a given delta.
+		 * 
 		 * @param GraphId The ID of the graph.
 		 * @param Delta The displacement vector by which each vertex should be moved.
 		 */
@@ -66,6 +75,7 @@ namespace GraphCommands {
 
 		/**
 		 * Rotates all the vertices of the given graph around the specified origin by the given angle.
+		 * 
 		 * @param GraphId The ID of the graph to rotate.
 		 * @param Origin The origin around which the rotation will happen.
 		 * @param Axis The axis of rotation.
@@ -75,6 +85,7 @@ namespace GraphCommands {
 
 		/**
 		 * Deserializes a JSON string and creates a graph with it.
+		 * 
 		 * @param JsonStr The JSON string to be deserialized.
 		 * @param[out] ErrorMessage If the function returns EntityId::NONE, this will contain the error message.
 		 * @return The ID of the created graph, or EntityId::NONE if failed.
@@ -85,6 +96,7 @@ namespace GraphCommands {
 	namespace Const {
 		/**
 		 * Serializes the given graph entity.
+		 * 
 		 * @param GraphId The ID of the graph entity to serialize.
 		 * @param Writer Output buffer for the serialized data.
 		 */
@@ -92,6 +104,7 @@ namespace GraphCommands {
 
 		/**
 		 * Calculates the center position of the graph by averaging the positions of all its vertices.
+		 * 
 		 * @param GraphId The ID of the graph to compute the center position for.
 		 * @return The center position of the graph.
 		 */

@@ -8,6 +8,7 @@ namespace EdgeCommands {
 	namespace Mutable {
 		/**
 		 * Creates a new edge entity connecting the two given vertex entities, and adds it to the given graph.
+		 * 
  		 * @param GraphId The ID of the graph to which the new edge should be added.
  		 * @param FromVertexId The ID of the vertex at one end of the new edge.
  		 * @param ToVertexId The ID of the vertex at the other end of the new edge.
@@ -18,6 +19,7 @@ namespace EdgeCommands {
 
 		/**
 		 * Removes the edge with the given ID from its associated graph and connected vertices, and deletes it.
+		 * 
 		 * @param EdgeId The ID of the edge to be removed.
 		 */
 		void Remove(EntityId EdgeId);
@@ -37,6 +39,7 @@ namespace EdgeCommands {
 
 		/**
 		 * Moves the edge with the given ID by moving its connected vertices by the given delta.
+		 * 
 		 * @param EdgeId The ID of the edge to be moved.
 		 * @param Delta The displacement vector by which the edge should be moved.
 		 */

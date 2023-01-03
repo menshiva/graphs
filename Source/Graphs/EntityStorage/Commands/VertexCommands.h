@@ -8,6 +8,7 @@ namespace VertexCommands {
 	namespace Mutable {
 		/**
  		 * Creates a new vertex entity and add it to the specified graph.
+ 		 * 
  		 * @param GraphId The ID of the graph to add the vertex to.
  		 * @param Label The label to assign to the vertex.
  		 * @param Position The position of the vertex.
@@ -45,6 +46,7 @@ namespace VertexCommands {
 
 		/**
 		 * Moves the vertex with the given ID by the given delta.
+		 * 
 		 * @param VertexId The ID of the vertex to be moved.
 		 * @param Delta The displacement vector by which the vertex should be moved.
 		 */
@@ -68,17 +70,18 @@ namespace VertexCommands {
 	namespace Const {
 		/**
 		 * Serializes the vertex with the given ID to a JSON object.
-		  *
-		  * The resulting JSON object will have the "label" and "position" attributes, and may have the "color"
-		  * attribute if the vertex color was previously defined by the user.
-		  *
-		  * @param VertexId The ID of the vertex to be serialized.
-		  * @param Writer The RapidJSON writer to which the serialized vertex should be written.
-		  */
+		 *
+		 * The resulting JSON object will have the "label" and "position" attributes, and may have the "color"
+		 * attribute if the vertex color was previously defined by the user.
+		 *
+		 * @param VertexId The ID of the vertex to be serialized.
+		 * @param Writer The RapidJSON writer to which the serialized vertex should be written.
+		 */
 		void Serialize(EntityId VertexId, rapidjson::PrettyWriter<rapidjson::StringBuffer> &Writer);
 
 		/**
 		 * Checks whether two vertices are connected by an edge.
+		 * 
 		 * @param FirstVertexId The ID of the first vertex.
 		 * @param SecondVertexId The ID of the second vertex.
 		 * @return True if the vertices are connected, false otherwise.

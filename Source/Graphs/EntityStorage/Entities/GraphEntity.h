@@ -22,7 +22,7 @@ struct GraphEntity {
 	/**
 	 * Whether this graph is colorful.
 	 *
-	 * If true, the vertices and edges in this graph will be rendered with their own different colors.
+	 * If true, the vertices in this graph will be rendered with their own different colors.
 	 * If false, they all will be rendered with the same `ColorConsts::VertexDefaultColor` color.
 	 */
 	bool Colorful;
