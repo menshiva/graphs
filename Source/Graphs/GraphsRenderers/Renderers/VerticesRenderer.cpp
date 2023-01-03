@@ -4,15 +4,6 @@
 DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetSectionMeshForLOD"), STAT_UVerticesRenderer_GetSectionMeshForLOD, GRAPHS_PERF_VERTICES_RENDERER);
 DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetCollisionMesh"), STAT_UVerticesRenderer_GetCollisionMesh, GRAPHS_PERF_VERTICES_RENDERER);
 
-void UVerticesRenderer::Initialize() {
-	const FSoftObjectPath VerticesMeshMaterialAsset(TEXT("/Game/Graphs/Materials/VerticesMaterialInst"));
-	auto VerticesMeshMaterial = Cast<UMaterialInstance>(VerticesMeshMaterialAsset.ResolveObject());
-	if (!VerticesMeshMaterial)
-		VerticesMeshMaterial = CastChecked<UMaterialInstance>(VerticesMeshMaterialAsset.TryLoad());
-	SetupMaterialSlot(0, "Vertices Mesh Material", VerticesMeshMaterial);
-	Super::Initialize();
-}
-
 bool UVerticesRenderer::GetSectionMeshForLOD(
 	const int32 LODIndex,
 	const int32 SectionId,

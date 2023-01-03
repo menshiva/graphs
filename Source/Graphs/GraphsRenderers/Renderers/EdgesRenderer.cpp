@@ -39,15 +39,6 @@ void GenerateEdgeFaces(
 	}
 }
 
-void UEdgesRenderer::Initialize() {
-	const FSoftObjectPath EdgesMeshMaterialAsset(TEXT("/Game/Graphs/Materials/EdgesMaterialInst"));
-	auto EdgesMeshMaterial = Cast<UMaterialInstance>(EdgesMeshMaterialAsset.ResolveObject());
-	if (!EdgesMeshMaterial)
-		EdgesMeshMaterial = CastChecked<UMaterialInstance>(EdgesMeshMaterialAsset.TryLoad());
-	SetupMaterialSlot(0, "Edges Mesh Material", EdgesMeshMaterial);
-	Super::Initialize();
-}
-
 bool UEdgesRenderer::GetSectionMeshForLOD(
 	const int32 LODIndex,
 	const int32 SectionId,

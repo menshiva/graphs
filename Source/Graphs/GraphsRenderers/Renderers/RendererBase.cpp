@@ -2,6 +2,12 @@
 #include "VerticesRenderer.h"
 
 void URendererBase::Initialize() {
+	const FSoftObjectPath GraphMeshMaterialAsset(TEXT("/Game/Graphs/Materials/GraphMaterialInst"));
+	auto GraphMeshMaterial = Cast<UMaterialInstance>(GraphMeshMaterialAsset.ResolveObject());
+	if (!GraphMeshMaterial)
+		GraphMeshMaterial = CastChecked<UMaterialInstance>(GraphMeshMaterialAsset.TryLoad());
+	SetupMaterialSlot(0, "Graph Mesh Material", GraphMeshMaterial);
+
 	// TODO: more LODs?
 	FRuntimeMeshLODProperties LODProperties;
 	LODProperties.ScreenSize = 0.0f;
