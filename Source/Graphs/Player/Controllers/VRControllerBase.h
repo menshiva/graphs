@@ -42,6 +42,19 @@ protected:
 
 	FORCEINLINE void SetLaserMinLength(const float NewMinLength) { LaserMinLength = NewMinLength; }
 	FORCEINLINE const FVector &GetLaserDirection() const { return LaserDirection; }
+
+	static void BindAction(
+		UInputComponent *PlayerInputComponent,
+		const char *ActionName,
+		const EInputEvent InputEvent,
+		TFunction<void()> &&Func
+	);
+
+	static void BindAxis(
+		UInputComponent *PlayerInputComponent,
+		const char *ActionName,
+		TFunction<void(float)> &&Func
+	);
 private:
 	static void SetLaserNiagaraStartEnd(class UNiagaraComponent *aLaser, const FVector &Start, const FVector &End);
 

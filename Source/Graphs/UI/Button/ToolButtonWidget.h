@@ -3,6 +3,11 @@
 #include "Blueprint/UserWidget.h"
 #include "ToolButtonWidget.generated.h"
 
+/**
+ * UToolButtonWidget is an image button widget with a text block below.
+ * 
+ * @note The native tick for this class is disabled.
+ */
 UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UToolButtonWidget : public UUserWidget {

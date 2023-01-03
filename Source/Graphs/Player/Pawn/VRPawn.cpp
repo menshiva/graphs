@@ -32,9 +32,11 @@ AVRPawn::AVRPawn(const FObjectInitializer &ObjectInitializer) : APawn(ObjectInit
 }
 
 void AVRPawn::SetupPlayerInputComponent(UInputComponent *PlayerInputComponent) {
-	Utils::BindAction(PlayerInputComponent, "Esc", IE_Pressed, [&] {
+	FInputActionBinding AB("Esc", IE_Pressed);
+	AB.ActionDelegate.GetDelegateForManualSet().BindLambda([&] {
 		QuitGame();
 	});
+	PlayerInputComponent->AddActionBinding(MoveTemp(AB));
 
 	LeftVrController->SetupInputBindings(PlayerInputComponent);
 	RightVrController->SetupInputBindings(PlayerInputComponent);

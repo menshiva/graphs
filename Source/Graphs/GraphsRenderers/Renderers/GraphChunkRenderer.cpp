@@ -34,6 +34,9 @@ AGraphChunkRenderer::AGraphChunkRenderer(const FObjectInitializer &ObjectInitial
     EdgesRuntimeMeshComponent->SetCastShadow(false);
 	EdgesRuntimeMeshComponent->SetGenerateOverlapEvents(false);
 	EdgesRuntimeMeshComponent->SetupAttachment(RootComponent);
+
+	VerticesToDraw.Reserve(ChunkSize);
+	EdgesToDraw.Reserve(ChunkSize);
 }
 
 void AGraphChunkRenderer::Initialize(const EntityId InGraphId) {

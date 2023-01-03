@@ -30,14 +30,14 @@ public:
 	void RedrawIfDirty();
 
 	// number of entities rendered by 1 graph chunk renderer
-	constexpr static size_t ChunkSize = 128;
+	constexpr static size_t ChunkSize = 200;
 private:
 	RenderData GenerateVerticesRenderData(const GraphEntity &Graph) const;
 	RenderData GenerateEdgesRenderData(const GraphEntity &Graph) const;
 
 	EntityId GraphId = EntityId::NONE();
-	TSet<EntityId, DefaultKeyFuncs<EntityId>, TFixedSetAllocator<ChunkSize>> VerticesToDraw;
-	TSet<EntityId, DefaultKeyFuncs<EntityId>, TFixedSetAllocator<ChunkSize>> EdgesToDraw;
+	TSet<EntityId, DefaultKeyFuncs<EntityId>> VerticesToDraw;
+	TSet<EntityId, DefaultKeyFuncs<EntityId>> EdgesToDraw;
 
 	UPROPERTY()
 	URuntimeMeshComponent *VerticesRuntimeMeshComponent;

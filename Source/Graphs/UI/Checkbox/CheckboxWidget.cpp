@@ -11,10 +11,6 @@ void UCheckboxWidget::NativePreConstruct() {
 		CBText->SetText(Text);
 }
 
-bool UCheckboxWidget::IsTicked() const {
-	return Ticked;
-}
-
 void UCheckboxWidget::SetTicked(const bool IsTicked) {
 	Ticked = IsTicked;
 	if (CBButton)

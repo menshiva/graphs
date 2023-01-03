@@ -1,23 +1,45 @@
 ﻿#pragma once
 
 namespace Utils {
-	template <typename E>
-	constexpr static std::underlying_type_t<E> EnumUnderlyingValue(E e) noexcept {
-		return static_cast<std::underlying_type_t<E>>(e);
-	}
-
-	constexpr static uint32_t CantorPair(const uint32_t X, const uint32_t Y) {
+	/**
+	 * Returns a unique integer from the two provided integers using Cantor pairing function.
+	 * @link https://en.wikipedia.org/wiki/Pairing_function
+	 * 
+	 * @param X First integer.
+	 * @param Y Second integer.
+	 * @return A unique integer calculated using Cantor pairing function.
+	 */
+	FORCEINLINE constexpr static uint32_t CantorPair(const uint32_t X, const uint32_t Y) {
 		return (X + Y) * (X + Y + 1) / 2 + Y;
 	}
 
+	/**
+	 * Inverse function of Cantor pairing function.
+	 * @link https://en.wikipedia.org/wiki/Pairing_function
+	 * 
+	 * @param Val the value to be unpaired.
+	 * @return A pair of values that, when passed to Cantor pairing function, would result in Val.
+	 */
 	static std::pair<uint32_t, uint32_t> CantorUnpair(const uint32_t Val) {
+		// Calculate the value of the upper bound of the pair of integers
 		const auto T = static_cast<uint32_t>(floorf(-1.0f + sqrtf(1.0f + 8.0f * Val)) / 2.0f);
+		// Calculate and return the pair of integers
 		return {
 			T * (T + 3) / 2 - Val,
 			Val - T * (T + 1) / 2
 		};
 	}
 
+	/**
+	 * Executes the given function on the game thread.
+	 *
+	 * If the current thread is the game thread, the function is executed immediately.
+	 * Otherwise, the function is added to the game thread task queue and will be executed as soon as possible.
+	 *
+	 * Can be used when an action cannot be performed on a background thread, such as updating the UI.
+	 * 
+	 * @param InFunction The function to execute on the game thread.
+	 */
 	template <typename FuncType>
 	static void DoOnGameThread(FuncType &&InFunction) {
 		if (!IsInGameThread()) {
@@ -26,27 +48,6 @@ namespace Utils {
 			}, TStatId(), nullptr, ENamedThreads::GameThread);
 		}
 		else InFunction();
-	}
-
-	static void BindAction(
-		UInputComponent *PlayerInputComponent,
-		const char *ActionName,
-		const EInputEvent InputEvent,
-		TFunction<void()> &&Func
-	) {
-		FInputActionBinding AB(ActionName, InputEvent);
-		AB.ActionDelegate.GetDelegateForManualSet().BindLambda(Func);
-		PlayerInputComponent->AddActionBinding(MoveTemp(AB));
-	}
-
-	static void BindAxis(
-		UInputComponent *PlayerInputComponent,
-		const char *ActionName,
-		TFunction<void(float)> &&Func
-	) {
-		FInputAxisBinding AB(ActionName);
-		AB.AxisDelegate.GetDelegateForManualSet().BindLambda(Func);
-		PlayerInputComponent->AxisBindings.Push(MoveTemp(AB));
 	}
 }
 

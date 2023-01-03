@@ -3,6 +3,12 @@
 #include "ButtonWidget.h"
 #include "TextButtonWidget.generated.h"
 
+/**
+ * UTextButtonWidget is a button widget with a text block as its content.
+ * The text block can be customized with various properties such as color, font size, and outline.
+ *
+ * @note The native tick for this class is disabled.
+ */
 UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UTextButtonWidget : public UButtonWidget {
