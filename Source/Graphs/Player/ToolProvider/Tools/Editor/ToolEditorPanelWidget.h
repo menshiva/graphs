@@ -11,6 +11,7 @@ public:
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry &MyGeometry, float InDeltaTime) override;
 
+	FORCEINLINE bool IsDataChanged() const { return DataChanged; }
 	void Update(const class UToolEditor *EditorTool);
 protected:
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
@@ -62,10 +63,10 @@ protected:
 	// --------------------------------------------
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	UGridPanel *VertexValueHolder;
+	UGridPanel *EdgeWeightHolder;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	class UEditableText *VertexDataInput;
+	class UEditableText *EdgeWeightInput;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UTextButtonWidget *CloseKeyboardBtn;
@@ -84,11 +85,11 @@ private:
 	UFUNCTION()
 	void OnEditTextFocusLost(const FText &Text, ETextCommit::Type Type);
 
-	void SetEntityColor(const class UToolEditor *EditorTool, const FLinearColor &Color);
+	void SetEntityColor(const UToolEditor *EditorTool, const FLinearColor &Color);
 
 	void SetDataChanged();
 
 	TWeakObjectPtr<UMenuWidget> ParentMenu;
 
-	bool IsDataChanged = false;
+	bool DataChanged = false;
 };

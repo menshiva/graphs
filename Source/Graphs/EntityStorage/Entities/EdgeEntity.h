@@ -29,5 +29,5 @@ struct EdgeEntity {
 
 	/** The IDs of the vertices connected by this edge. */
 	TStaticArray<EntityId, 2> ConnectedVertices = TStaticArray<EntityId, 2>(EntityId::NONE());
-	float Weight;
+	float Weight = 0.0f;
 };

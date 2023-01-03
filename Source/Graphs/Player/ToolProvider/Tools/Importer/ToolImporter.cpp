@@ -13,24 +13,34 @@ UToolImporter::UToolImporter() : UTool(
 void UToolImporter::OnAttach() {
 	Super::OnAttach();
 	GetToolPanel<UToolImporterPanelWidget>()->ShowImportList();
+	GetVrRightController()->SetLaserActive(false);
 }
 
 void UToolImporter::OnDetach() {
 	Super::OnDetach();
 	DeselectImportedGraph();
+	GetVrRightController()->SetLaserActive(true);
+}
+
+bool UToolImporter::GetExportFolderContents(TArray<FString> &OutFilePaths) {
+	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
+	const auto ExportDirPath = FPaths::LaunchDir() + FileConsts::ExportDirName;
+	if (!FileManager.CreateDirectoryTree(*ExportDirPath))
+		return false;
+	FileManager.FindFiles(OutFilePaths, *ExportDirPath, TEXT(".json"));
+	return true;
 }
 
 void UToolImporter::ImportFromFile(const FString &FilePath) {
 	const auto GraphRenderers = GetGraphsRenderers();
 	const auto ImporterToolPanel = GetToolPanel<UToolImporterPanelWidget>();
 	ImporterToolPanel->ShowLoadingPanel();
-
 	AsyncTask(
 		ENamedThreads::AnyBackgroundHiPriTask,
 		[&, GraphRenderers, ImporterToolPanel] {
 			auto ErrorMessage = ImportFromFileImpl(FilePath);
 			Utils::DoOnGameThread([&, GraphRenderers, ImporterToolPanel, ErrorMessage(MoveTemp(ErrorMessage))] {
-				if (ImportedGraphId != EntityId::NONE()) {
+				if (ES::IsValid<GraphEntity>(ImportedGraphId)) {
 					check(ErrorMessage.IsEmpty());
 					ImporterToolPanel->ShowSuccessPanel();
 					GraphCommands::Mutable::SetOverrideColor(ImportedGraphId, ColorConsts::GreenColor);
@@ -38,7 +48,7 @@ void UToolImporter::ImportFromFile(const FString &FilePath) {
 				}
 				else {
 					check(!ErrorMessage.IsEmpty());
-					ImporterToolPanel->ShowErrorPanel("Error while importing graph:\n\n" + ErrorMessage);
+					ImporterToolPanel->ShowErrorPanel("Error while importing the graph:\n\n" + ErrorMessage);
 				}
 			});
 		}
@@ -46,7 +56,7 @@ void UToolImporter::ImportFromFile(const FString &FilePath) {
 }
 
 void UToolImporter::DeselectImportedGraph() {
-	if (ImportedGraphId != EntityId::NONE()) {
+	if (ES::IsValid<GraphEntity>(ImportedGraphId)) {
 		GraphCommands::Mutable::SetOverrideColor(ImportedGraphId, ColorConsts::OverrideColorNone);
 		GetGraphsRenderers()->MarkGraphDirty(
 			ImportedGraphId,
@@ -65,13 +75,14 @@ FString UToolImporter::ImportFromFileImpl(const FString &FilePath) {
 	check(FilePath.EndsWith(".json"));
 
 	if (!FileManager.FileExists(*FilePath))
-		return "File does not exist.";
+		return "File does not exist. Please refresh the list.";
 
 	FString JsonStr;
 	if (!FFileHelper::LoadFileToString(JsonStr, &FileManager, *FilePath))
-		return "Failed to read from file.";
+		return "Failed to read file contents.";
 
 	FString ErrorMessage;
 	ImportedGraphId = GraphCommands::Mutable::Deserialize(JsonStr, ErrorMessage);
+
 	return ErrorMessage;
 }

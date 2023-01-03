@@ -41,14 +41,14 @@ void UToolEditorPanelWidget::NativeConstruct() {
 		EditorTool->RandomizeVerticesColors();
 	});
 
-	VertexDataInput->OnTextChanged.AddDynamic(this, &UToolEditorPanelWidget::OnEditTextChanged);
-	VertexDataInput->OnTextCommitted.AddDynamic(this, &UToolEditorPanelWidget::OnEditTextFocusLost);
+	EdgeWeightInput->OnTextChanged.AddDynamic(this, &UToolEditorPanelWidget::OnEditTextChanged);
+	EdgeWeightInput->OnTextCommitted.AddDynamic(this, &UToolEditorPanelWidget::OnEditTextFocusLost);
 
 	EditorSaveButton->SetOnClickEvent([EditorTool] {
 		EditorTool->SelectEntity(EntityId::NONE());
 	});
 	EditorCancelButton->SetOnClickEvent([&, EditorTool] {
-		if (IsDataChanged)
+		if (DataChanged)
 			EditorTool->RestoreCache();
 		EditorTool->SelectEntity(EntityId::NONE());
 	});
@@ -56,8 +56,8 @@ void UToolEditorPanelWidget::NativeConstruct() {
 
 void UToolEditorPanelWidget::NativeTick(const FGeometry &MyGeometry, const float InDeltaTime) {
 	Super::NativeTick(MyGeometry, InDeltaTime);
-	// VertexDataInput editable text has no OnFocus event, so we check focus on tick event
-	if (VertexValueHolder->IsVisible() && !ParentMenu->IsKeyboardVisible() && VertexDataInput->HasAnyUserFocus()) {
+	// EdgeWeightInput editable text has no OnFocus event, so we check focus on tick event
+	if (EdgeWeightHolder->IsVisible() && !ParentMenu->IsKeyboardVisible() && EdgeWeightInput->HasAnyUserFocus()) {
 		CloseKeyboardBtn->SetIsEnabled(true);
 		ParentMenu->SetKeyboardVisibility(true);
 	}
@@ -67,7 +67,7 @@ void UToolEditorPanelWidget::Update(const UToolEditor *EditorTool) {
 	const auto SelectedId = EditorTool->GetSelectedEntityId();
 	if (SelectedId == EntityId::NONE()) {
 		EditorPanelSwitcher->SetActiveWidgetIndex(0);
-		IsDataChanged = false;
+		DataChanged = false;
 		EditorSaveButton->SetIsEnabled(false);
 	}
 	else {
@@ -75,7 +75,7 @@ void UToolEditorPanelWidget::Update(const UToolEditor *EditorTool) {
 			const auto &Vertex = ES::GetEntity<VertexEntity>(SelectedId);
 			const auto &Graph = ES::GetEntity<GraphEntity>(Vertex.GraphId);
 
-			SelectedEntityTitle->SetText(FText::FromString("Vertex #" + FString::FromInt(Vertex.CustomId)));
+			SelectedEntityTitle->SetText(FText::FromString("Vertex #" + FString::FromInt(Vertex.Label)));
 
 			ColorfulCheckbox->SetVisibility(ESlateVisibility::Collapsed);
 
@@ -83,12 +83,23 @@ void UToolEditorPanelWidget::Update(const UToolEditor *EditorTool) {
 			ColorHolderPanelSwitcher->SetActiveWidgetIndex(Graph.Colorful);
 			ColorHolder->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 
-			VertexDataInput->SetText(FText::FromString(FString::SanitizeFloat(Vertex.Value, 0)));
-			VertexValueHolder->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
+			// VertexDataInput->SetText(FText::FromString(FString::SanitizeFloat(Vertex.Value, 0)));
+			EdgeWeightHolder->SetVisibility(ESlateVisibility::Collapsed);
 
 			// reset IsDataChanged because of VertexDataInput->SetText above
-			IsDataChanged = false;
+			DataChanged = false;
 			EditorSaveButton->SetIsEnabled(false);
+		}
+		else if (ES::IsValid<EdgeEntity>(SelectedId)) {
+			const auto &Edge = ES::GetEntity<EdgeEntity>(SelectedId);
+
+			SelectedEntityTitle->SetText(FText::FromString("Edge"));
+
+			ColorfulCheckbox->SetVisibility(ESlateVisibility::Collapsed);
+			ColorHolder->SetVisibility(ESlateVisibility::Collapsed);
+
+			EdgeWeightInput->SetText(FText::FromString(FString::SanitizeFloat(Edge.Weight, 0)));
+			EdgeWeightHolder->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
 		}
 		else if (ES::IsValid<GraphEntity>(SelectedId)) {
 			const auto &Graph = ES::GetEntity<GraphEntity>(SelectedId);
@@ -106,7 +117,7 @@ void UToolEditorPanelWidget::Update(const UToolEditor *EditorTool) {
 			else
 				ColorHolder->SetVisibility(ESlateVisibility::Collapsed);
 
-			VertexValueHolder->SetVisibility(ESlateVisibility::Collapsed);
+			EdgeWeightHolder->SetVisibility(ESlateVisibility::Collapsed);
 		}
 		else {
 			check(false);
@@ -118,14 +129,12 @@ void UToolEditorPanelWidget::Update(const UToolEditor *EditorTool) {
 
 void UToolEditorPanelWidget::OnEditTextChanged(const FText &Text) {
 	SetDataChanged();
-
-	if (Text.ToString().Len() > 80) {
+	if (Text.ToString().Len() > 20) {
 		auto TrimmedStr = Text.ToString();
-		TrimmedStr.RemoveAt(80, 1, false);
-		VertexDataInput->SetText(FText::FromString(MoveTemp(TrimmedStr)));
+		TrimmedStr.RemoveAt(20, 1, false);
+		EdgeWeightInput->SetText(FText::FromString(MoveTemp(TrimmedStr)));
 	}
-
-	GetTool<UToolEditor>()->SetVertexValue(atof(TCHAR_TO_ANSI(ToCStr(Text.ToString()))));
+	GetTool<UToolEditor>()->SetEdgeWeight(atof(TCHAR_TO_ANSI(ToCStr(Text.ToString()))));
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
@@ -146,6 +155,6 @@ void UToolEditorPanelWidget::SetEntityColor(const UToolEditor *EditorTool, const
 }
 
 void UToolEditorPanelWidget::SetDataChanged() {
-	IsDataChanged = true;
+	DataChanged = true;
 	EditorSaveButton->SetIsEnabled(true);
 }

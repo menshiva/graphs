@@ -1,5 +1,6 @@
 ﻿#include "ToolEditor.h"
 #include "ToolEditorPanelWidget.h"
+#include "Graphs/EntityStorage/Commands/EdgeCommands.h"
 #include "Graphs/EntityStorage/Commands/GraphCommands.h"
 
 DECLARE_CYCLE_STAT(TEXT("UToolEditor::SelectEntity"), STAT_UToolEditor_SelectEntity, STATGROUP_GRAPHS_PERF);
@@ -10,18 +11,14 @@ UToolEditor::UToolEditor() : UTool(
 	TEXT("/Game/Graphs/UI/Icons/Edit"),
 	TEXT("/Game/Graphs/UI/Blueprints/Tools/ToolEditorPanel")
 ) {
-	SetSupportedEntities({VERTEX, GRAPH});
-}
-
-void UToolEditor::OnAttach() {
-	Super::OnAttach();
-	GetVrRightController()->SetLaserActive(true);
+	SetSupportedEntities({VERTEX, EDGE, GRAPH});
 }
 
 void UToolEditor::OnDetach() {
 	Super::OnDetach();
+	if (GetToolPanel<UToolEditorPanelWidget>()->IsDataChanged())
+		RestoreCache();
 	SelectEntity(EntityId::NONE());
-	GetVrRightController()->SetLaserActive(false);
 }
 
 bool UToolEditor::OnRightTriggerAction(const bool IsPressed) {
@@ -49,7 +46,10 @@ void UToolEditor::SelectEntity(const EntityId NewEntityId) {
 	else if (ES::IsValid<VertexEntity>(SelectedEntityId)) {
 		const auto &Vertex = ES::GetEntity<VertexEntity>(SelectedEntityId);
 		VertexEntityCache.Color = Vertex.Color;
-		VertexEntityCache.Value = Vertex.Value;
+	}
+	else if (ES::IsValid<EdgeEntity>(SelectedEntityId)) {
+		const auto &Edge = ES::GetEntity<EdgeEntity>(SelectedEntityId);
+		EdgeEntityCache.Weight = Edge.Weight;
 	}
 	else {
 		GetVrRightController()->SetLaserActive(true);
@@ -80,6 +80,10 @@ void UToolEditor::SetVertexColor(const FColor &Color) const {
 	RedrawSelectedVertex();
 }
 
+void UToolEditor::SetEdgeWeight(const float Weight) const {
+	EdgeCommands::Mutable::SetWeight(SelectedEntityId, Weight);
+}
+
 void UToolEditor::RestoreCache() const {
 	SCOPE_CYCLE_COUNTER(STAT_UToolEditor_RestoreCache);
 	if (ES::IsValid<GraphEntity>(SelectedEntityId)) {
@@ -87,10 +91,13 @@ void UToolEditor::RestoreCache() const {
 		GraphCommands::Mutable::SetColor(SelectedEntityId, GraphEntityCache.VerticesColors);
 		RedrawSelectedGraph();
 	}
+	else if (ES::IsValid<EdgeEntity>(SelectedEntityId)) {
+		EdgeCommands::Mutable::SetWeight(SelectedEntityId, EdgeEntityCache.Weight);
+		// we do not need to redraw geometry since weight is not a part of a mesh
+	}
 	else {
 		check(ES::IsValid<VertexEntity>(SelectedEntityId));
 		VertexCommands::Mutable::SetColor(SelectedEntityId, VertexEntityCache.Color);
-		VertexCommands::Mutable::SetValue(SelectedEntityId, VertexEntityCache.Value);
 		RedrawSelectedVertex();
 	}
 }

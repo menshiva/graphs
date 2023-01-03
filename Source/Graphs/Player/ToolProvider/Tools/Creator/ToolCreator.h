@@ -24,7 +24,6 @@ public:
 	FORCEINLINE bool IsVertexSelected() const { return SelectedVertexId != EntityId::NONE(); }
 	void SetVertexSelection(EntityId VertexId);
 
-	virtual void OnAttach() override;
 	virtual void OnDetach() override;
 	virtual void TickTool() override;
 

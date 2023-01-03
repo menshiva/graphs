@@ -12,6 +12,7 @@ public:
 	virtual void OnAttach() override;
 	virtual void OnDetach() override;
 
+	static bool GetExportFolderContents(TArray<FString> &OutFilePaths);
 	void ImportFromFile(const FString &FilePath);
 	void DeselectImportedGraph();
 private:

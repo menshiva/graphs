@@ -9,7 +9,6 @@ class GRAPHS_API UToolRemover final : public UTool {
 public:
 	UToolRemover();
 
-	virtual void OnAttach() override;
 	virtual void OnDetach() override;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;

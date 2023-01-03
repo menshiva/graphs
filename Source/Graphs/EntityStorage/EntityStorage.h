@@ -4,10 +4,20 @@
 #include "Entities/VertexEntity.h"
 #include "Entities/EdgeEntity.h"
 
+/**
+ * Entity system responsible for creating, modifying, and deleting entities.
+ *
+ * It stores three types of entities: vertices, edges, and graphs.
+ * Each entity has a unique EntityId, which consists of an index and a signature.
+ * The index is used to access the entity in the corresponding storage,
+ * while the signature is used to determine the type of the entity (in which storage entity is contained).
+ *
+ * This class is implemented as a singleton and all its public methods are static.
+ */
 class ES {
 public:
-	template <typename Entity>
-	using StorageImpl = TSparseArray<Entity>;
+	template <typename EntityType>
+	using StorageImpl = TSparseArray<EntityType>;
 
 	ES() = default;
 	ES(const ES&) = delete;
@@ -15,51 +25,58 @@ public:
 	ES &operator=(const ES&) = delete;
 	ES &operator=(ES&&) noexcept = delete;
 
-	template <typename Entity>
+	/** Checks that the storage of EntityType contains an entity at Id. */
+	template <typename EntityType>
 	static bool IsValid(const EntityId Id) {
-		if (Entity::Signature != Id.GetSignature() || Id == EntityId::NONE())
+		if (EntityType::Signature != Id.GetSignature() || Id == EntityId::NONE())
 			return false;
-		return GetInstance().GetStorage<Entity>().IsValidIndex(Id.GetIndex());
+		return GetInstance().GetStorage<EntityType>().IsValidIndex(Id.GetIndex());
 	}
 
-	template <typename Entity>
-	FORCEINLINE static const Entity &GetEntity(const EntityId Id) {
+	/** Returns const data of an entity at Id from the storage of EntityType. */
+	template <typename EntityType>
+	FORCEINLINE static const EntityType &GetEntity(const EntityId Id) {
 		check(Id != EntityId::NONE());
-		check(Entity::Signature == Id.GetSignature());
-		return GetInstance().GetStorage<Entity>()[Id.GetIndex()];
+		check(EntityType::Signature == Id.GetSignature());
+		return GetInstance().GetStorage<EntityType>()[Id.GetIndex()];
 	}
 
-	template <typename Entity>
+	/** Preallocates memory for the storage of EntityType. */
+	template <typename EntityType>
 	static void Reserve(size_t NumElementsToAdd) {
-		auto &Storage = GetInstance().GetStorage<Entity>();
+		auto &Storage = GetInstance().GetStorage<EntityType>();
 		Storage.Reserve(Storage.Num() + NumElementsToAdd);
 	}
 
-	template <typename Entity>
+	/** Removes all elements from the storage of EntityType. */
+	template <typename EntityType>
 	FORCEINLINE static void Clear() {
-		GetInstance().GetStorage<Entity>().Empty();
+		GetInstance().GetStorage<EntityType>().Empty();
 	}
 
-	template <typename Entity>
-	FORCEINLINE static Entity &GetEntityMut(const EntityId Id) {
+	/** Returns mutable data of an entity at Id from the storage of EntityType. */
+	template <typename EntityType>
+	FORCEINLINE static EntityType &GetEntityMut(const EntityId Id) {
 		check(Id != EntityId::NONE());
-		check(Entity::Signature == Id.GetSignature());
-		return GetInstance().GetStorage<Entity>()[Id.GetIndex()];
+		check(EntityType::Signature == Id.GetSignature());
+		return GetInstance().GetStorage<EntityType>()[Id.GetIndex()];
 	}
 
-	template <typename Entity>
+	/** Creates a new entity of EntityType in the first free position of the corresponding storage. */
+	template <typename EntityType>
 	FORCEINLINE static EntityId NewEntity() {
 		return {
-			static_cast<uint32_t>(GetInstance().GetStorage<Entity>().Emplace()),
-			Entity::Signature
+			static_cast<uint32_t>(GetInstance().GetStorage<EntityType>().Emplace()),
+			EntityType::Signature
 		};
 	}
 
-	template <typename Entity>
+	/** Removes an entity at Id from the storage of EntityType. */
+	template <typename EntityType>
 	FORCEINLINE static void RemoveEntity(const EntityId Id) {
 		check(Id != EntityId::NONE());
-		check(Entity::Signature == Id.GetSignature());
-		GetInstance().GetStorage<Entity>().RemoveAt(Id.GetIndex());
+		check(EntityType::Signature == Id.GetSignature());
+		GetInstance().GetStorage<EntityType>().RemoveAt(Id.GetIndex());
 	}
 private:
 	static ES &GetInstance() {
@@ -67,10 +84,10 @@ private:
 		return Singleton;
 	}
 
-	template <typename Entity>
-	FORCEINLINE StorageImpl<Entity> &GetStorage() {
+	template <typename EntityType>
+	FORCEINLINE StorageImpl<EntityType> &GetStorage() {
 		UE_LOG(LogTemp, Fatal, TEXT("Undefined type!"));
-		return StorageImpl<Entity>();
+		return StorageImpl<EntityType>();
 	}
 
 	template <>

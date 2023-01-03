@@ -79,22 +79,22 @@ void UToolCreatorPanelWidget::Update(const UToolCreator *CreatorTool) const {
 		case CreationMode::VERTEX: {
 			if (!CreatorTool->IsGraphSelected()) {
 				CancelButton->SetVisibility(ESlateVisibility::Collapsed);
-				CreatorText->SetText(FText::FromString("Select graph"));
+				CreatorText->SetText(FText::FromString("Select a graph"));
 			}
 			else {
 				CancelButton->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-				CreatorText->SetText(FText::FromString("Click to create a new vertex and attach it to selected graph"));
+				CreatorText->SetText(FText::FromString("Click to create a new vertex and attach it to the selected graph"));
 			}
 			break;
 		}
 		case CreationMode::EDGE: {
 			if (!CreatorTool->IsVertexSelected()) {
 				CancelButton->SetVisibility(ESlateVisibility::Collapsed);
-				CreatorText->SetText(FText::FromString("Select first vertex"));
+				CreatorText->SetText(FText::FromString("Select a first vertex"));
 			}
 			else {
 				CancelButton->SetVisibility(ESlateVisibility::SelfHitTestInvisible);
-				CreatorText->SetText(FText::FromString("Select second vertex to create a new edge"));
+				CreatorText->SetText(FText::FromString("Select a second vertex to create a new edge"));
 			}
 			break;
 		}

@@ -14,12 +14,10 @@ void UToolRemoverPanelWidget::NativeConstruct() {
 
 	RemoverRemoveButton->SetOnClickEvent([&, RemoverTool] {
 		RemoverTool->RemoveSelectedEntities();
-		SetButtonsEnabled(false);
 	});
 
 	RemoverDeselectButton->SetOnClickEvent([&, RemoverTool] {
 		RemoverTool->DeselectEntities();
-		SetButtonsEnabled(false);
 	});
 }
 

@@ -71,7 +71,7 @@ private:
 	ControllerState State = ControllerState::NONE;
 
 	bool TriggerPressed = false;
-	bool LaserVisibleFlag = false;
+	bool LaserVisibleFlag = true;
 	bool CastEnabled = true;
 
 	SelectionMode Selection = SelectionMode::VERTEX_EDGE;

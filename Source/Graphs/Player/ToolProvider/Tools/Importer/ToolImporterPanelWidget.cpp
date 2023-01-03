@@ -11,6 +11,8 @@ void UToolImporterPanelWidget::NativeConstruct() {
 	Super::NativeConstruct();
 	const auto ImportTool = GetTool<UToolImporter>();
 
+	// widgets callback bindings
+
 	ImporterList->OnItemClicked().AddLambda([ImportTool] (const UObject *Item) {
 		ImportTool->ImportFromFile(CastChecked<UListItemData>(Item)->TextData);
 	});
@@ -18,16 +20,13 @@ void UToolImporterPanelWidget::NativeConstruct() {
 	ImporterRefreshButton->SetOnClickEvent([&] {
 		check(ImporterPanelSwitcher->GetActiveWidgetIndex() == 0);
 		if (!RefreshList())
-			ShowErrorPanel(TEXT("Failed to create export directory."));
+			ShowErrorPanel(TEXT("Failed to create the Export directory."));
 	});
 
 	ImporterConfirmButton->SetOnClickEvent([&, ImportTool] {
 		check(ImporterPanelSwitcher->GetActiveWidgetIndex() == 1);
 		ImportTool->DeselectImportedGraph();
-		if (RefreshList())
-			ShowImportList();
-		else
-			ShowErrorPanel(TEXT("Failed to create export directory."));
+		ShowImportList();
 	});
 }
 
@@ -41,7 +40,7 @@ void UToolImporterPanelWidget::ShowImportList() const {
 
 void UToolImporterPanelWidget::ShowSuccessPanel() const {
 	SetCloseToolButtonVisible(true);
-	ImporterText->SetText(FText::FromString("Graph has been successfuly imported."));
+	ImporterText->SetText(FText::FromString("The graph has been successfuly imported."));
 	ImporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
 	ImporterPanelSwitcher->SetActiveWidgetIndex(1);
 }
@@ -59,16 +58,9 @@ void UToolImporterPanelWidget::ShowLoadingPanel() const {
 }
 
 bool UToolImporterPanelWidget::RefreshList() const {
-	auto &FileManager = FPlatformFileManager::Get().GetPlatformFile();
-	const auto ExportDirPath = FPaths::LaunchDir() + FileConsts::ExportDirName;
-
-	if (!FileManager.CreateDirectoryTree(*ExportDirPath)) {
-		ShowErrorPanel(TEXT("Failed to create export directory."));
-		return false;
-	}
-
 	TArray<FString> ImportFiles;
-	FileManager.FindFiles(ImportFiles, *ExportDirPath, TEXT(".json"));
+	if (!UToolImporter::GetExportFolderContents(ImportFiles))
+		return false;
 
 	ImporterList->ClearListItems();
 	for (auto &FilePath : ImportFiles) {
