@@ -25,7 +25,7 @@ void GenerateEdgeFaces(
 	check(FVector::Orthogonal(ForwardDir, RightDir));
 
 	// offset vertex positions almost by vertex mesh scale
-	const auto Offset = ForwardDir * UVerticesRenderer::MeshScale * 0.95f;
+	const auto Offset = ForwardDir * UVerticesRenderer::MeshScale * 0.9f;
 	FirstVertexPos += Offset;
 	SecondVertexPos -= Offset;
 

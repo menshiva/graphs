@@ -132,7 +132,7 @@ EntityId GraphCommands::Mutable::Deserialize(const FString &JsonStr, FString &Er
 		return EntityId::NONE();
 	}
 
-	bool Colorful = true;
+	bool Colorful = false;
 	{
 		const auto &ColorfulMember = DomGraph.FindMember("colorful");
 		if (ColorfulMember != DomGraph.MemberEnd()) {
