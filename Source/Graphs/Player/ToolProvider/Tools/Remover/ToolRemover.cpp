@@ -14,14 +14,8 @@ UToolRemover::UToolRemover() : UTool(
 	SetSupportedEntities({GRAPH, EDGE, VERTEX});
 }
 
-void UToolRemover::OnAttach() {
-	Super::OnAttach();
-	GetVrRightController()->SetLaserActive(true);
-}
-
 void UToolRemover::OnDetach() {
 	Super::OnDetach();
-	GetVrRightController()->SetLaserActive(false);
 	DeselectEntities();
 }
 
@@ -124,11 +118,11 @@ void UToolRemover::RemoveSelectedEntities() {
 						}
 					}
 					GraphsRenderer->RedrawGraphChunksIfDirty(P.Key);
-					GraphCommands::Mutable::CompactSets(P.Key);
 				}
 			}
 
 			Utils::DoOnGameThread([RemoverToolPanel, RightVrController] {
+				RemoverToolPanel->SetButtonsEnabled(false);
 				RemoverToolPanel->SetLoadingStatus(false);
 				RightVrController->SetLaserActive(true);
 			});
@@ -167,4 +161,5 @@ void UToolRemover::DeselectEntities() {
 		}
 	}
 	GraphsRemoveData.Reset();
+	GetToolPanel<UToolRemoverPanelWidget>()->SetButtonsEnabled(false);
 }

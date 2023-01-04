@@ -12,12 +12,11 @@ class GRAPHS_API AGraphChunkRenderer final : public AActor {
 	GENERATED_BODY()
 public:
 	explicit AGraphChunkRenderer(const FObjectInitializer &ObjectInitializer);
+
 	void Initialize(EntityId InGraphId);
+	FORCEINLINE bool IsEmpty() const { return VerticesToDraw.Num() == 0 && EdgesToDraw.Num() == 0; }
 
 	EntityId GetEntityIdFromHitResult(const FHitResult &HitResult) const;
-	FORCEINLINE EntityId GetGraphId() const { return GraphId; }
-
-	FORCEINLINE bool IsEmpty() const { return VerticesToDraw.Num() == 0 && EdgesToDraw.Num() == 0; }
 
 	bool AddVertex(EntityId VertexId);
 	bool AddEdge(EntityId EdgeId);
@@ -25,20 +24,20 @@ public:
 	void MarkAllVerticesDirty(bool MarkMesh, bool MarkCollision);
 	void MarkAllEdgesDirty(bool MarkMesh, bool MarkCollision);
 
-	bool RemoveVertex(EntityId VertexId);
-	bool RemoveEdge(EntityId EdgeId);
+	FORCEINLINE bool RemoveVertex(const EntityId VertexId) { return VerticesToDraw.Remove(VertexId) == 1; }
+	FORCEINLINE bool RemoveEdge(const EntityId EdgeId) { return EdgesToDraw.Remove(EdgeId) == 1; }
 
 	void RedrawIfDirty();
 
 	// number of entities rendered by 1 graph chunk renderer
-	constexpr static size_t ChunkSize = 256;
+	constexpr static size_t ChunkSize = 200;
 private:
 	RenderData GenerateVerticesRenderData(const GraphEntity &Graph) const;
 	RenderData GenerateEdgesRenderData(const GraphEntity &Graph) const;
 
 	EntityId GraphId = EntityId::NONE();
-	TSet<EntityId, DefaultKeyFuncs<EntityId>, TFixedSetAllocator<ChunkSize>> VerticesToDraw;
-	TSet<EntityId, DefaultKeyFuncs<EntityId>, TFixedSetAllocator<ChunkSize>> EdgesToDraw;
+	TSet<EntityId, DefaultKeyFuncs<EntityId>> VerticesToDraw;
+	TSet<EntityId, DefaultKeyFuncs<EntityId>> EdgesToDraw;
 
 	UPROPERTY()
 	URuntimeMeshComponent *VerticesRuntimeMeshComponent;

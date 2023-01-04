@@ -14,7 +14,6 @@ DECLARE_CYCLE_STAT(TEXT("UToolProvider::Tick"), STAT_UToolProvider_Tick, STATGRO
 
 UToolProvider::UToolProvider(const FObjectInitializer &ObjectInitializer) : USceneComponent(ObjectInitializer) {
 	PrimaryComponentTick.bCanEverTick = true;
-
 	RegisterTool<UToolImporter>(ObjectInitializer, "Tool Importer");
 	RegisterTool<UToolExporter>(ObjectInitializer, "Tool Exporter");
 	RegisterTool<UToolCreator>(ObjectInitializer, "Tool Creator");
@@ -42,16 +41,21 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 
 		HitEntityId = EntityId::NONE();
 
-		if (NewHitEntityId != EntityId::NONE() && ActiveTool.IsValid() && ActiveTool->SupportsEntity(NewHitEntityId)) {
+		if (NewHitEntityId != EntityId::NONE()
+			&& (!ActiveTool.IsValid()
+				|| (ActiveTool.IsValid() && ActiveTool->SupportsEntity(NewHitEntityId))))
+		{
 			HitEntityId = NewHitEntityId;
 			ExecuteHitCommandBasedOnHitEntity(true);
 
 			if (ES::IsValid<VertexEntity>(HitEntityId)) {
 				const auto &Vertex = ES::GetEntity<VertexEntity>(HitEntityId);
+				auto ColorStr = "#" + Vertex.Color.ToHex();
+				ColorStr.RemoveAt(ColorStr.Len() - 2, 2, false); // removes alpha channel
 				GetVrPawn()->GetMenuWidget()->SetHitEntity(
 					"Vertex",
-					FString("Id: #") + FString::FromInt(Vertex.CustomId)
-					+ FString("\nValue: ") + FString::SanitizeFloat(Vertex.Value, 0)
+					FString("Label: #") + FString::FromInt(Vertex.Label)
+					+ FString("\nColor: ") + ColorStr
 				);
 			}
 			else if (ES::IsValid<EdgeEntity>(HitEntityId)) {
@@ -60,8 +64,9 @@ void UToolProvider::SetHitResult(const FHitResult &NewHitResult) {
 				const auto &SecondVertex = ES::GetEntity<VertexEntity>(Edge.ConnectedVertices[1]);
 				GetVrPawn()->GetMenuWidget()->SetHitEntity(
 					"Edge",
-					FString("From: Vertex #") + FString::FromInt(FirstVertex.CustomId)
-					+ FString("\nTo: Vertex #") + FString::FromInt(SecondVertex.CustomId)
+					FString("From: Vertex #") + FString::FromInt(FirstVertex.Label)
+					+ FString("\nTo: Vertex #") + FString::FromInt(SecondVertex.Label)
+					+ FString("\nWeight: ") + FString::SanitizeFloat(Edge.Weight)
 				);
 			}
 			else {
@@ -148,17 +153,20 @@ void UToolProvider::ExecuteHitCommandBasedOnHitEntity(const bool IsHit) const {
 void UToolProvider::BeginPlay() {
 	Super::BeginPlay();
 
-	GraphsRenderers = Cast<AGraphsRenderers>(UGameplayStatics::GetActorOfClass(
+	GraphsRenderers = CastChecked<AGraphsRenderers>(UGameplayStatics::GetActorOfClass(
 		GetWorld(),
 		AGraphsRenderers::StaticClass()
 	));
 
-	// TODO: only for test
+#if !UE_BUILD_SHIPPING
+	// is used only during the development
 	{
+		// when running in UE editor, singleton data is not removed, so we need to clear it manually
 		ES::Clear<VertexEntity>();
 		ES::Clear<EdgeEntity>();
 		ES::Clear<GraphEntity>();
 
+		// create a dummy graph
 		const TArray<FVector> Positions = {
 			{437.109619f, 225.096985f, 50.0f},
 			{748.974915f, 345.263428f, 260.0f},
@@ -188,8 +196,7 @@ void UToolProvider::BeginPlay() {
 				GraphId,
 				i,
 				Positions[i],
-				FLinearColor::MakeRandomColor().ToFColor(false),
-				1337.0
+				FLinearColor::MakeRandomColor().ToFColor(false)
 			);
 		}
 
@@ -221,4 +228,5 @@ void UToolProvider::BeginPlay() {
 
 		GetGraphsRenderers()->ConstructGraphChunks(GraphId);
 	}
+#endif
 }

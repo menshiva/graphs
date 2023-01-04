@@ -9,14 +9,14 @@
 void UMenuWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
 	for (const auto MenuChild : MenuButtonHolder->GetAllChildren())
-		Cast<UImageButtonWidget>(MenuChild)->SetBackgroundColor(MenuButtonUnselectedColor);
+		CastChecked<UImageButtonWidget>(MenuChild)->SetBackgroundColor(MenuButtonUnselectedColor);
 	SetActivePanel(0);
 }
 
 void UMenuWidget::NativeConstruct() {
 	Super::NativeConstruct();
 	for (size_t i = 0; i < MenuButtonHolder->GetChildrenCount(); ++i) {
-		const auto MenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(i));
+		const auto MenuButton = CastChecked<UImageButtonWidget>(MenuButtonHolder->GetChildAt(i));
 		MenuButton->SetOnClickEvent([&, i] { SetActivePanel(i); });
 	}
 }
@@ -48,9 +48,9 @@ void UMenuWidget::SetHitEntity(const char *EntityName, FString &&EntityCaption) 
 void UMenuWidget::SetActivePanel(const size_t Index) const {
 	if (ActivePanelSwitcher) {
 		const size_t CurrentIndex = ActivePanelSwitcher->GetActiveWidgetIndex();
-		const auto CurrentActiveMenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(CurrentIndex));
+		const auto CurrentActiveMenuButton = CastChecked<UImageButtonWidget>(MenuButtonHolder->GetChildAt(CurrentIndex));
 		CurrentActiveMenuButton->SetBackgroundColor(MenuButtonUnselectedColor);
-		const auto NewActiveMenuButton = Cast<UImageButtonWidget>(MenuButtonHolder->GetChildAt(Index));
+		const auto NewActiveMenuButton = CastChecked<UImageButtonWidget>(MenuButtonHolder->GetChildAt(Index));
 		NewActiveMenuButton->SetBackgroundColor(Background->BrushColor);
 		ActivePanelSwitcher->SetActiveWidgetIndex(Index);
 	}

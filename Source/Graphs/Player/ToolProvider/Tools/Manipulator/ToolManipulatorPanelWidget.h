@@ -17,8 +17,5 @@ protected:
 	class UOptionSelectorWidget *ModeSelector;
 
 	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
-	UOptionSelectorWidget *RotationModeSelector;
-
-	UPROPERTY(BlueprintReadOnly, meta=(BindWidget))
 	UTextBlock *ManipulatorText;
 };

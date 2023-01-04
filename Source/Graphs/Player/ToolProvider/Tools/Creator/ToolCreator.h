@@ -24,14 +24,18 @@ public:
 	FORCEINLINE bool IsVertexSelected() const { return SelectedVertexId != EntityId::NONE(); }
 	void SetVertexSelection(EntityId VertexId);
 
-	virtual void OnAttach() override;
 	virtual void OnDetach() override;
 	virtual void TickTool() override;
 
 	virtual bool OnRightTriggerAction(bool IsPressed) override;
 	virtual bool OnRightThumbstickY(float Value) override;
 private:
-	bool CheckVertexPreviewValidity() const;
+	FORCEINLINE bool CheckVertexPreviewValidity() const {
+		return !GetVrRightController()->IsInUiState()
+		&& (Mode == CreationMode::GRAPH
+			|| (Mode == CreationMode::VERTEX && SelectedGraphId != EntityId::NONE()));
+	}
+
 	bool CheckEdgePreviewValidity() const;
 
 	UPROPERTY()
@@ -46,4 +50,5 @@ private:
 	EntityId SelectedVertexId = EntityId::NONE();
 
 	constexpr static float DefaultPreviewDistance = 300.0f;
+	float PreviewDistance = DefaultPreviewDistance;
 };

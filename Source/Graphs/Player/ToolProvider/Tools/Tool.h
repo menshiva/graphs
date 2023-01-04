@@ -34,7 +34,7 @@ protected:
 	FORCEINLINE EntityId GetHitEntityId() const { return ToolProvider->GetHitEntityId(); }
 
 	template <class WidgetClass>
-	FORCEINLINE WidgetClass *GetToolPanel() const { return Cast<WidgetClass>(ToolPanel.Get()); }
+	FORCEINLINE WidgetClass *GetToolPanel() const { return CastChecked<WidgetClass>(ToolPanel.Get()); }
 
 	void SetSupportedEntities(std::initializer_list<EntitySignature> &&Signatures);
 private:

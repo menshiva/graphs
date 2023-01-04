@@ -38,28 +38,28 @@ UVRControllerRight::UVRControllerRight(
 }
 
 void UVRControllerRight::SetupInputBindings(UInputComponent *Pic) {
-	Utils::BindAction(Pic, "RightTrigger", IE_Pressed, [this] {
+	BindAction(Pic, "RightTrigger", IE_Pressed, [this] {
 		if (OnRightTriggerAction(true))
 			PlayActionHapticEffect();
 	});
-	Utils::BindAction(Pic, "RightTrigger", IE_Released, [this] {
+	BindAction(Pic, "RightTrigger", IE_Released, [this] {
 		OnRightTriggerAction(false);
 	});
-	Utils::BindAction(Pic, "RightGrip", IE_Pressed, [this] {
+	BindAction(Pic, "RightGrip", IE_Pressed, [this] {
 		if (State != ControllerState::TOOL) {
 			SelectionWidgetComponent->SetVisibility(true);
 			PlayActionHapticEffect();
 		}
 	});
-	Utils::BindAction(Pic, "RightGrip", IE_Released, [this] {
+	BindAction(Pic, "RightGrip", IE_Released, [this] {
 		if (SelectionWidgetComponent->IsVisible())
 			SelectionWidgetComponent->SetVisibility(false);
 	});
 
-	Utils::BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
+	BindAxis(Pic, "RightThumbstickAxisY", [this] (const float Value) {
 		OnRightThumbstickY(Value);
 	});
-	Utils::BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
+	BindAxis(Pic, "RightThumbstickAxisX", [this] (const float Value) {
 		OnRightThumbstickX(Value);
 	});
 }
@@ -139,7 +139,7 @@ bool UVRControllerRight::OnRightThumbstickX(const float Value) {
 bool UVRControllerRight::OnRightThumbstickXAction(const float Value) {
 	if (SelectionWidgetComponent->IsVisible()) {
 		check(State != ControllerState::TOOL);
-		const auto SelectorWidget = Cast<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
+		const auto SelectorWidget = CastChecked<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
 		if (Value < 0.0f)
 			SelectorWidget->SelectPreviousOption(true);
 		else if (Value > 0.0f)
@@ -158,6 +158,11 @@ void UVRControllerRight::SetLaserActive(const bool IsActive) {
 		Super::SetLaserActive(IsActive);
 	if (State != ControllerState::TOOL)
 		GetVrPawn()->GetToolProvider()->ResetHitResult();
+}
+
+void UVRControllerRight::SetCastEnabled(const bool Enable) {
+	CastEnabled = Enable;
+	GetVrPawn()->GetToolProvider()->ResetHitResult();
 }
 
 void UVRControllerRight::SetUiInteractionEnabled(const bool Enabled) {
@@ -201,7 +206,7 @@ void UVRControllerRight::BeginPlay() {
 	if (!SelectionWidgetComponent->GetWidget())
 		SelectionWidgetComponent->InitWidget();
 
-	const auto SelectorWidget = Cast<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
+	const auto SelectorWidget = CastChecked<UOptionSelectorWidget>(SelectionWidgetComponent->GetWidget());
 	SelectorWidget->SetOnSelectedOptionChangedEvent([&] (const int32 SelectedIdx) {
 		if (SelectedIdx == 0)
 			Selection = SelectionMode::VERTEX_EDGE;

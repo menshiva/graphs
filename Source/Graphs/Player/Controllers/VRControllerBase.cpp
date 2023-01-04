@@ -14,7 +14,7 @@ UVRControllerBase::UVRControllerBase(
 	PrimaryComponentTick.bCanEverTick = true;
 
 	const auto ControllerName = StaticEnum<EControllerHand>()
-		->GetNameStringByValue(Utils::EnumUnderlyingValue(aControllerType));
+		->GetNameStringByValue(static_cast<std::underlying_type_t<EControllerHand>>(aControllerType));
 
 	MotionController = ObjectInitializer.CreateDefaultSubobject<UMotionControllerComponent>(
 		this,
@@ -61,6 +61,16 @@ void UVRControllerBase::SetLaserActive(const bool IsActive) {
 	}
 }
 
+float UVRControllerBase::SetLaserLength(const float NewLength) {
+	LaserLength = FMath::Clamp(NewLength, LaserMinLength, LaserMaxLength);
+	return LaserLength;
+}
+
+float UVRControllerBase::SetLaserLengthDelta(const float Delta) {
+	LaserLength = FMath::Clamp(LaserLength + Delta * LaserLengthDeltaSpeed, LaserMinLength, LaserMaxLength);
+	return LaserLength;
+}
+
 void UVRControllerBase::SetLaserColor(const FLinearColor &Color) const {
 	Laser->SetColorParameter("User.CustomColor", Color);
 }
@@ -92,6 +102,27 @@ void UVRControllerBase::TickComponent(
 void UVRControllerBase::BeginPlay() {
 	Super::BeginPlay();
 	ForceUpdateLaserTransform();
+}
+
+void UVRControllerBase::BindAction(
+	UInputComponent *PlayerInputComponent,
+	const char *ActionName,
+	const EInputEvent InputEvent,
+	TFunction<void()> &&Func
+) {
+	FInputActionBinding AB(ActionName, InputEvent);
+	AB.ActionDelegate.GetDelegateForManualSet().BindLambda(Func);
+	PlayerInputComponent->AddActionBinding(MoveTemp(AB));
+}
+
+void UVRControllerBase::BindAxis(
+	UInputComponent *PlayerInputComponent,
+	const char *ActionName,
+	TFunction<void(float)> &&Func
+) {
+	FInputAxisBinding AB(ActionName);
+	AB.AxisDelegate.GetDelegateForManualSet().BindLambda(Func);
+	PlayerInputComponent->AxisBindings.Push(MoveTemp(AB));
 }
 
 void UVRControllerBase::SetLaserNiagaraStartEnd(UNiagaraComponent *aLaser, const FVector &Start, const FVector &End) {

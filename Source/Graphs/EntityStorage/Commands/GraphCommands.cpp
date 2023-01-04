@@ -7,10 +7,10 @@ DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::Create"), STAT_GraphCommands_Mu
 EntityId GraphCommands::Mutable::Create(const bool Colorful) {
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Mutable_Create);
 
-	// create new graph entity
+	// create a new graph entity
 	const auto GraphId = ES::NewEntity<GraphEntity>();
 
-	// fill new entity with given properties
+	// fill the new entity with given properties
 	ES::GetEntityMut<GraphEntity>(GraphId).Colorful = Colorful;
 
 	return GraphId;
@@ -20,7 +20,6 @@ DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::Remove"), STAT_GraphCommands_Mu
 void GraphCommands::Mutable::Remove(const EntityId GraphId) {
 	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Mutable_Remove);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
-
 	for (const auto VertexId : Graph.Vertices)
 		ES::RemoveEntity<VertexEntity>(VertexId);
 	for (const auto EdgeId : Graph.Edges)
@@ -34,15 +33,11 @@ void GraphCommands::Mutable::SetHit(const EntityId GraphId, const bool IsHit) {
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 	check(Graph.Vertices.Num() > 0);
-	ParallelFor(Graph.Vertices.Num(), [&Graph, IsHit] (const int32_t Idx) {
-		VertexCommands::Mutable::SetHit(Graph.Vertices[FSetElementId::FromInteger(Idx)], IsHit);
-	});
+	for (const auto VertexId : Graph.Vertices)
+		VertexCommands::Mutable::SetHit(VertexId, IsHit);
 
-	if (Graph.Edges.Num() > 0) {
-		ParallelFor(Graph.Edges.Num(), [&Graph, IsHit] (const int32_t Idx) {
-			EdgeCommands::Mutable::SetHit(Graph.Edges[FSetElementId::FromInteger(Idx)], IsHit);
-		});
-	}
+	for (const auto EdgeId : Graph.Edges)
+		EdgeCommands::Mutable::SetHit(EdgeId, IsHit);
 }
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::SetColor"), STAT_GraphCommands_Mutable_SetColor, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -51,9 +46,8 @@ void GraphCommands::Mutable::SetColor(const EntityId GraphId, const FColor &Colo
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 	check(Graph.Vertices.Num() > 0);
-	ParallelFor(Graph.Vertices.Num(), [&Graph, &Color] (const int32_t Idx) {
-		VertexCommands::Mutable::SetColor(Graph.Vertices[FSetElementId::FromInteger(Idx)], Color);
-	});
+	for (const auto VertexId : Graph.Vertices)
+		VertexCommands::Mutable::SetColor(VertexId, Color);
 }
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::SetColor_Arr"), STAT_GraphCommands_Mutable_SetColor_Arr, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -63,9 +57,9 @@ void GraphCommands::Mutable::SetColor(const EntityId GraphId, const TArray<FColo
 
 	check(Graph.Vertices.Num() > 0);
 	check(Graph.Vertices.Num() == Colors.Num());
-	ParallelFor(Graph.Vertices.Num(), [&Graph, &Colors] (const int32_t Idx) {
-		VertexCommands::Mutable::SetColor(Graph.Vertices[FSetElementId::FromInteger(Idx)], Colors[Idx]);
-	});
+	auto ColorIter = Colors.CreateConstIterator();
+	for (const auto VertexId : Graph.Vertices)
+		VertexCommands::Mutable::SetColor(VertexId, *ColorIter++);
 }
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::RandomizeVerticesColors"), STAT_GraphCommands_Mutable_RandomizeVerticesColors, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -74,12 +68,8 @@ void GraphCommands::Mutable::RandomizeVerticesColors(const EntityId GraphId) {
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 	check(Graph.Vertices.Num() > 0);
-	ParallelFor(Graph.Vertices.Num(), [&Graph] (const int32_t Idx) {
-		VertexCommands::Mutable::SetColor(
-			Graph.Vertices[FSetElementId::FromInteger(Idx)],
-			FLinearColor::MakeRandomColor().ToFColor(false)
-		);
-	});
+	for (const auto VertexId : Graph.Vertices)
+		VertexCommands::Mutable::SetColor(VertexId, FLinearColor::MakeRandomColor().ToFColor(false));
 }
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::SetOverrideColor"), STAT_GraphCommands_Mutable_SetOverrideColor, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -88,15 +78,11 @@ void GraphCommands::Mutable::SetOverrideColor(const EntityId GraphId, const FCol
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 	check(Graph.Vertices.Num() > 0);
-	ParallelFor(Graph.Vertices.Num(), [&Graph, &OverrideColor] (const int32_t Idx) {
-		VertexCommands::Mutable::SetOverrideColor(Graph.Vertices[FSetElementId::FromInteger(Idx)], OverrideColor);
-	});
+	for (const auto VertexId : Graph.Vertices)
+		VertexCommands::Mutable::SetOverrideColor(VertexId, OverrideColor);
 
-	if (Graph.Edges.Num() > 0) {
-		ParallelFor(Graph.Edges.Num(), [&Graph, &OverrideColor] (const int32_t Idx) {
-			EdgeCommands::Mutable::SetOverrideColor(Graph.Edges[FSetElementId::FromInteger(Idx)], OverrideColor);
-		});
-	}
+	for (const auto EdgeId : Graph.Edges)
+		EdgeCommands::Mutable::SetOverrideColor(EdgeId, OverrideColor);
 }
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::Move"), STAT_GraphCommands_Mutable_Move, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -105,9 +91,8 @@ void GraphCommands::Mutable::Move(const EntityId GraphId, const FVector &Delta) 
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 	check(Graph.Vertices.Num() > 0);
-	ParallelFor(Graph.Vertices.Num(), [&Graph, &Delta] (const int32_t Idx) {
-		VertexCommands::Mutable::Move(Graph.Vertices[FSetElementId::FromInteger(Idx)], Delta);
-	});
+	for (const auto VertexId : Graph.Vertices)
+		VertexCommands::Mutable::Move(VertexId, Delta);
 }
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::Rotate"), STAT_GraphCommands_Mutable_Rotate, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -120,18 +105,10 @@ void GraphCommands::Mutable::Rotate(
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
 	check(Graph.Vertices.Num() > 0);
-	ParallelFor(Graph.Vertices.Num(), [&Graph, &Origin, &Axis, Angle] (const int32_t Idx) {
-		auto &Vertex = ES::GetEntityMut<VertexEntity>(Graph.Vertices[FSetElementId::FromInteger(Idx)]);
+	for (const auto VertexId : Graph.Vertices) {
+		auto &Vertex = ES::GetEntityMut<VertexEntity>(VertexId);
 		Vertex.Position = (Vertex.Position - Origin).RotateAngleAxis(Angle, Axis) + Origin;
-	});
-}
-
-DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::CompactSets"), STAT_GraphCommands_Mutable_CompactSets, STATGROUP_GRAPHS_PERF_COMMANDS);
-void GraphCommands::Mutable::CompactSets(const EntityId GraphId) {
-	auto &Graph = ES::GetEntityMut<GraphEntity>(GraphId);
-	// make sets be a contiguous range
-	Graph.Vertices.Compact();
-	Graph.Edges.Compact();
+	}
 }
 
 DECLARE_CYCLE_STAT(TEXT("GraphCommands::Mutable::Deserialize"), STAT_GraphCommands_Mutable_Deserialize, STATGROUP_GRAPHS_PERF_COMMANDS);
@@ -155,7 +132,7 @@ EntityId GraphCommands::Mutable::Deserialize(const FString &JsonStr, FString &Er
 		return EntityId::NONE();
 	}
 
-	bool Colorful = true;
+	bool Colorful = false;
 	{
 		const auto &ColorfulMember = DomGraph.FindMember("colorful");
 		if (ColorfulMember != DomGraph.MemberEnd()) {
@@ -186,7 +163,7 @@ EntityId GraphCommands::Mutable::Deserialize(const FString &JsonStr, FString &Er
 		}
 
 		ES::Reserve<VertexEntity>(DomVerticesArray.Size());
-		Graph.VerticesCustomIdToEntityId.Reserve(DomVerticesArray.Size());
+		Graph.VerticesLabelToEntityId.Reserve(DomVerticesArray.Size());
 		Graph.Vertices.Reserve(DomVerticesArray.Size());
 
 		size_t VertexI = 0;
@@ -248,15 +225,15 @@ void GraphCommands::Const::Serialize(const EntityId GraphId, rapidjson::PrettyWr
 	{
 		check(Graph.Vertices.Num() > 0);
 
-		// copy vertices ids and sort them by CustomId
-		auto VerticesSortedByCustomId = Graph.Vertices.Array();
-		VerticesSortedByCustomId.Sort([] (const EntityId F, const EntityId S) {
-			return ES::GetEntity<VertexEntity>(F).CustomId < ES::GetEntity<VertexEntity>(S).CustomId;
+		// copy vertices ids and sort them by the vertex' label so that vertices are arranged in ascending order in the file
+		auto VerticesSortedByLabel = Graph.Vertices.Array();
+		VerticesSortedByLabel.Sort([] (const EntityId F, const EntityId S) {
+			return ES::GetEntity<VertexEntity>(F).Label < ES::GetEntity<VertexEntity>(S).Label;
 		});
 
 		Writer.Key("vertices");
 		Writer.StartArray();
-		for (const auto VertexId : VerticesSortedByCustomId)
+		for (const auto VertexId : VerticesSortedByLabel)
 			VertexCommands::Const::Serialize(VertexId, Writer);
 		Writer.EndArray();
 	}
@@ -288,19 +265,21 @@ FVector GraphCommands::Const::ComputeCenterPosition(const EntityId GraphId) {
 	return Center;
 }
 
-DECLARE_CYCLE_STAT(TEXT("GraphCommands::Const::GenerateUniqueVertexUserId"), STAT_GraphCommands_Const_GenerateUniqueVertexUserId, STATGROUP_GRAPHS_PERF_COMMANDS);
-uint32_t GraphCommands::Const::GenerateUniqueVertexUserId(const EntityId GraphId) {
-	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Const_GenerateUniqueVertexUserId);
+DECLARE_CYCLE_STAT(TEXT("GraphCommands::Const::GenerateUniqueVertexUserId"), STAT_GraphCommands_Const_GenerateUniqueVertexLabel, STATGROUP_GRAPHS_PERF_COMMANDS);
+uint32_t GraphCommands::Const::GenerateUniqueVertexLabel(const EntityId GraphId) {
+	SCOPE_CYCLE_COUNTER(STAT_GraphCommands_Const_GenerateUniqueVertexLabel);
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	uint32_t MaxUserId = -1;
-	if (Graph.VerticesCustomIdToEntityId.Num() > 0) {
-		auto Iter = Graph.VerticesCustomIdToEntityId.CreateConstIterator();
-		MaxUserId = Iter.Key();
+	// we simply try to find the highest vertex label in the graph
+	uint32_t MaxLabel = -1;
+	if (Graph.VerticesLabelToEntityId.Num() > 0) {
+		auto Iter = Graph.VerticesLabelToEntityId.CreateConstIterator();
+		MaxLabel = Iter.Key();
 		for (++Iter; Iter; ++Iter)
-			if (Iter.Key() > MaxUserId)
-				MaxUserId = Iter.Key();
+			if (Iter.Key() > MaxLabel)
+				MaxLabel = Iter.Key();
 	}
 
-	return MaxUserId + 1;
+	// and then return it + 1
+	return MaxLabel + 1;
 }

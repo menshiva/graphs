@@ -8,7 +8,7 @@ void USettingsPanelWidget::NativeConstruct() {
 	Super::NativePreConstruct();
 
 	const auto Pawn = GetOwningPlayerPawn<AVRPawn>();
-	const auto GameMode = Cast<AVRGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
+	const auto GameMode = CastChecked<AVRGameMode>(UGameplayStatics::GetGameMode(GetWorld()));
 
 	CameraFadeAnimationTick->SetTicked(Pawn->IsCameraFadeAnimationEnabled());
 	CameraFadeAnimationTick->SetOnClickEvent([Pawn] { Pawn->ToggleCameraFadeAnimation(); });

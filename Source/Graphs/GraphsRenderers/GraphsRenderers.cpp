@@ -45,10 +45,7 @@ void AGraphsRenderers::ConstructGraphChunks(const EntityId GraphId) {
 			const bool Result = CurrentChunk->AddVertex(VertexId);
 			check(Result);
 		}
-
-		// use Insert if check below fails
-		const auto LookupIdx = VerticesChunksLookup.Add(CurrentChunk);
-		check(VertexId.GetIndex() == LookupIdx);
+		VerticesChunksLookup.Insert(VertexId.GetIndex(), CurrentChunk);
 	}
 	EdgesChunksLookup.Reserve(EdgesChunksLookup.Num() + Graph.Edges.Num());
 	auto OtherChunkIter = NewGraphChunks.CreateConstIterator();
@@ -59,10 +56,7 @@ void AGraphsRenderers::ConstructGraphChunks(const EntityId GraphId) {
 			const bool Result = CurrentChunk->AddEdge(EdgeId);
 			check(Result);
 		}
-
-		// use Insert if check below fails
-		const auto LookupIdx = EdgesChunksLookup.Add(CurrentChunk);
-		check(EdgeId.GetIndex() == LookupIdx);
+		EdgesChunksLookup.Insert(EdgeId.GetIndex(), CurrentChunk);
 	}
 
 	// initialize filled chunks

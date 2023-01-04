@@ -40,13 +40,13 @@ void UToolsPanelWidget::NativeConstruct() {
 			SetCloseToolButtonVisible(true);
 		});
 
-		const auto ToolPanel = Cast<UToolWidget>(CreateWidget(
+		const auto ToolPanel = CastChecked<UToolWidget>(CreateWidget(
 			this,
 			Tool->GetToolPanelClass(),
 			FName(FString(Tool->GetToolName()) + "ToolPanel")
 		));
 		Tool->SetToolPanel(this, ToolPanel);
-		const auto ToolPanelSlot = Cast<UWidgetSwitcherSlot>(ToolPanelSwitcher->AddChild(ToolPanel));
+		const auto ToolPanelSlot = CastChecked<UWidgetSwitcherSlot>(ToolPanelSwitcher->AddChild(ToolPanel));
 		ToolPanelSlot->SetHorizontalAlignment(HAlign_Fill);
 		ToolPanelSlot->SetVerticalAlignment(VAlign_Fill);
 	}

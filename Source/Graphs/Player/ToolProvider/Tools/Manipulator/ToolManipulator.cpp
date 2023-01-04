@@ -17,13 +17,11 @@ UToolManipulator::UToolManipulator() : UTool(
 
 void UToolManipulator::OnAttach() {
 	Super::OnAttach();
-	GetVrRightController()->SetLaserActive(true);
 	SetManipulationMode(ManipMode);
 }
 
 void UToolManipulator::OnDetach() {
 	Super::OnDetach();
-	GetVrRightController()->SetLaserActive(false);
 	check(ManipulationEntity == EntityId::NONE());
 }
 
@@ -122,10 +120,11 @@ bool UToolManipulator::OnRightThumbstickY(const float Value) {
 	if (GetVrRightController()->IsInToolState()) {
 		if (ManipMode == ManipulationMode::MOVE) {
 			GetVrRightController()->SetLaserLengthDelta(Value);
+			LastThumbstickYValue = Value;
 			return true;
 		}
 		check(ManipMode == ManipulationMode::ROTATE);
-		if (RotMode == RotationMode::Z_AXIS && (Value != LastThumbstickYValue || Value > 0.0f)) {
+		if (Value != LastThumbstickYValue && fabs(Value) > fabs(LastThumbstickXValue)) {
 			check(ES::IsValid<GraphEntity>(ManipulationEntity));
 			GraphCommands::Mutable::Rotate(
 				ManipulationEntity,
@@ -139,6 +138,7 @@ bool UToolManipulator::OnRightThumbstickY(const float Value) {
 				true, false
 			);
 			GetGraphsRenderers()->RedrawGraphChunksIfDirty(ManipulationEntity);
+			LastThumbstickYValue = Value;
 			return true;
 		}
 	}
@@ -150,8 +150,8 @@ bool UToolManipulator::OnRightThumbstickY(const float Value) {
 bool UToolManipulator::OnRightThumbstickX(const float Value) {
 	SCOPE_CYCLE_COUNTER(STAT_UToolManipulator_OnRightThumbstickX);
 
-	if (RotMode == RotationMode::Y_AXIS && (Value != LastThumbstickXValue || Value > 0.0f)) {
-		if (ManipMode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
+	if (ManipMode == ManipulationMode::ROTATE && GetVrRightController()->IsInToolState()) {
+		if (Value != LastThumbstickXValue && fabs(Value) > fabs(LastThumbstickYValue)) {
 			check(ES::IsValid<GraphEntity>(ManipulationEntity));
 			GraphCommands::Mutable::Rotate(
 				ManipulationEntity,
@@ -165,6 +165,7 @@ bool UToolManipulator::OnRightThumbstickX(const float Value) {
 				true, false
 			);
 			GetGraphsRenderers()->RedrawGraphChunksIfDirty(ManipulationEntity);
+			LastThumbstickXValue = Value;
 			return true;
 		}
 	}

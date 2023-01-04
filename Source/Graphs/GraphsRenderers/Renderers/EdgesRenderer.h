@@ -8,7 +8,6 @@ class GRAPHS_API UEdgesRenderer final : public URendererBase {
 	GENERATED_BODY()
 public:
 	UEdgesRenderer();
-
 	virtual void Initialize() override;
 
 	virtual bool GetSectionMeshForLOD(int32 LODIndex, int32 SectionId, FRuntimeMeshRenderableMeshData &MeshData) override;
@@ -20,7 +19,5 @@ public:
 	constexpr static int32 CollisionQuality = 3;
 private:
 	UPROPERTY()
-	UMaterial *MeshMaterial;
-
-	static inline uint8 MeshAlpha = roundf(255.0f * 0.7f);
+	UMaterialInstance *EdgeMeshMaterial;
 };

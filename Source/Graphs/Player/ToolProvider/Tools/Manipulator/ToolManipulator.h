@@ -8,11 +8,6 @@ enum class ManipulationMode {
 	ROTATE
 };
 
-enum class RotationMode {
-	Y_AXIS,
-	Z_AXIS
-};
-
 UCLASS()
 class GRAPHS_API UToolManipulator final : public UTool {
 	GENERATED_BODY()
@@ -31,12 +26,8 @@ public:
 
 	FORCEINLINE ManipulationMode GetManipulationMode() const { return ManipMode; }
 	void SetManipulationMode(ManipulationMode NewMode);
-
-	FORCEINLINE RotationMode GetRotationMode() const { return RotMode; }
-	FORCEINLINE void SetRotationMode(const RotationMode NewMode) { RotMode = NewMode; }
 private:
 	ManipulationMode ManipMode = ManipulationMode::MOVE;
-	RotationMode RotMode = RotationMode::Y_AXIS;
 
 	EntityId ManipulationEntity = EntityId::NONE();
 

@@ -3,6 +3,11 @@
 #include "Blueprint/UserWidget.h"
 #include "CheckboxWidget.generated.h"
 
+/**
+ * UCheckboxWidget is a widget that displays an image button with a tick icon and a text next to it.
+ * 
+ * @note The native tick for this class is disabled.
+ */
 UCLASS(Abstract, meta=(DisableNativeTick))
 // ReSharper disable once CppClassCanBeFinal
 class GRAPHS_API UCheckboxWidget : public UUserWidget {
@@ -10,7 +15,7 @@ class GRAPHS_API UCheckboxWidget : public UUserWidget {
 public:
 	virtual void NativePreConstruct() override;
 
-	bool IsTicked() const;
+	FORCEINLINE bool IsTicked() const { return Ticked; }
 	void SetTicked(bool IsTicked);
 
 	void SetOnClickEvent(TFunction<void()> &&ClickEvent);

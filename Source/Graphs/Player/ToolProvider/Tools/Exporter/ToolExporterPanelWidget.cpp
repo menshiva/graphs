@@ -18,14 +18,14 @@ void UToolExporterPanelWidget::ShowExportPanel() const {
 
 void UToolExporterPanelWidget::ShowSuccessPanel(const FString &ExportPath) const {
 	SetCloseToolButtonVisible(true);
-	ExporterText->SetText(FText::FromString("Selected graph has been successfuly\nexported to:\n\n" + ExportPath));
+	ExporterText->SetText(FText::FromString("The selected graph has been successfuly\nexported to:\n\n" + ExportPath));
 	ExporterConfirmButton->SetBackgroundColor(ColorConsts::GreenColor.ReinterpretAsLinear());
 	ExporterPanelSwitcher->SetActiveWidgetIndex(1);
 }
 
 void UToolExporterPanelWidget::ShowErrorPanel(const FStringView &ErrorDesc) const {
 	SetCloseToolButtonVisible(true);
-	ExporterText->SetText(FText::FromString(FString("Error while exporting selected graph:\n\n") + ErrorDesc.GetData()));
+	ExporterText->SetText(FText::FromString(FString("Error while exporting the selected graph:\n\n") + ErrorDesc.GetData()));
 	ExporterConfirmButton->SetBackgroundColor(ColorConsts::RedColor.ReinterpretAsLinear());
 	ExporterPanelSwitcher->SetActiveWidgetIndex(1);
 }

@@ -21,7 +21,7 @@ void UToolExporter::OnAttach() {
 
 void UToolExporter::OnDetach() {
 	Super::OnDetach();
-	GetVrRightController()->SetLaserActive(false);
+	GetVrRightController()->SetLaserActive(true);
 }
 
 bool UToolExporter::OnRightTriggerAction(const bool IsPressed) {

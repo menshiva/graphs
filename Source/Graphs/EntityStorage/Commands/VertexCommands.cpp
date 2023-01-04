@@ -5,27 +5,26 @@
 DECLARE_CYCLE_STAT(TEXT("VertexCommands::Mutable::Create"), STAT_VertexCommands_Mutable_Create, STATGROUP_GRAPHS_PERF_COMMANDS);
 EntityId VertexCommands::Mutable::Create(
 	const EntityId GraphId,
-	const uint32_t CustomVertexId, const FVector &Position, const FColor &Color, const double Value
+	const uint32_t Label, const FVector &Position, const FColor &Color
 ) {
 	SCOPE_CYCLE_COUNTER(STAT_VertexCommands_Mutable_Create);
 
-	// create new vertex entity
+	// create a new vertex entity
 	const auto VertexId = ES::NewEntity<VertexEntity>();
 
-	// fill new entity with given properties
+	// fill the new entity with given properties
 	auto &Vertex = ES::GetEntityMut<VertexEntity>(VertexId);
 	Vertex.GraphId = GraphId;
 	Vertex.IsHit = false;
 	Vertex.OverrideColor = ColorConsts::OverrideColorNone;
-	Vertex.CustomId = CustomVertexId;
+	Vertex.Label = Label;
 	Vertex.Position = Position;
 	Vertex.Color = Color;
-	Vertex.Value = Value;
 
-	// add new entity to parent graph
+	// add the new entity to parent graph
 	auto &Graph = ES::GetEntityMut<GraphEntity>(GraphId);
-	check(!Graph.VerticesCustomIdToEntityId.Contains(CustomVertexId));
-	Graph.VerticesCustomIdToEntityId.Add(CustomVertexId, VertexId);
+	check(!Graph.VerticesLabelToEntityId.Contains(Label));
+	Graph.VerticesLabelToEntityId.Add(Label, VertexId);
 	bool AlreadyInSet = false;
 	Graph.Vertices.Add(VertexId, &AlreadyInSet);
 	check(!AlreadyInSet);
@@ -41,8 +40,8 @@ void VertexCommands::Mutable::Remove(const EntityId VertexId) {
 	auto &Graph = ES::GetEntityMut<GraphEntity>(Vertex.GraphId);
 
 	if (Graph.Vertices.Num() > 1) {
-		// remove from associated parent graph
-		auto CheckNum = Graph.VerticesCustomIdToEntityId.Remove(Vertex.CustomId);
+		// remove from the associated parent graph
+		auto CheckNum = Graph.VerticesLabelToEntityId.Remove(Vertex.Label);
 		check(CheckNum == 1);
 		CheckNum = Graph.Vertices.Remove(VertexId);
 		check(CheckNum == 1);
@@ -56,7 +55,7 @@ void VertexCommands::Mutable::Remove(const EntityId VertexId) {
 		ES::RemoveEntity<VertexEntity>(VertexId);
 	}
 	else {
-		// graph contains 1 vertex -> we can remove graph completely
+		// graph contains 1 vertex that should be removed -> remove the entire graph
 		GraphCommands::Mutable::Remove(Vertex.GraphId);
 	}
 }
@@ -72,16 +71,16 @@ bool VertexCommands::Mutable::Deserialize(const rapidjson::Value &DomVertex, con
 
 	const auto &Graph = ES::GetEntity<GraphEntity>(GraphId);
 
-	uint32_t CustomId;
+	uint32_t Label;
 	{
-		const auto &IdMember = DomVertex.FindMember("id");
-		if (IdMember == DomVertex.MemberEnd() || !IdMember->value.IsUint()) {
-			ErrorMessage = "Object should have \"id\" unique integer number.";
+		const auto &LabelMember = DomVertex.FindMember("label");
+		if (LabelMember == DomVertex.MemberEnd() || !LabelMember->value.IsUint()) {
+			ErrorMessage = "Object should have \"label\" unique integer number.";
 			return false;
 		}
-		CustomId = IdMember->value.GetUint();
-		if (Graph.VerticesCustomIdToEntityId.Contains(CustomId)) {
-			ErrorMessage = "\"id\" is not unique.";
+		Label = LabelMember->value.GetUint();
+		if (Graph.VerticesLabelToEntityId.Contains(Label)) {
+			ErrorMessage = "\"label\" is not unique.";
 			return false;
 		}
 	}
@@ -115,19 +114,7 @@ bool VertexCommands::Mutable::Deserialize(const rapidjson::Value &DomVertex, con
 		}
 	}
 
-	double Value = 0.0;
-	{
-		const auto &ValueMember = DomVertex.FindMember("value");
-		if (ValueMember != DomVertex.MemberEnd()) {
-			if (!ValueMember->value.IsDouble()) {
-				ErrorMessage = "\"value\" should be a floating point number.";
-				return false;
-			}
-			Value = ValueMember->value.GetDouble();
-		}
-	}
-
-	Create(GraphId, CustomId, Position, Color, Value);
+	Create(GraphId, Label, Position, Color);
 	return true;
 }
 
@@ -138,10 +125,10 @@ void VertexCommands::Const::Serialize(const EntityId VertexId, rapidjson::Pretty
 	const auto &Vertex = ES::GetEntity<VertexEntity>(VertexId);
 	Writer.StartObject();
 
-	// custom id
+	// label
 	{
-		Writer.Key("id");
-		Writer.Uint(Vertex.CustomId);
+		Writer.Key("label");
+		Writer.Uint(Vertex.Label);
 	}
 
 	// position in "X=%3.3f Y=%3.3f Z=%3.3f" format
@@ -153,18 +140,12 @@ void VertexCommands::Const::Serialize(const EntityId VertexId, rapidjson::Pretty
 	}
 
 	// color in #RRGGBB format
-	{
+	if (Vertex.Color != ColorConsts::VertexDefaultColor) {
 		auto ColorStr = "#" + Vertex.Color.ToHex();
 		ColorStr.RemoveAt(ColorStr.Len() - 2, 2, false); // removes alpha channel
 		const FTCHARToUTF8 ColorStrUTF(*ColorStr);
 		Writer.Key("color");
 		Writer.String(ColorStrUTF.Get(), ColorStrUTF.Length());
-	}
-
-	// value
-	{
-		Writer.Key("value");
-		Writer.Double(Vertex.Value);
 	}
 
 	Writer.EndObject();

@@ -125,11 +125,6 @@ void UToolCreator::SetVertexSelection(const EntityId VertexId) {
 	GetToolPanel<UToolCreatorPanelWidget>()->Update(this);
 }
 
-void UToolCreator::OnAttach() {
-	Super::OnAttach();
-	GetVrRightController()->SetLaserActive(true);
-}
-
 void UToolCreator::OnDetach() {
 	Super::OnDetach();
 
@@ -138,7 +133,6 @@ void UToolCreator::OnDetach() {
 	GetVrRightController()->SetLaserColor(ColorConsts::BlueColor.ReinterpretAsLinear());
 	GetVrRightController()->SetLaserLength(0.0f);
 	GetVrRightController()->SetCastEnabled(true);
-	GetVrRightController()->SetLaserActive(false);
 
 	SetGraphSelection(EntityId::NONE());
 }
@@ -153,7 +147,7 @@ void UToolCreator::TickTool() {
 			if (!VertexPreviewMesh->IsVisible()) {
 				GetVrRightController()->SetCastEnabled(false);
 				GetVrRightController()->SetLaserColor(ColorConsts::GreenColor.ReinterpretAsLinear());
-				GetVrRightController()->SetLaserLength(DefaultPreviewDistance);
+				GetVrRightController()->SetLaserLength(PreviewDistance);
 				VertexPreviewMesh->SetVisibility(true);
 			}
 		}
@@ -216,18 +210,18 @@ bool UToolCreator::OnRightTriggerAction(const bool IsPressed) {
 	if (Mode == CreationMode::VERTEX) {
 		if (SelectedGraphId == EntityId::NONE()) {
 			if (GetHitEntityId() != EntityId::NONE()) {
+				const auto HitGraphId = GetHitEntityId();
 				GetVrRightController()->SetCastEnabled(false);
-				SetGraphSelection(GetHitEntityId());
+				SetGraphSelection(HitGraphId);
 				return true;
 			}
 		}
 		else {
 			const auto VertexId = VertexCommands::Mutable::Create(
 				SelectedGraphId,
-				GraphCommands::Const::GenerateUniqueVertexUserId(SelectedGraphId),
+				GraphCommands::Const::GenerateUniqueVertexLabel(SelectedGraphId),
 				GetVrRightController()->GetLaserEndPosition(),
-				ColorConsts::VertexDefaultColor,
-				0
+				ColorConsts::VertexDefaultColor
 			);
 			VertexCommands::Mutable::SetOverrideColor(VertexId, ColorConsts::GreenColor);
 			GetGraphsRenderers()->AddVertexToChunk(VertexId);
@@ -258,10 +252,9 @@ bool UToolCreator::OnRightTriggerAction(const bool IsPressed) {
 		const auto GraphId = GraphCommands::Mutable::Create(true);
 		VertexCommands::Mutable::Create(
 			GraphId,
-			GraphCommands::Const::GenerateUniqueVertexUserId(GraphId),
+			GraphCommands::Const::GenerateUniqueVertexLabel(GraphId),
 			GetVrRightController()->GetLaserEndPosition(),
-			ColorConsts::VertexDefaultColor,
-			0
+			ColorConsts::VertexDefaultColor
 		);
 		GetGraphsRenderers()->ConstructGraphChunks(GraphId);
 		GetToolPanel<UToolCreatorPanelWidget>()->UpdateModeViaSelector(CreationMode::VERTEX);
@@ -273,17 +266,11 @@ bool UToolCreator::OnRightTriggerAction(const bool IsPressed) {
 }
 
 bool UToolCreator::OnRightThumbstickY(const float Value) {
-	if (CheckVertexPreviewValidity()) {
-		GetVrRightController()->SetLaserLengthDelta(Value);
+	if (Value != 0.0f && CheckVertexPreviewValidity()) {
+		PreviewDistance = GetVrRightController()->SetLaserLengthDelta(Value);
 		return true;
 	}
 	return Super::OnRightThumbstickY(Value);
-}
-
-bool UToolCreator::CheckVertexPreviewValidity() const {
-	return !GetVrRightController()->IsInUiState()
-		&& (Mode == CreationMode::GRAPH
-			|| (Mode == CreationMode::VERTEX && SelectedGraphId != EntityId::NONE()));
 }
 
 bool UToolCreator::CheckEdgePreviewValidity() const {

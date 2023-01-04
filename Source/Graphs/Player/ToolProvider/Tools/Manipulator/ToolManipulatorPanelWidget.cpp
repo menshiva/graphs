@@ -5,15 +5,9 @@
 
 void UToolManipulatorPanelWidget::NativePreConstruct() {
 	Super::NativePreConstruct();
-
 	if (ModeSelector) {
 		ModeSelector->SetOptions({"Move", "Rotate"});
 		ModeSelector->SetSelectedOptionIndex(0, false);
-	}
-
-	if (RotationModeSelector) {
-		RotationModeSelector->SetOptions({"Along Y axis", "Along Z axis"});
-		RotationModeSelector->SetSelectedOptionIndex(0, false);
 	}
 }
 
@@ -32,40 +26,22 @@ void UToolManipulatorPanelWidget::NativeConstruct() {
 		Update(ManipulatorTool);
 	});
 	ModeSelector->SetSelectedOptionIndex(0, true);
-
-	RotationModeSelector->SetOnSelectedOptionChangedEvent([&, ManipulatorTool] (const int32 SelectedIdx) {
-		if (SelectedIdx == 0)
-			ManipulatorTool->SetRotationMode(RotationMode::Y_AXIS);
-		else if (SelectedIdx == 1)
-			ManipulatorTool->SetRotationMode(RotationMode::Z_AXIS);
-		else {
-			check(false);
-		}
-	});
-	RotationModeSelector->SetSelectedOptionIndex(0, true);
 }
 
 void UToolManipulatorPanelWidget::Update(const UToolManipulator *ManipulatorTool) const {
 	const bool IsInMoveMode = ManipulatorTool->GetManipulationMode() == ManipulationMode::MOVE;
-
 	if (ManipulatorTool->GetManipulationEntity() == EntityId::NONE()) {
 		ManipulatorText->SetText(
 			IsInMoveMode
-				? FText::FromString("Select vertex / edge / graph")
-				: FText::FromString("Select graph")
+				? FText::FromString("Select a vertex / edge / graph")
+				: FText::FromString("Select a graph")
 		);
 	}
 	else {
 		ManipulatorText->SetText(
 			IsInMoveMode
-				? FText::FromString("Move controller or thumbstick up / down to move")
-				: FText::FromString("Move thumbstick to rotate")
+				? FText::FromString("Move the controller or\n tilt the thumbstick up / down")
+				: FText::FromString("Tilt the thumbstick")
 		);
 	}
-
-	RotationModeSelector->SetVisibility(
-		IsInMoveMode
-			? ESlateVisibility::Collapsed
-			: ESlateVisibility::SelfHitTestInvisible
-	);
 }
