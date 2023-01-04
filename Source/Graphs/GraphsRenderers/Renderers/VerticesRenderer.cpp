@@ -4,6 +4,116 @@
 DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetSectionMeshForLOD"), STAT_UVerticesRenderer_GetSectionMeshForLOD, GRAPHS_PERF_VERTICES_RENDERER);
 DECLARE_CYCLE_STAT(TEXT("UVerticesRenderer::GetCollisionMesh"), STAT_UVerticesRenderer_GetCollisionMesh, GRAPHS_PERF_VERTICES_RENDERER);
 
+constexpr static uint32_t IcosahedronFirstVertNum = 42;
+constexpr static uint32_t IcosahedronFirstIndNum = 240;
+
+constexpr static uint32_t IcosahedronZeroVertNum = 12;
+constexpr static uint32_t IcosahedronZeroIndNum = 80;
+
+/**
+ * Hard-coded icosahedron of 1 order scaled by MeshScale.
+ * Used for vertex collision.
+ * 
+ * @link https://observablehq.com/@mourner/fast-icosphere-mesh
+ */
+static std::pair<
+	TArray<FVector, TFixedAllocator<IcosahedronFirstVertNum>>,
+	TArray<int32, TFixedAllocator<IcosahedronFirstIndNum>>
+> IcosahedronMesh = {
+	{
+		FVector(-0.525731, 0.850651, 0.000000) * UVerticesRenderer::MeshScale,
+		FVector(0.525731, 0.850651, 0.000000) * UVerticesRenderer::MeshScale,
+		FVector(-0.525731, -0.850651, 0.000000) * UVerticesRenderer::MeshScale,
+		FVector(0.525731, -0.850651, 0.000000) * UVerticesRenderer::MeshScale,
+		FVector(0.000000, -0.525731, 0.850651) * UVerticesRenderer::MeshScale,
+		FVector(0.000000, 0.525731, 0.850651) * UVerticesRenderer::MeshScale,
+		FVector(0.000000, -0.525731, -0.850651) * UVerticesRenderer::MeshScale,
+		FVector(0.000000, 0.525731, -0.850651) * UVerticesRenderer::MeshScale,
+		FVector(0.850651, 0.000000, -0.525731) * UVerticesRenderer::MeshScale,
+		FVector(0.850651, 0.000000, 0.525731) * UVerticesRenderer::MeshScale,
+		FVector(-0.850651, 0.000000, -0.525731) * UVerticesRenderer::MeshScale,
+		FVector(-0.850651, 0.000000, 0.525731) * UVerticesRenderer::MeshScale,
+		FVector(-0.500000, 0.309017, 0.809017) * UVerticesRenderer::MeshScale,
+		FVector(-0.809017, 0.500000, 0.309017) * UVerticesRenderer::MeshScale,
+		FVector(-0.309017, 0.809017, 0.500000) * UVerticesRenderer::MeshScale,
+		FVector(0.309017, 0.809017, 0.500000) * UVerticesRenderer::MeshScale,
+		FVector(0.000000, 1.000000, 0.000000) * UVerticesRenderer::MeshScale,
+		FVector(0.309017, 0.809017, -0.500000) * UVerticesRenderer::MeshScale,
+		FVector(-0.309017, 0.809017, -0.500000) * UVerticesRenderer::MeshScale,
+		FVector(-0.500000, 0.309017, -0.809017) * UVerticesRenderer::MeshScale,
+		FVector(-0.809017, 0.500000, -0.309017) * UVerticesRenderer::MeshScale,
+		FVector(-1.000000, 0.000000, 0.000000) * UVerticesRenderer::MeshScale,
+		FVector(-0.809017, -0.500000, -0.309017) * UVerticesRenderer::MeshScale,
+		FVector(-0.809017, -0.500000, 0.309017) * UVerticesRenderer::MeshScale,
+		FVector(-0.500000, -0.309017, 0.809017) * UVerticesRenderer::MeshScale,
+		FVector(0.000000, 0.000000, 1.000000) * UVerticesRenderer::MeshScale,
+		FVector(0.500000, 0.309017, 0.809017) * UVerticesRenderer::MeshScale,
+		FVector(0.809017, 0.500000, 0.309017) * UVerticesRenderer::MeshScale,
+		FVector(0.809017, 0.500000, -0.309017) * UVerticesRenderer::MeshScale,
+		FVector(0.500000, 0.309017, -0.809017) * UVerticesRenderer::MeshScale,
+		FVector(0.000000, 0.000000, -1.000000) * UVerticesRenderer::MeshScale,
+		FVector(-0.500000, -0.309017, -0.809017) * UVerticesRenderer::MeshScale,
+		FVector(0.500000, -0.309017, 0.809017) * UVerticesRenderer::MeshScale,
+		FVector(0.809017, -0.500000, 0.309017) * UVerticesRenderer::MeshScale,
+		FVector(0.309017, -0.809017, 0.500000) * UVerticesRenderer::MeshScale,
+		FVector(-0.309017, -0.809017, 0.500000) * UVerticesRenderer::MeshScale,
+		FVector(0.000000, -1.000000, 0.000000) * UVerticesRenderer::MeshScale,
+		FVector(-0.309017, -0.809017, -0.500000) * UVerticesRenderer::MeshScale,
+		FVector(0.309017, -0.809017, -0.500000) * UVerticesRenderer::MeshScale,
+		FVector(0.500000, -0.309017, -0.809017) * UVerticesRenderer::MeshScale,
+		FVector(0.809017, -0.500000, -0.309017) * UVerticesRenderer::MeshScale,
+		FVector(1.000000, 0.000000, 0.000000) * UVerticesRenderer::MeshScale,
+	},
+	{
+		5, 12, 14, 11, 13, 12, 0, 14, 13, 12, 13, 14, 1, 15, 16, 5, 14, 15,
+		0, 16, 14, 15, 14, 16, 7, 17, 18, 1, 16, 17, 0, 18, 16, 17, 16, 18,
+		10, 19, 20, 7, 18, 19, 0, 20, 18, 19, 18, 20, 11, 21, 13, 10, 20, 21,
+		0, 13, 20, 21, 20, 13, 2, 22, 23, 10, 21, 22, 11, 23, 21, 22, 21, 23,
+		4, 24, 25, 11, 12, 24, 5, 25, 12, 24, 12, 25, 9, 26, 27, 5, 15, 26,
+		1, 27, 15, 26, 15, 27, 8, 28, 29, 1, 17, 28, 7, 29, 17, 28, 17, 29,
+		6, 30, 31, 7, 19, 30, 10, 31, 19, 30, 19, 31, 4, 32, 34, 9, 33, 32,
+		3, 34, 33, 32, 33, 34, 2, 35, 36, 4, 34, 35, 3, 36, 34, 35, 34, 36,
+		6, 37, 38, 2, 36, 37, 3, 38, 36, 37, 36, 38, 8, 39, 40, 6, 38, 39,
+		3, 40, 38, 39, 38, 40, 9, 41, 33, 8, 40, 41, 3, 33, 40, 41, 40, 33,
+		1, 28, 27, 8, 41, 28, 9, 27, 41, 28, 41, 27, 5, 26, 25, 9, 32, 26,
+		4, 25, 32, 26, 32, 25, 11, 24, 23, 4, 35, 24, 2, 23, 35, 24, 35, 23,
+		10, 22, 31, 2, 37, 22, 6, 31, 37, 22, 37, 31, 7, 30, 29, 6, 39, 30,
+		8, 29, 39, 30, 39, 29,
+	}
+};
+
+/**
+ * Hard-coded icosahedron of 0 order scaled by MeshScale.
+ * Used for vertex collision.
+ * 
+ * @link https://observablehq.com/@mourner/fast-icosphere-mesh
+ */
+static std::pair<
+	TArray<FVector, TFixedAllocator<IcosahedronZeroVertNum>>,
+	TArray<int32, TFixedAllocator<IcosahedronZeroIndNum>>
+> IcosahedronCollision = {
+	{
+		FVector(-0.525731087f, 0.850650787f, 0.0f) * UVerticesRenderer::MeshScale,
+		FVector(0.525731087f, 0.850650787f, 0.0f) * UVerticesRenderer::MeshScale,
+		FVector(-0.525731087f, -0.850650787f, 0.0f) * UVerticesRenderer::MeshScale,
+		FVector(0.525731087f, -0.850650787f, 0.0f) * UVerticesRenderer::MeshScale,
+		FVector(0.0f, -0.525731087f, 0.850650787f) * UVerticesRenderer::MeshScale,
+		FVector(0.0f, 0.525731087f, 0.850650787f) * UVerticesRenderer::MeshScale,
+		FVector(0.0f, -0.525731087f, -0.850650787f) * UVerticesRenderer::MeshScale,
+		FVector(0.0f, 0.525731087f, -0.850650787f) * UVerticesRenderer::MeshScale,
+		FVector(0.850650787f, 0.0f, -0.525731087f) * UVerticesRenderer::MeshScale,
+		FVector(0.850650787f, 0.0f, 0.525731087f) * UVerticesRenderer::MeshScale,
+		FVector(-0.850650787f, 0.0f, -0.525731087f) * UVerticesRenderer::MeshScale,
+		FVector(-0.850650787f, 0.0f, 0.525731087f) * UVerticesRenderer::MeshScale,
+	},
+	{
+		5, 11, 0, 1, 5, 0, 7, 1, 0, 10, 7, 0, 11, 10, 0, 2, 10, 11,
+		4, 11, 5, 9, 5, 1, 8, 1, 7, 6, 7, 10, 4, 9, 3, 2, 4, 3,
+		6, 2, 3, 8, 6, 3, 9, 8, 3, 1, 8, 9, 5, 9, 4, 11, 4, 2,
+		10, 2, 6, 7, 6, 8
+	}
+};
+
 bool UVerticesRenderer::GetSectionMeshForLOD(
 	const int32 LODIndex,
 	const int32 SectionId,
@@ -26,7 +136,7 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 	check(MeshData.Positions.Num() == 0);
 	check(MeshData.Triangles.Num() == 0);
 
-	const size_t VerticesNum = IcosahedronMesh.Vertices.size() * TmpData.Positions.Num();
+	const size_t VerticesNum = IcosahedronMesh.first.Num() * TmpData.Positions.Num();
 
 	// mesh vertices
 	{
@@ -34,10 +144,7 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 		Positions.Reserve(VerticesNum);
 
 		for (const auto &VertexPos : TmpData.Positions) {
-			TArray<FVector, TFixedAllocator<IcosahedronMesh.Vertices.size()>> VertexMeshPositions(
-				reinterpret_cast<const FVector*>(IcosahedronMesh.Vertices.data()),
-				IcosahedronMesh.Vertices.size()
-			);
+			auto VertexMeshPositions = IcosahedronMesh.first;
 			for (auto &VertexMeshPos : VertexMeshPositions)
 				VertexMeshPos += VertexPos;
 			Positions.Append(MoveTemp(VertexMeshPositions));
@@ -53,8 +160,8 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 		Colors.Reserve(VerticesNum);
 
 		for (const auto &VertexColor : TmpData.Colors) {
-			TArray<FColor, TFixedAllocator<IcosahedronMesh.Vertices.size()>> VertexMeshColors;
-			VertexMeshColors.Init(VertexColor, IcosahedronMesh.Vertices.size());
+			TArray<FColor, TFixedAllocator<IcosahedronFirstVertNum>> VertexMeshColors;
+			VertexMeshColors.Init(VertexColor, IcosahedronMesh.first.Num());
 			Colors.Append(MoveTemp(VertexMeshColors));
 		}
 
@@ -64,15 +171,12 @@ bool UVerticesRenderer::GetSectionMeshForLOD(
 
 	// mesh indices
 	{
-		const size_t IndicesNum = IcosahedronMesh.Indices.size() * TmpData.Positions.Num();
+		const size_t IndicesNum = IcosahedronMesh.second.Num() * TmpData.Positions.Num();
 		TArray<int32> Indices;
 		Indices.Reserve(IndicesNum);
 
-		for (size_t VerticesOffset = 0; VerticesOffset < VerticesNum; VerticesOffset += IcosahedronMesh.Vertices.size()) {
-			TArray<int32, TFixedAllocator<IcosahedronMesh.Indices.size()>> VertexMeshIndices(
-				IcosahedronMesh.Indices.data(),
-				IcosahedronMesh.Indices.size()
-			);
+		for (size_t VerticesOffset = 0; VerticesOffset < VerticesNum; VerticesOffset += IcosahedronMesh.first.Num()) {
+			auto VertexMeshIndices = IcosahedronMesh.second;
 			if (VerticesOffset > 0)
 				for (auto &Idx : VertexMeshIndices)
 					Idx += VerticesOffset;
@@ -106,12 +210,9 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 
 	// collision vertices
 	{
-		const TArray<FVector, TFixedAllocator<IcosahedronCollision.Vertices.size()>> VertexCollisionPositions(
-			reinterpret_cast<const FVector*>(IcosahedronCollision.Vertices.data()),
-			IcosahedronCollision.Vertices.size()
-		);
+		const auto VertexCollisionPositions = IcosahedronCollision.first;
 
-		const size_t VerticesNum = IcosahedronCollision.Vertices.size() * Data.Positions.Num();
+		const size_t VerticesNum = VertexCollisionPositions.Num() * Data.Positions.Num();
 		CollisionData.Vertices.Reserve(VerticesNum);
 
 		for (const auto &VertexPos : Data.Positions) {
@@ -124,12 +225,9 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 
 	// collision triangles and sources
 	{
-		const TArray<int32, TFixedAllocator<IcosahedronCollision.Indices.size()>> VertexCollisionIndices(
-			IcosahedronCollision.Indices.data(),
-			IcosahedronCollision.Indices.size()
-		);
+		const auto VertexCollisionIndices = IcosahedronCollision.second;
 
-		const size_t TrianglesNum = IcosahedronCollision.Indices.size() / 3 * Data.Positions.Num();
+		const size_t TrianglesNum = VertexCollisionIndices.Num() / 3 * Data.Positions.Num();
 		const size_t SourcesNum = Data.Positions.Num();
 		CollisionData.Triangles.Reserve(TrianglesNum);
 		CollisionData.CollisionSources.Reserve(SourcesNum);
@@ -145,7 +243,7 @@ bool UVerticesRenderer::GetCollisionMesh(FRuntimeMeshCollisionData &CollisionDat
 				);
 			}
 			const size_t EndTriangles = CollisionData.Triangles.Num() - 1;
-			VerticesOffset += IcosahedronCollision.Vertices.size();
+			VerticesOffset += IcosahedronCollision.first.Num();
 
 			CollisionData.CollisionSources.Emplace(
 				StartTriangles, EndTriangles,

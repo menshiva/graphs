@@ -25,6 +25,6 @@ public class Graphs : ModuleRules {
 		});
 		PublicIncludePaths.Add(EngineThirdPartyPath);
 
-		CppStandard = CppStandardVersion.Latest;
+		CppStandard = CppStandardVersion.Cpp17;
 	}
 }

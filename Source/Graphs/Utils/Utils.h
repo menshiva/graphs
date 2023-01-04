@@ -3,7 +3,7 @@
 namespace Utils {
 	/**
 	 * Returns a unique integer from the two provided integers using Cantor pairing function.
-	 * @link https://en.wikipedia.org/wiki/Pairing_function
+	 * @link https://mathworld.wolfram.com/PairingFunction.html
 	 * 
 	 * @param X First integer.
 	 * @param Y Second integer.
@@ -15,7 +15,7 @@ namespace Utils {
 
 	/**
 	 * Inverse function of Cantor pairing function.
-	 * @link https://en.wikipedia.org/wiki/Pairing_function
+	 * @link https://mathworld.wolfram.com/PairingFunction.html
 	 * 
 	 * @param Val the value to be unpaired.
 	 * @return A pair of values that, when passed to Cantor pairing function, would result in Val.
