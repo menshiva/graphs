@@ -114,6 +114,18 @@ static std::pair<
 	}
 };
 
+UVerticesRenderer::UVerticesRenderer() {
+	const ConstructorHelpers::FObjectFinder<UMaterialInstance> GraphMeshMaterialAsset(
+		TEXT("/Game/Graphs/Materials/GraphMaterialInst")
+	);
+	VertexMeshMaterial = GraphMeshMaterialAsset.Object;
+}
+
+void UVerticesRenderer::Initialize() {
+	SetupMaterialSlot(0, "Vertex Mesh Material", VertexMeshMaterial);
+	Super::Initialize();
+}
+
 bool UVerticesRenderer::GetSectionMeshForLOD(
 	const int32 LODIndex,
 	const int32 SectionId,

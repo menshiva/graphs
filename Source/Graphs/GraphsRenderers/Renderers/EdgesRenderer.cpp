@@ -39,6 +39,18 @@ void GenerateEdgeFaces(
 	}
 }
 
+UEdgesRenderer::UEdgesRenderer() {
+	const ConstructorHelpers::FObjectFinder<UMaterialInstance> GraphMeshMaterialAsset(
+		TEXT("/Game/Graphs/Materials/GraphMaterialInst")
+	);
+	EdgeMeshMaterial = GraphMeshMaterialAsset.Object;
+}
+
+void UEdgesRenderer::Initialize() {
+	SetupMaterialSlot(0, "Edge Mesh Material", EdgeMeshMaterial);
+	Super::Initialize();
+}
+
 bool UEdgesRenderer::GetSectionMeshForLOD(
 	const int32 LODIndex,
 	const int32 SectionId,
