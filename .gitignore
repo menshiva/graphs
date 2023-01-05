@@ -8,6 +8,8 @@
 # Do not ignore git files in the root of the repo.
 !/.git*
 
+!/Thesis/**
+
 # Do not ignore current project's `.uproject`.
 !/Graphs.uproject
 
